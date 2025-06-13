@@ -1,10 +1,19 @@
+// Load environment variables first
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Debug environment loading
+console.log('🔧 Environment variables loaded:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DB_HOST:', process.env.DB_HOST ? '[SET]' : '[NOT SET]');
+console.log('DB_USER:', process.env.DB_USER ? '[SET]' : '[NOT SET]');
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
