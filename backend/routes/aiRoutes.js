@@ -3,8 +3,8 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const AIController = require('../controllers/AIController');
-const { authenticateToken, authorizeRoles } = require('../middleware/auth');
-const { validateRequest } = require('../middleware/validation');
+const { authenticateToken, authorize } = require('../middleware/authMiddleware');
+const { validateRequest } = require('../middleware/validationMiddleware');
 const { body, param, query } = require('express-validator');
 
 // Configure multer for file uploads
@@ -39,7 +39,7 @@ const upload = multer({
 
 router.post('/parse-resume',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   upload.single('resume'),
   [
     body('employeeId').optional().isInt().withMessage('Employee ID must be a valid integer')
@@ -50,7 +50,7 @@ router.post('/parse-resume',
 
 router.get('/resume-history/:employeeId',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     param('employeeId').isInt().withMessage('Employee ID must be a valid integer')
   ],
@@ -64,7 +64,7 @@ router.get('/resume-history/:employeeId',
 
 router.get('/attrition-predictions',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     query('riskThreshold').optional().isFloat({ min: 0, max: 1 }).withMessage('Risk threshold must be between 0 and 1')
   ],
@@ -74,7 +74,7 @@ router.get('/attrition-predictions',
 
 router.post('/attrition-predictions',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     body('employeeId').isInt().withMessage('Employee ID is required and must be valid')
   ],
@@ -88,7 +88,7 @@ router.post('/attrition-predictions',
 
 router.post('/smart-feedback',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     body('employeeId').isInt().withMessage('Employee ID is required'),
     body('feedbackType').isIn(['performance', 'development', 'career', 'general']).withMessage('Invalid feedback type'),
@@ -100,7 +100,7 @@ router.post('/smart-feedback',
 
 router.get('/smart-feedback/:employeeId',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     param('employeeId').isInt().withMessage('Employee ID must be valid'),
     query('feedbackType').optional().isIn(['performance', 'development', 'career', 'general']),
@@ -116,7 +116,7 @@ router.get('/smart-feedback/:employeeId',
 
 router.get('/attendance-anomalies',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     query('status').optional().isIn(['active', 'resolved', 'ignored']).withMessage('Invalid status')
   ],
@@ -126,7 +126,7 @@ router.get('/attendance-anomalies',
 
 router.post('/detect-anomalies',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     body('employeeId').optional().isInt().withMessage('Employee ID must be valid'),
     body('dateRange').isObject().withMessage('Date range is required'),
@@ -167,7 +167,7 @@ router.get('/chatbot/history/:sessionId',
 
 router.post('/smart-reports',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     body('reportType').isIn(['employee', 'attendance', 'leave', 'performance', 'payroll']).withMessage('Invalid report type'),
     body('parameters').isObject().withMessage('Parameters must be an object')

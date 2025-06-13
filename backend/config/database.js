@@ -1,7 +1,12 @@
-const mysql = require('mysql2/promise');
 require('dotenv').config();
+const mysql = require('mysql2/promise');
 
 // Database configuration
+console.log('🔧 Loading database config...');
+console.log('DB_HOST from env:', process.env.DB_HOST);
+console.log('DB_USER from env:', process.env.DB_USER);
+console.log('DB_NAME from env:', process.env.DB_NAME);
+
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 3306,
@@ -16,6 +21,11 @@ const dbConfig = {
   reconnect: true,
   charset: 'utf8mb4'
 };
+
+console.log('🔧 Final database config:');
+console.log('Host:', dbConfig.host);
+console.log('User:', dbConfig.user);
+console.log('Database:', dbConfig.database);
 
 // Create MySQL connection pool
 const pool = mysql.createPool(dbConfig);
