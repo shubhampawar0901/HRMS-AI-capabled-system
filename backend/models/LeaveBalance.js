@@ -248,31 +248,57 @@ class LeaveBalance {
     // Get all approved leave applications for the year
     const applicationsQuery = `
       SELECT leave_type_id, SUM(total_days) as total_used
-      FROM leave_applications 
-      WHERE employee_id = ? 
-        AND YEAR(start_date) = ? 
+      FROM leave_applications
+      WHERE employee_id = ?
+        AND YEAR(start_date) = ?
         AND status = 'approved'
       GROUP BY leave_type_id
     `;
-    
+
     const applications = await executeQuery(applicationsQuery, [employeeId, year]);
-    
+
     // Update balances based on actual usage
     for (const app of applications) {
       const balance = await LeaveBalance.findByEmployeeAndType(
-        employeeId, 
-        app.leave_type_id, 
+        employeeId,
+        app.leave_type_id,
         year
       );
-      
+
       if (balance && balance.usedDays !== app.total_used) {
         await LeaveBalance.update(balance.id, {
           usedDays: app.total_used
         });
       }
     }
-    
+
     return await LeaveBalance.findByEmployee(employeeId, year);
+  }
+
+  static async updateUsedDays(employeeId, leaveTypeId, year, additionalDays) {
+    const balance = await LeaveBalance.findByEmployeeAndType(employeeId, leaveTypeId, year);
+
+    if (!balance) {
+      // Create balance if it doesn't exist
+      const leaveTypeQuery = 'SELECT * FROM leave_types WHERE id = ?';
+      const leaveTypes = await executeQuery(leaveTypeQuery, [leaveTypeId]);
+
+      if (leaveTypes.length === 0) {
+        throw new Error('Leave type not found');
+      }
+
+      return await LeaveBalance.create({
+        employeeId,
+        leaveTypeId,
+        year,
+        allocatedDays: leaveTypes[0].max_days_per_year,
+        usedDays: additionalDays
+      });
+    }
+
+    return await LeaveBalance.update(balance.id, {
+      usedDays: balance.usedDays + additionalDays
+    });
   }
 
   // Instance methods

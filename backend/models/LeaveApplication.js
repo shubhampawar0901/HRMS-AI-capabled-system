@@ -275,9 +275,221 @@ class LeaveApplication {
     const end = new Date(endDate);
     const timeDiff = end.getTime() - start.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-    
+
     // Simple calculation - can be enhanced to exclude weekends/holidays
     return daysDiff;
+  }
+
+  static async findOverlapping(employeeId, startDate, endDate, excludeId = null) {
+    let query = `
+      SELECT * FROM leave_applications
+      WHERE employee_id = ?
+        AND status IN ('pending', 'approved')
+        AND (
+          (start_date <= ? AND end_date >= ?) OR
+          (start_date <= ? AND end_date >= ?) OR
+          (start_date >= ? AND end_date <= ?)
+        )
+    `;
+    const params = [employeeId, startDate, startDate, endDate, endDate, startDate, endDate];
+
+    if (excludeId) {
+      query += ' AND id != ?';
+      params.push(excludeId);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows.map(row => new LeaveApplication(row));
+  }
+
+  static async countByEmployee(employeeId, options = {}) {
+    let query = 'SELECT COUNT(*) as total FROM leave_applications WHERE employee_id = ?';
+    const params = [employeeId];
+
+    if (options.status) {
+      query += ' AND status = ?';
+      params.push(options.status);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows[0].total;
+  }
+
+  static async findAll(options = {}) {
+    let query = `
+      SELECT la.*,
+             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code,
+             lt.name as leave_type_name,
+             CONCAT(a.first_name, ' ', a.last_name) as approved_by_name
+      FROM leave_applications la
+      LEFT JOIN employees e ON la.employee_id = e.id
+      LEFT JOIN leave_types lt ON la.leave_type_id = lt.id
+      LEFT JOIN users u ON la.approved_by = u.id
+      LEFT JOIN employees a ON u.id = a.user_id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (options.status) {
+      query += ' AND la.status = ?';
+      params.push(options.status);
+    }
+
+    query += ' ORDER BY la.created_at DESC';
+
+    if (options.limit) {
+      query += ' LIMIT ?';
+      params.push(options.limit);
+    }
+
+    if (options.page && options.limit) {
+      const offset = (options.page - 1) * options.limit;
+      query += ' OFFSET ?';
+      params.push(offset);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows.map(row => new LeaveApplication(row));
+  }
+
+  static async count(options = {}) {
+    let query = 'SELECT COUNT(*) as total FROM leave_applications WHERE 1=1';
+    const params = [];
+
+    if (options.status) {
+      query += ' AND status = ?';
+      params.push(options.status);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows[0].total;
+  }
+
+  static async findByManager(managerId, options = {}) {
+    let query = `
+      SELECT la.*,
+             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code,
+             lt.name as leave_type_name
+      FROM leave_applications la
+      JOIN employees e ON la.employee_id = e.id
+      JOIN leave_types lt ON la.leave_type_id = lt.id
+      WHERE e.manager_id = ?
+    `;
+    const params = [managerId];
+
+    if (options.status) {
+      query += ' AND la.status = ?';
+      params.push(options.status);
+    }
+
+    query += ' ORDER BY la.created_at DESC';
+
+    if (options.limit) {
+      query += ' LIMIT ?';
+      params.push(options.limit);
+    }
+
+    if (options.page && options.limit) {
+      const offset = (options.page - 1) * options.limit;
+      query += ' OFFSET ?';
+      params.push(offset);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows.map(row => new LeaveApplication(row));
+  }
+
+  static async countByManager(managerId, options = {}) {
+    let query = `
+      SELECT COUNT(*) as total FROM leave_applications la
+      JOIN employees e ON la.employee_id = e.id
+      WHERE e.manager_id = ?
+    `;
+    const params = [managerId];
+
+    if (options.status) {
+      query += ' AND la.status = ?';
+      params.push(options.status);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows[0].total;
+  }
+
+  static async findByMonth(month, year) {
+    const query = `
+      SELECT la.*,
+             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code,
+             lt.name as leave_type_name,
+             d.name as department_name
+      FROM leave_applications la
+      JOIN employees e ON la.employee_id = e.id
+      JOIN leave_types lt ON la.leave_type_id = lt.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE la.status = 'approved'
+        AND (
+          (MONTH(la.start_date) = ? AND YEAR(la.start_date) = ?) OR
+          (MONTH(la.end_date) = ? AND YEAR(la.end_date) = ?) OR
+          (la.start_date <= ? AND la.end_date >= ?)
+        )
+      ORDER BY la.start_date
+    `;
+
+    const startOfMonth = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const endOfMonth = `${year}-${month.toString().padStart(2, '0')}-31`;
+
+    const rows = await executeQuery(query, [month, year, month, year, endOfMonth, startOfMonth]);
+    return rows.map(row => new LeaveApplication(row));
+  }
+
+  static async findTeamByMonth(managerId, month, year) {
+    const query = `
+      SELECT la.*,
+             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code,
+             lt.name as leave_type_name
+      FROM leave_applications la
+      JOIN employees e ON la.employee_id = e.id
+      JOIN leave_types lt ON la.leave_type_id = lt.id
+      WHERE e.manager_id = ? AND la.status = 'approved'
+        AND (
+          (MONTH(la.start_date) = ? AND YEAR(la.start_date) = ?) OR
+          (MONTH(la.end_date) = ? AND YEAR(la.end_date) = ?) OR
+          (la.start_date <= ? AND la.end_date >= ?)
+        )
+      ORDER BY la.start_date
+    `;
+
+    const startOfMonth = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const endOfMonth = `${year}-${month.toString().padStart(2, '0')}-31`;
+
+    const rows = await executeQuery(query, [managerId, month, year, month, year, endOfMonth, startOfMonth]);
+    return rows.map(row => new LeaveApplication(row));
+  }
+
+  static async findByEmployeeAndMonth(employeeId, month, year) {
+    const query = `
+      SELECT la.*,
+             lt.name as leave_type_name
+      FROM leave_applications la
+      JOIN leave_types lt ON la.leave_type_id = lt.id
+      WHERE la.employee_id = ? AND la.status = 'approved'
+        AND (
+          (MONTH(la.start_date) = ? AND YEAR(la.start_date) = ?) OR
+          (MONTH(la.end_date) = ? AND YEAR(la.end_date) = ?) OR
+          (la.start_date <= ? AND la.end_date >= ?)
+        )
+      ORDER BY la.start_date
+    `;
+
+    const startOfMonth = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const endOfMonth = `${year}-${month.toString().padStart(2, '0')}-31`;
+
+    const rows = await executeQuery(query, [employeeId, month, year, month, year, endOfMonth, startOfMonth]);
+    return rows.map(row => new LeaveApplication(row));
   }
 
   // Instance methods
