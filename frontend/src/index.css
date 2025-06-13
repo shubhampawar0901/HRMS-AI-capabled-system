@@ -1,0 +1,588 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ShadCN UI Base Colors */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+
+    /* HRMS Semantic Colors */
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --error: 0 84% 60%;
+    --info: 199 89% 48%;
+
+    /* HRMS Role Colors */
+    --hrms-admin: 0 84% 60%;
+    --hrms-manager: 25 95% 53%;
+    --hrms-employee: 158 64% 52%;
+    --hrms-ai: 258 90% 66%;
+
+    /* HRMS Role Light Variants */
+    --hrms-admin-light: 0 84% 95%;
+    --hrms-manager-light: 25 95% 95%;
+    --hrms-employee-light: 158 64% 95%;
+    --hrms-ai-light: 258 90% 95%;
+
+    /* Animation Variables */
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* Duration Variables */
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+    --duration-slow: 300ms;
+    --duration-slower: 500ms;
+
+    /* Spacing Variables */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+
+    /* Border Radius Variables */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
+    --radius-full: 9999px;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    /* Dark mode role light variants */
+    --hrms-admin-light: 0 84% 15%;
+    --hrms-manager-light: 25 95% 15%;
+    --hrms-employee-light: 158 64% 15%;
+    --hrms-ai-light: 258 90% 15%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography Scale */
+  .text-heading-xl { @apply text-4xl font-bold leading-tight; }
+  .text-heading-lg { @apply text-3xl font-semibold leading-tight; }
+  .text-heading-md { @apply text-2xl font-semibold leading-snug; }
+  .text-heading-sm { @apply text-xl font-semibold leading-snug; }
+
+  .text-body-lg { @apply text-lg font-normal leading-relaxed; }
+  .text-body-md { @apply text-base font-normal leading-relaxed; }
+  .text-body-sm { @apply text-sm font-normal leading-normal; }
+  .text-body-xs { @apply text-xs font-normal leading-normal; }
+
+  .text-label { @apply text-sm font-medium leading-snug; }
+  .text-caption { @apply text-xs font-normal leading-snug; }
+
+  /* Responsive Typography */
+  .text-responsive-xl { font-size: clamp(1.5rem, 4vw, 2.25rem); }
+  .text-responsive-lg { font-size: clamp(1.25rem, 3vw, 1.875rem); }
+  .text-responsive-md { font-size: clamp(1rem, 2vw, 1.5rem); }
+
+  /* Focus States */
+  .focus-ring:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Smooth Scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Reduced Motion */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@layer components {
+  /* Base Transition Class */
+  .hrms-transition {
+    transition: all var(--duration-normal) var(--ease-in-out);
+  }
+
+  /* Performance Optimized Animation Base */
+  .performance-optimized {
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+  }
+
+  /* HRMS Card System */
+  .hrms-card {
+    @apply bg-card rounded-lg border border-border p-6 performance-optimized;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    transition: all var(--duration-normal) var(--ease-in-out);
+  }
+
+  .hrms-card:hover {
+    box-shadow: 0 8px 25px -8px rgb(0 0 0 / 0.15), 0 4px 12px -4px rgb(0 0 0 / 0.1);
+  }
+
+  .hrms-card-interactive {
+    @apply hrms-card cursor-pointer;
+    transition: all var(--duration-normal) var(--ease-out);
+  }
+
+  .hrms-card-interactive:hover {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+
+  .hrms-card-interactive:active {
+    transform: scale(0.98) translateY(0px);
+  }
+
+  /* HRMS Button System */
+  .hrms-button-interactive {
+    @apply performance-optimized;
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+
+  .hrms-button-interactive:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+
+  .hrms-button-interactive:active {
+    transform: scale(0.98);
+  }
+
+  /* Role-based Button Styles */
+  .hrms-button-admin {
+    background: linear-gradient(135deg, hsl(var(--hrms-admin)), hsl(var(--hrms-admin)) 80%);
+    @apply text-white hrms-button-interactive;
+  }
+
+  .hrms-button-admin:hover {
+    background: linear-gradient(135deg, hsl(var(--hrms-admin) / 0.9), hsl(var(--hrms-admin) / 0.8));
+  }
+
+  .hrms-button-manager {
+    background: linear-gradient(135deg, hsl(var(--hrms-manager)), hsl(var(--hrms-manager)) 80%);
+    @apply text-white hrms-button-interactive;
+  }
+
+  .hrms-button-manager:hover {
+    background: linear-gradient(135deg, hsl(var(--hrms-manager) / 0.9), hsl(var(--hrms-manager) / 0.8));
+  }
+
+  .hrms-button-employee {
+    background: linear-gradient(135deg, hsl(var(--hrms-employee)), hsl(var(--hrms-employee)) 80%);
+    @apply text-white hrms-button-interactive;
+  }
+
+  .hrms-button-employee:hover {
+    background: linear-gradient(135deg, hsl(var(--hrms-employee) / 0.9), hsl(var(--hrms-employee) / 0.8));
+  }
+
+  .hrms-button-ai {
+    background: linear-gradient(135deg, hsl(var(--hrms-ai)), hsl(var(--hrms-ai)) 80%);
+    @apply text-white hrms-button-interactive;
+  }
+
+  .hrms-button-ai:hover {
+    background: linear-gradient(135deg, hsl(var(--hrms-ai) / 0.9), hsl(var(--hrms-ai) / 0.8));
+  }
+
+  /* Subtle Gradient Backgrounds */
+  .hrms-gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+  }
+
+  .hrms-gradient-admin {
+    background: linear-gradient(135deg, hsl(var(--hrms-admin)), hsl(var(--hrms-admin) / 0.8));
+  }
+
+  .hrms-gradient-manager {
+    background: linear-gradient(135deg, hsl(var(--hrms-manager)), hsl(var(--hrms-manager) / 0.8));
+  }
+
+  .hrms-gradient-employee {
+    background: linear-gradient(135deg, hsl(var(--hrms-employee)), hsl(var(--hrms-employee) / 0.8));
+  }
+
+  .hrms-gradient-ai {
+    background: linear-gradient(135deg, hsl(var(--hrms-ai)), hsl(var(--hrms-ai) / 0.8));
+  }
+
+  /* Form System */
+  .hrms-form-container {
+    @apply space-y-6 p-6 bg-card rounded-lg border border-border;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  }
+
+  .hrms-input {
+    @apply w-full px-3 py-2 bg-background border border-input rounded-md;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .hrms-input:hover {
+    @apply border-ring/50;
+  }
+
+  /* Navigation System */
+  .hrms-nav-item {
+    @apply flex items-center px-3 py-2 rounded-md text-sm font-medium;
+    @apply transition-all duration-200 ease-in-out;
+    @apply hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .hrms-nav-item-active {
+    @apply hrms-nav-item bg-primary text-primary-foreground;
+    box-shadow: 0 2px 4px -1px hsl(var(--primary) / 0.3);
+  }
+
+  /* Layout Grids */
+  .hrms-dashboard-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+  }
+
+  .hrms-content-grid {
+    @apply grid grid-cols-1 lg:grid-cols-2 gap-6;
+  }
+
+  /* Table System */
+  .hrms-table-container {
+    @apply overflow-x-auto rounded-lg border border-border bg-card;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  }
+
+  .hrms-table {
+    @apply w-full text-sm;
+  }
+
+  .hrms-table th {
+    @apply px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider;
+    @apply bg-muted/50 border-b border-border;
+  }
+
+  .hrms-table td {
+    @apply px-6 py-4 whitespace-nowrap border-b border-border;
+  }
+
+  .hrms-table tr:hover {
+    @apply bg-muted/30;
+    transition: background-color var(--duration-fast) var(--ease-in-out);
+  }
+
+  /* Loading States */
+  .hrms-loading {
+    @apply bg-muted rounded animate-pulse;
+  }
+
+  .hrms-skeleton {
+    @apply bg-muted rounded;
+    animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .hrms-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background-size: 200px 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Status Badge System */
+  .hrms-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .hrms-status-active {
+    @apply hrms-badge;
+    background-color: hsl(var(--success) / 0.1);
+    color: hsl(var(--success));
+    border: 1px solid hsl(var(--success) / 0.2);
+  }
+
+  .hrms-status-inactive {
+    @apply hrms-badge;
+    background-color: hsl(var(--error) / 0.1);
+    color: hsl(var(--error));
+    border: 1px solid hsl(var(--error) / 0.2);
+  }
+
+  .hrms-status-pending {
+    @apply hrms-badge;
+    background-color: hsl(var(--warning) / 0.1);
+    color: hsl(var(--warning));
+    border: 1px solid hsl(var(--warning) / 0.2);
+  }
+
+  .hrms-status-info {
+    @apply hrms-badge;
+    background-color: hsl(var(--info) / 0.1);
+    color: hsl(var(--info));
+    border: 1px solid hsl(var(--info) / 0.2);
+  }
+
+  /* Role Badge System */
+  .hrms-role-admin {
+    @apply hrms-badge;
+    background-color: hsl(var(--hrms-admin-light));
+    color: hsl(var(--hrms-admin));
+    border: 1px solid hsl(var(--hrms-admin) / 0.2);
+  }
+
+  .hrms-role-manager {
+    @apply hrms-badge;
+    background-color: hsl(var(--hrms-manager-light));
+    color: hsl(var(--hrms-manager));
+    border: 1px solid hsl(var(--hrms-manager) / 0.2);
+  }
+
+  .hrms-role-employee {
+    @apply hrms-badge;
+    background-color: hsl(var(--hrms-employee-light));
+    color: hsl(var(--hrms-employee));
+    border: 1px solid hsl(var(--hrms-employee) / 0.2);
+  }
+
+  /* Scale Effects */
+  .scale-hover-sm:hover {
+    transform: scale(1.02);
+    transition: transform var(--duration-normal) var(--ease-out);
+  }
+
+  .scale-hover-md:hover {
+    transform: scale(1.05);
+    transition: transform var(--duration-normal) var(--ease-out);
+  }
+
+  .scale-hover-lg:hover {
+    transform: scale(1.08);
+    transition: transform var(--duration-normal) var(--ease-out);
+  }
+
+  /* Focus States */
+  .focus-ring-admin:focus-visible {
+    @apply outline-none;
+    box-shadow: 0 0 0 3px hsl(var(--hrms-admin) / 0.2);
+  }
+
+  .focus-ring-manager:focus-visible {
+    @apply outline-none;
+    box-shadow: 0 0 0 3px hsl(var(--hrms-manager) / 0.2);
+  }
+
+  .focus-ring-employee:focus-visible {
+    @apply outline-none;
+    box-shadow: 0 0 0 3px hsl(var(--hrms-employee) / 0.2);
+  }
+
+  .focus-ring-ai:focus-visible {
+    @apply outline-none;
+    box-shadow: 0 0 0 3px hsl(var(--hrms-ai) / 0.2);
+  }
+
+  /* Utility Classes */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Animation Classes */
+  .animate-fade-in-up {
+    animation: fade-in-up 0.3s var(--ease-out);
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s var(--ease-out);
+  }
+
+  .animate-slide-in-left {
+    animation: slide-in-left 0.3s var(--ease-out);
+  }
+
+  .animate-bounce-in {
+    animation: bounce-in 0.5s var(--ease-bounce);
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.2s var(--ease-out);
+  }
+}
+
+/* Keyframe Animations */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px hsl(var(--primary) / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.8), 0 0 30px hsl(var(--primary) / 0.6);
+  }
+}
