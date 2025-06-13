@@ -116,7 +116,7 @@ class PerformanceReview {
 
   static async findByReviewer(reviewerId, options = {}) {
     let query = `
-      SELECT pr.*, 
+      SELECT pr.*,
              CONCAT(e.first_name, ' ', e.last_name) as employee_name,
              e.employee_code
       FROM performance_reviews pr
@@ -124,16 +124,128 @@ class PerformanceReview {
       WHERE pr.reviewer_id = ?
     `;
     const params = [reviewerId];
-    
+
     if (options.status) {
       query += ' AND pr.status = ?';
       params.push(options.status);
     }
-    
+
     query += ' ORDER BY pr.created_at DESC';
-    
+
     const rows = await executeQuery(query, params);
     return rows.map(row => new PerformanceReview(row));
+  }
+
+  static async findAll(options = {}) {
+    let query = `
+      SELECT pr.*,
+             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code,
+             CONCAT(r.first_name, ' ', r.last_name) as reviewer_name
+      FROM performance_reviews pr
+      LEFT JOIN employees e ON pr.employee_id = e.id
+      LEFT JOIN users u ON pr.reviewer_id = u.id
+      LEFT JOIN employees r ON u.id = r.user_id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (options.status) {
+      query += ' AND pr.status = ?';
+      params.push(options.status);
+    }
+
+    query += ' ORDER BY pr.created_at DESC';
+
+    if (options.limit) {
+      query += ' LIMIT ?';
+      params.push(options.limit);
+    }
+
+    if (options.page && options.limit) {
+      const offset = (options.page - 1) * options.limit;
+      query += ' OFFSET ?';
+      params.push(offset);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows.map(row => new PerformanceReview(row));
+  }
+
+  static async count(options = {}) {
+    let query = 'SELECT COUNT(*) as total FROM performance_reviews WHERE 1=1';
+    const params = [];
+
+    if (options.status) {
+      query += ' AND status = ?';
+      params.push(options.status);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows[0].total;
+  }
+
+  static async findByManager(managerId, options = {}) {
+    let query = `
+      SELECT pr.*,
+             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code
+      FROM performance_reviews pr
+      JOIN employees e ON pr.employee_id = e.id
+      WHERE e.manager_id = ?
+    `;
+    const params = [managerId];
+
+    if (options.status) {
+      query += ' AND pr.status = ?';
+      params.push(options.status);
+    }
+
+    query += ' ORDER BY pr.created_at DESC';
+
+    if (options.limit) {
+      query += ' LIMIT ?';
+      params.push(options.limit);
+    }
+
+    if (options.page && options.limit) {
+      const offset = (options.page - 1) * options.limit;
+      query += ' OFFSET ?';
+      params.push(offset);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows.map(row => new PerformanceReview(row));
+  }
+
+  static async countByManager(managerId, options = {}) {
+    let query = `
+      SELECT COUNT(*) as total FROM performance_reviews pr
+      JOIN employees e ON pr.employee_id = e.id
+      WHERE e.manager_id = ?
+    `;
+    const params = [managerId];
+
+    if (options.status) {
+      query += ' AND pr.status = ?';
+      params.push(options.status);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows[0].total;
+  }
+
+  static async countByEmployee(employeeId, options = {}) {
+    let query = 'SELECT COUNT(*) as total FROM performance_reviews WHERE employee_id = ?';
+    const params = [employeeId];
+
+    if (options.status) {
+      query += ' AND status = ?';
+      params.push(options.status);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows[0].total;
   }
 
   // Instance methods

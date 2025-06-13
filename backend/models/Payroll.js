@@ -119,7 +119,7 @@ class Payroll {
 
   static async findByEmployee(employeeId, options = {}) {
     let query = `
-      SELECT p.*, 
+      SELECT p.*,
              CONCAT(proc.first_name, ' ', proc.last_name) as processed_by_name
       FROM payroll_records p
       LEFT JOIN users u ON p.processed_by = u.id
@@ -127,26 +127,160 @@ class Payroll {
       WHERE p.employee_id = ?
     `;
     const params = [employeeId];
-    
+
+    if (options.month) {
+      query += ' AND p.month = ?';
+      params.push(options.month);
+    }
+
     if (options.year) {
       query += ' AND p.year = ?';
       params.push(options.year);
     }
-    
+
     if (options.status) {
       query += ' AND p.status = ?';
       params.push(options.status);
     }
-    
+
     query += ' ORDER BY p.year DESC, p.month DESC';
-    
+
     if (options.limit) {
       query += ' LIMIT ?';
       params.push(options.limit);
     }
-    
+
+    if (options.page && options.limit) {
+      const offset = (options.page - 1) * options.limit;
+      query += ' OFFSET ?';
+      params.push(offset);
+    }
+
     const rows = await executeQuery(query, params);
     return rows.map(row => new Payroll(row));
+  }
+
+  static async findAll(options = {}) {
+    let query = `
+      SELECT p.*,
+             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code,
+             d.name as department_name,
+             CONCAT(proc.first_name, ' ', proc.last_name) as processed_by_name
+      FROM payroll_records p
+      LEFT JOIN employees e ON p.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN users u ON p.processed_by = u.id
+      LEFT JOIN employees proc ON u.id = proc.user_id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (options.month) {
+      query += ' AND p.month = ?';
+      params.push(options.month);
+    }
+
+    if (options.year) {
+      query += ' AND p.year = ?';
+      params.push(options.year);
+    }
+
+    if (options.status) {
+      query += ' AND p.status = ?';
+      params.push(options.status);
+    }
+
+    if (options.departmentId) {
+      query += ' AND e.department_id = ?';
+      params.push(options.departmentId);
+    }
+
+    query += ' ORDER BY p.year DESC, p.month DESC, e.first_name, e.last_name';
+
+    if (options.limit) {
+      query += ' LIMIT ?';
+      params.push(options.limit);
+    }
+
+    if (options.page && options.limit) {
+      const offset = (options.page - 1) * options.limit;
+      query += ' OFFSET ?';
+      params.push(offset);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows.map(row => new Payroll(row));
+  }
+
+  static async count(options = {}) {
+    let query = 'SELECT COUNT(*) as total FROM payroll_records p LEFT JOIN employees e ON p.employee_id = e.id WHERE 1=1';
+    const params = [];
+
+    if (options.month) {
+      query += ' AND p.month = ?';
+      params.push(options.month);
+    }
+
+    if (options.year) {
+      query += ' AND p.year = ?';
+      params.push(options.year);
+    }
+
+    if (options.status) {
+      query += ' AND p.status = ?';
+      params.push(options.status);
+    }
+
+    if (options.departmentId) {
+      query += ' AND e.department_id = ?';
+      params.push(options.departmentId);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows[0].total;
+  }
+
+  static async countByEmployee(employeeId, options = {}) {
+    let query = 'SELECT COUNT(*) as total FROM payroll_records WHERE employee_id = ?';
+    const params = [employeeId];
+
+    if (options.month) {
+      query += ' AND month = ?';
+      params.push(options.month);
+    }
+
+    if (options.year) {
+      query += ' AND year = ?';
+      params.push(options.year);
+    }
+
+    if (options.status) {
+      query += ' AND status = ?';
+      params.push(options.status);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows[0].total;
+  }
+
+  static async getSummary(month, year) {
+    const query = `
+      SELECT
+        COUNT(*) as total_employees,
+        SUM(p.gross_salary) as total_gross,
+        SUM(p.total_deductions) as total_deductions,
+        SUM(p.net_salary) as total_net,
+        AVG(p.net_salary) as avg_net_salary,
+        COUNT(CASE WHEN p.status = 'processed' THEN 1 END) as processed_count,
+        COUNT(CASE WHEN p.status = 'paid' THEN 1 END) as paid_count,
+        COUNT(CASE WHEN p.status = 'draft' THEN 1 END) as draft_count
+      FROM payroll_records p
+      WHERE p.month = ? AND p.year = ?
+    `;
+
+    const rows = await executeQuery(query, [month, year]);
+    return rows[0];
   }
 
   static async findByPeriod(month, year, options = {}) {

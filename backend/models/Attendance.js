@@ -221,7 +221,7 @@ class Attendance {
 
   static async getDepartmentAttendance(departmentId, date) {
     const query = `
-      SELECT 
+      SELECT
         e.id as employee_id,
         e.employee_code,
         CONCAT(e.first_name, ' ', e.last_name) as employee_name,
@@ -229,17 +229,80 @@ class Attendance {
         a.check_out_time,
         a.total_hours,
         a.status,
-        CASE 
+        CASE
           WHEN a.id IS NULL THEN 'absent'
-          ELSE a.status 
+          ELSE a.status
         END as final_status
       FROM employees e
       LEFT JOIN attendance_records a ON e.id = a.employee_id AND a.date = ?
       WHERE e.department_id = ? AND e.status = 'active'
       ORDER BY e.first_name, e.last_name
     `;
-    
+
     return await executeQuery(query, [date, departmentId]);
+  }
+
+  static async findByDate(date) {
+    const query = `
+      SELECT ar.*, CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code, d.name as department_name
+      FROM attendance_records ar
+      JOIN employees e ON ar.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE ar.date = ?
+      ORDER BY e.first_name, e.last_name
+    `;
+    const rows = await executeQuery(query, [date]);
+    return rows.map(row => new Attendance(row));
+  }
+
+  static async findByManagerAndDate(managerId, date) {
+    const query = `
+      SELECT ar.*, CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code, d.name as department_name
+      FROM attendance_records ar
+      JOIN employees e ON ar.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE e.manager_id = ? AND ar.date = ?
+      ORDER BY e.first_name, e.last_name
+    `;
+    const rows = await executeQuery(query, [managerId, date]);
+    return rows.map(row => new Attendance(row));
+  }
+
+  static async countByEmployee(employeeId, options = {}) {
+    let query = 'SELECT COUNT(*) as total FROM attendance_records WHERE employee_id = ?';
+    const params = [employeeId];
+
+    if (options.startDate) {
+      query += ' AND date >= ?';
+      params.push(options.startDate);
+    }
+
+    if (options.endDate) {
+      query += ' AND date <= ?';
+      params.push(options.endDate);
+    }
+
+    const rows = await executeQuery(query, params);
+    return rows[0].total;
+  }
+
+  static async getSummary(employeeId, month, year) {
+    const query = `
+      SELECT
+        COUNT(*) as total_days,
+        SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_days,
+        SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_days,
+        SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_days,
+        SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END) as half_days,
+        ROUND(AVG(total_hours), 2) as avg_hours,
+        SUM(total_hours) as total_hours
+      FROM attendance_records
+      WHERE employee_id = ? AND MONTH(date) = ? AND YEAR(date) = ?
+    `;
+    const rows = await executeQuery(query, [employeeId, month, year]);
+    return rows[0];
   }
 
   // Instance methods

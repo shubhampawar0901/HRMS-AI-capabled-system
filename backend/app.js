@@ -6,10 +6,10 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-// Import shared middleware
-const { errorHandler, notFound } = require('./shared/middleware/errorMiddleware');
-const { authenticateToken } = require('./shared/middleware/authMiddleware');
-const { validateRequest } = require('./shared/middleware/validationMiddleware');
+// Import middleware
+const { errorHandler, notFound } = require('./middleware/errorMiddleware');
+const { authenticateToken } = require('./middleware/authMiddleware');
+const { validateRequest } = require('./middleware/validationMiddleware');
 
 // Import database connection
 const { connectDB, closeDB } = require('./config/database');
