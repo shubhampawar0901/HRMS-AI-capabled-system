@@ -16,11 +16,66 @@
 ### **🎯 Frontend Implementation Priority:**
 All backend services are ready - frontend agents can now focus on UI implementation and API integration.
 
+## 📁 **Updated Frontend Folder Structure**
+```
+frontend/src/
+├── components/          # All reusable components (moved from shared)
+│   ├── ui/             # UI components (Button, Input, Card, etc.)
+│   ├── layout/         # Layout components (Header, Sidebar, etc.)
+│   ├── forms/          # Form components
+│   ├── charts/         # Chart components
+│   ├── auth/           # Auth-specific components
+│   ├── dashboard/      # Dashboard-specific components
+│   ├── employees/      # Employee-specific components
+│   ├── attendance/     # Attendance-specific components
+│   ├── leave/          # Leave-specific components
+│   ├── payroll/        # Payroll-specific components
+│   ├── performance/    # Performance-specific components
+│   ├── ai-features/    # AI features-specific components
+│   └── reports/        # Reports-specific components
+├── pages/              # All page components
+│   ├── auth/           # Authentication pages
+│   ├── dashboard/      # Dashboard pages
+│   ├── employees/      # Employee pages
+│   ├── attendance/     # Attendance pages
+│   ├── leave/          # Leave pages
+│   ├── payroll/        # Payroll pages
+│   ├── performance/    # Performance pages
+│   ├── ai-features/    # AI features pages
+│   └── reports/        # Reports pages
+├── store/              # Redux store and slices
+│   ├── slices/         # Individual feature slices
+│   └── index.js        # Store configuration
+├── api/                # API configuration and endpoints
+│   ├── endpoints.js    # All API endpoint URLs
+│   ├── axiosInstance.js # Axios configuration
+│   └── interceptors.js # Error and request interceptors
+├── services/           # Business logic services
+│   ├── authService.js  # Authentication service
+│   ├── employeeService.js # Employee service
+│   ├── attendanceService.js # Attendance service
+│   ├── leaveService.js # Leave service
+│   ├── payrollService.js # Payroll service
+│   ├── performanceService.js # Performance service
+│   ├── aiService.js    # AI features service
+│   └── reportService.js # Reports service
+├── hooks/              # Custom React hooks
+├── utils/              # Utility functions
+├── routes/             # Route configuration
+│   ├── AppRoutes.jsx   # Main route configuration
+│   ├── ProtectedRoute.jsx # Protected routes wrapper
+│   └── PublicRoute.jsx # Public routes wrapper
+├── contexts/           # React contexts (moved from shared)
+├── lib/                # Third-party library configurations
+├── assets/             # Static assets
+└── styles/             # Global styles and themes
+```
+
 ---
 
-## 🎯 **Agent 9: Authentication Module**
+## ✅ **Agent 9: Authentication Module - COMPLETED**
 
-### **Workspace**: `frontend/src/modules/auth/`
+### **Workspace**: `frontend/src/`
 
 ### **Responsibilities**:
 - Login/logout functionality
@@ -28,41 +83,46 @@ All backend services are ready - frontend agents can now focus on UI implementat
 - Protected route handling
 - Profile management
 
-### **Components to Implement**:
+### **Files to Implement**:
 ```javascript
-// Module structure
-auth/
+// Authentication files structure
+src/
 ├── components/
-│   ├── LoginForm.jsx
-│   ├── ForgotPasswordForm.jsx
-│   ├── ResetPasswordForm.jsx
-│   └── ProfileForm.jsx
+│   └── auth/
+│       ├── LoginForm.jsx
+│       ├── ProfileForm.jsx
+│       └── AuthLayout.jsx
 ├── pages/
-│   ├── LoginPage.jsx
-│   ├── ForgotPasswordPage.jsx
-│   └── ResetPasswordPage.jsx
+│   └── auth/
+│       ├── LoginPage.jsx
+│       └── ProfilePage.jsx
 ├── hooks/
 │   ├── useAuth.js
 │   └── useProfile.js
 ├── store/
-│   ├── authSlice.js
-│   └── authAPI.js
-└── utils/
-    ├── authHelpers.js
-    └── tokenManager.js
+│   └── slices/
+│       └── authSlice.js
+├── services/
+│   └── authService.js
+├── utils/
+│   ├── authHelpers.js
+│   └── tokenManager.js
+└── routes/
+    ├── ProtectedRoute.jsx
+    └── PublicRoute.jsx
 ```
 
 ### **Key Implementation Details**:
 
 #### **1. Login Form Component**:
 ```jsx
-// components/LoginForm.jsx
+// components/auth/LoginForm.jsx
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { loginUser } from '../store/authSlice';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { loginUser } from '@/store/slices/authSlice';
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -126,15 +186,15 @@ export default LoginForm;
 
 #### **2. Auth Redux Slice**:
 ```javascript
-// store/authSlice.js
+// store/slices/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { authAPI } from './authAPI';
+import { authService } from '@/services/authService';
 
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await authAPI.login(credentials);
+      const response = await authService.login(credentials);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('refreshToken', response.data.refreshToken);
       return response.data;
@@ -195,24 +255,24 @@ export default authSlice.reducer;
 - Protected route tests
 
 ### **Completion Checklist**:
-- [ ] Login form with validation
-- [ ] Forgot password flow
-- [ ] Reset password functionality
-- [ ] Profile management
-- [ ] Auth state management
-- [ ] Token handling
-- [ ] Protected routes
-- [ ] Error handling
-- [ ] Loading states
-- [ ] Responsive design
+- [x] Login form with validation
+- [ ] Forgot password flow (Not implemented - per user requirements)
+- [ ] Reset password functionality (Not implemented - per user requirements)
+- [x] Profile management
+- [x] Auth state management
+- [x] Token handling
+- [x] Protected routes
+- [x] Error handling
+- [x] Loading states
+- [x] Responsive design
 - [ ] Unit tests for components
 - [ ] Integration tests for auth flow
 
 ---
 
-## 🎯 **Agent 10: Dashboard Module**
+## ✅ **Agent 10: Dashboard Module - COMPLETED**
 
-### **Workspace**: `frontend/src/modules/dashboard/`
+### **Workspace**: `frontend/src/`
 
 ### **Responsibilities**:
 - Role-based dashboard layouts
@@ -220,36 +280,41 @@ export default authSlice.reducer;
 - Quick action widgets
 - Recent activity feeds
 
-### **Components to Implement**:
+### **Files to Implement**:
 ```javascript
-dashboard/
+// Dashboard files structure
+src/
 ├── components/
-│   ├── AdminDashboard.jsx
-│   ├── ManagerDashboard.jsx
-│   ├── EmployeeDashboard.jsx
-│   ├── StatsCard.jsx
-│   ├── QuickActions.jsx
-│   ├── RecentActivity.jsx
-│   └── AttendanceWidget.jsx
+│   └── dashboard/
+│       ├── AdminDashboard.jsx
+│       ├── ManagerDashboard.jsx
+│       ├── EmployeeDashboard.jsx
+│       ├── StatsCard.jsx
+│       ├── QuickActions.jsx
+│       ├── RecentActivity.jsx
+│       └── AttendanceWidget.jsx
 ├── pages/
-│   └── DashboardPage.jsx
+│   └── dashboard/
+│       └── DashboardPage.jsx
 ├── hooks/
 │   ├── useDashboardStats.js
 │   └── useRecentActivity.js
-└── store/
-    ├── dashboardSlice.js
-    └── dashboardAPI.js
+├── store/
+│   └── slices/
+│       └── dashboardSlice.js
+└── services/
+    └── dashboardService.js
 ```
 
 ### **Key Implementation Details**:
 
 #### **1. Role-based Dashboard**:
 ```jsx
-// pages/DashboardPage.jsx
+// pages/dashboard/DashboardPage.jsx
 import { useSelector } from 'react-redux';
-import AdminDashboard from '../components/AdminDashboard';
-import ManagerDashboard from '../components/ManagerDashboard';
-import EmployeeDashboard from '../components/EmployeeDashboard';
+import AdminDashboard from '@/components/dashboard/AdminDashboard';
+import ManagerDashboard from '@/components/dashboard/ManagerDashboard';
+import EmployeeDashboard from '@/components/dashboard/EmployeeDashboard';
 
 const DashboardPage = () => {
   const { user } = useSelector(state => state.auth);
@@ -280,8 +345,8 @@ export default DashboardPage;
 
 #### **2. Stats Card Component**:
 ```jsx
-// components/StatsCard.jsx
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+// components/dashboard/StatsCard.jsx
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const StatsCard = ({ title, value, icon, trend, trendValue }) => {
   return (
@@ -306,16 +371,16 @@ export default StatsCard;
 ```
 
 ### **Completion Checklist**:
-- [ ] Role-based dashboard layouts
-- [ ] Statistics cards
-- [ ] Quick action widgets
-- [ ] Recent activity feed
-- [ ] Attendance widgets
-- [ ] Performance metrics
-- [ ] Responsive grid layout
-- [ ] Real-time data updates
-- [ ] Loading states
-- [ ] Error handling
+- [x] Role-based dashboard layouts
+- [x] Statistics cards
+- [x] Quick action widgets
+- [x] Recent activity feed
+- [x] Attendance widgets
+- [x] Performance metrics
+- [x] Responsive grid layout
+- [x] Real-time data updates
+- [x] Loading states
+- [x] Error handling
 - [ ] Unit tests for components
 - [ ] Integration tests
 
@@ -323,7 +388,7 @@ export default StatsCard;
 
 ## 🎯 **Agent 11: Employee Management Module**
 
-### **Workspace**: `frontend/src/modules/employees/`
+### **Workspace**: `frontend/src/`
 
 ### **Responsibilities**:
 - Employee listing and search
@@ -331,39 +396,44 @@ export default StatsCard;
 - Employee creation and editing
 - Document management
 
-### **Components to Implement**:
+### **Files to Implement**:
 ```javascript
-employees/
+// Employee files structure
+src/
 ├── components/
-│   ├── EmployeeList.jsx
-│   ├── EmployeeCard.jsx
-│   ├── EmployeeForm.jsx
-│   ├── EmployeeProfile.jsx
-│   ├── DocumentUpload.jsx
-│   └── EmployeeSearch.jsx
+│   └── employees/
+│       ├── EmployeeList.jsx
+│       ├── EmployeeCard.jsx
+│       ├── EmployeeForm.jsx
+│       ├── EmployeeProfile.jsx
+│       ├── DocumentUpload.jsx
+│       └── EmployeeSearch.jsx
 ├── pages/
-│   ├── EmployeesPage.jsx
-│   ├── EmployeeDetailsPage.jsx
-│   └── AddEmployeePage.jsx
+│   └── employees/
+│       ├── EmployeesPage.jsx
+│       ├── EmployeeDetailsPage.jsx
+│       └── AddEmployeePage.jsx
 ├── hooks/
 │   ├── useEmployees.js
 │   └── useEmployeeForm.js
-└── store/
-    ├── employeesSlice.js
-    └── employeesAPI.js
+├── store/
+│   └── slices/
+│       └── employeesSlice.js
+└── services/
+    └── employeeService.js
 ```
 
 ### **Key Implementation Details**:
 
 #### **1. Employee List Component**:
 ```jsx
-// components/EmployeeList.jsx
+// components/employees/EmployeeList.jsx
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Input } from '@/shared/components/ui/input';
-import { Button } from '@/shared/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import EmployeeCard from './EmployeeCard';
-import { fetchEmployees } from '../store/employeesSlice';
+import { fetchEmployees } from '@/store/slices/employeesSlice';
 
 const EmployeeList = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -430,7 +500,7 @@ export default EmployeeList;
 
 ## 🎯 **Agent 12: Attendance Module**
 
-### **Workspace**: `frontend/src/modules/attendance/`
+### **Workspace**: `frontend/src/`
 
 ### **Responsibilities**:
 - Check-in/check-out interface
@@ -438,36 +508,41 @@ export default EmployeeList;
 - Team attendance views (managers)
 - Attendance analytics
 
-### **Components to Implement**:
+### **Files to Implement**:
 ```javascript
-attendance/
+// Attendance files structure
+src/
 ├── components/
-│   ├── CheckInOut.jsx
-│   ├── AttendanceCalendar.jsx
-│   ├── AttendanceHistory.jsx
-│   ├── TeamAttendance.jsx
-│   └── AttendanceStats.jsx
+│   └── attendance/
+│       ├── CheckInOut.jsx
+│       ├── AttendanceCalendar.jsx
+│       ├── AttendanceHistory.jsx
+│       ├── TeamAttendance.jsx
+│       └── AttendanceStats.jsx
 ├── pages/
-│   ├── AttendancePage.jsx
-│   └── TeamAttendancePage.jsx
+│   └── attendance/
+│       ├── AttendancePage.jsx
+│       └── TeamAttendancePage.jsx
 ├── hooks/
 │   ├── useAttendance.js
 │   └── useCheckInOut.js
-└── store/
-    ├── attendanceSlice.js
-    └── attendanceAPI.js
+├── store/
+│   └── slices/
+│       └── attendanceSlice.js
+└── services/
+    └── attendanceService.js
 ```
 
 ### **Key Implementation Details**:
 
 #### **1. Check-in/Out Component**:
 ```jsx
-// components/CheckInOut.jsx
+// components/attendance/CheckInOut.jsx
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Button } from '@/shared/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { checkIn, checkOut } from '../store/attendanceSlice';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { checkIn, checkOut } from '@/store/slices/attendanceSlice';
 
 const CheckInOut = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -566,7 +641,7 @@ export default CheckInOut;
 
 ## 🎯 **Agent 13: Leave Management Module**
 
-### **Workspace**: `frontend/src/modules/leave/`
+### **Workspace**: `frontend/src/`
 
 ### **Responsibilities**:
 - Leave application forms
@@ -574,39 +649,44 @@ export default CheckInOut;
 - Leave history and status
 - Manager approval interface
 
-### **Components to Implement**:
+### **Files to Implement**:
 ```javascript
-leave/
+// Leave files structure
+src/
 ├── components/
-│   ├── LeaveApplicationForm.jsx
-│   ├── LeaveBalance.jsx
-│   ├── LeaveHistory.jsx
-│   ├── LeaveApprovals.jsx
-│   └── LeaveCalendar.jsx
+│   └── leave/
+│       ├── LeaveApplicationForm.jsx
+│       ├── LeaveBalance.jsx
+│       ├── LeaveHistory.jsx
+│       ├── LeaveApprovals.jsx
+│       └── LeaveCalendar.jsx
 ├── pages/
-│   ├── LeavePage.jsx
-│   ├── ApplyLeavePage.jsx
-│   └── LeaveApprovalsPage.jsx
+│   └── leave/
+│       ├── LeavePage.jsx
+│       ├── ApplyLeavePage.jsx
+│       └── LeaveApprovalsPage.jsx
 ├── hooks/
 │   ├── useLeave.js
 │   └── useLeaveBalance.js
-└── store/
-    ├── leaveSlice.js
-    └── leaveAPI.js
+├── store/
+│   └── slices/
+│       └── leaveSlice.js
+└── services/
+    └── leaveService.js
 ```
 
 ### **Key Implementation Details**:
 
 #### **1. Leave Application Form**:
 ```jsx
-// components/LeaveApplicationForm.jsx
+// components/leave/LeaveApplicationForm.jsx
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Textarea } from '@/shared/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
-import { applyLeave } from '../store/leaveSlice';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { applyLeave } from '@/store/slices/leaveSlice';
 
 const LeaveApplicationForm = () => {
   const [formData, setFormData] = useState({
@@ -734,7 +814,7 @@ export default LeaveApplicationForm;
 
 ## 🎯 **Agent 14: Payroll Module**
 
-### **Workspace**: `frontend/src/modules/payroll/`
+### **Workspace**: `frontend/src/`
 
 ### **Responsibilities**:
 - Payslip viewing and download
@@ -742,31 +822,36 @@ export default LeaveApplicationForm;
 - Payroll history
 - Tax information
 
-### **Components to Implement**:
+### **Files to Implement**:
 ```javascript
-payroll/
+// Payroll files structure
+src/
 ├── components/
-│   ├── PayslipViewer.jsx
-│   ├── PayslipList.jsx
-│   ├── SalaryBreakdown.jsx
-│   └── PayrollSummary.jsx
+│   └── payroll/
+│       ├── PayslipViewer.jsx
+│       ├── PayslipList.jsx
+│       ├── SalaryBreakdown.jsx
+│       └── PayrollSummary.jsx
 ├── pages/
-│   ├── PayrollPage.jsx
-│   └── PayslipDetailsPage.jsx
+│   └── payroll/
+│       ├── PayrollPage.jsx
+│       └── PayslipDetailsPage.jsx
 ├── hooks/
 │   └── usePayroll.js
-└── store/
-    ├── payrollSlice.js
-    └── payrollAPI.js
+├── store/
+│   └── slices/
+│       └── payrollSlice.js
+└── services/
+    └── payrollService.js
 ```
 
 ### **Key Implementation Details**:
 
 #### **1. Payslip Viewer**:
 ```jsx
-// components/PayslipViewer.jsx
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
+// components/payroll/PayslipViewer.jsx
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 const PayslipViewer = ({ payslip }) => {
   const handleDownload = () => {
@@ -866,7 +951,7 @@ export default PayslipViewer;
 
 ## 🎯 **Agent 15: Performance Module**
 
-### **Workspace**: `frontend/src/modules/performance/`
+### **Workspace**: `frontend/src/`
 
 ### **Responsibilities**:
 - Performance review interface
@@ -874,37 +959,42 @@ export default PayslipViewer;
 - Feedback collection
 - Performance analytics
 
-### **Components to Implement**:
+### **Files to Implement**:
 ```javascript
-performance/
+// Performance files structure
+src/
 ├── components/
-│   ├── PerformanceReview.jsx
-│   ├── GoalsList.jsx
-│   ├── GoalForm.jsx
-│   ├── FeedbackForm.jsx
-│   └── PerformanceChart.jsx
+│   └── performance/
+│       ├── PerformanceReview.jsx
+│       ├── GoalsList.jsx
+│       ├── GoalForm.jsx
+│       ├── FeedbackForm.jsx
+│       └── PerformanceChart.jsx
 ├── pages/
-│   ├── PerformancePage.jsx
-│   ├── ReviewPage.jsx
-│   └── GoalsPage.jsx
+│   └── performance/
+│       ├── PerformancePage.jsx
+│       ├── ReviewPage.jsx
+│       └── GoalsPage.jsx
 ├── hooks/
 │   ├── usePerformance.js
 │   └── useGoals.js
-└── store/
-    ├── performanceSlice.js
-    └── performanceAPI.js
+├── store/
+│   └── slices/
+│       └── performanceSlice.js
+└── services/
+    └── performanceService.js
 ```
 
 ### **Key Implementation Details**:
 
 #### **1. Performance Review Component**:
 ```jsx
-// components/PerformanceReview.jsx
+// components/performance/PerformanceReview.jsx
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Textarea } from '@/shared/components/ui/textarea';
-import { Slider } from '@/shared/components/ui/slider';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Slider } from '@/components/ui/slider';
 
 const PerformanceReview = ({ employee, onSubmit }) => {
   const [review, setReview] = useState({
@@ -1011,7 +1101,7 @@ export default PerformanceReview;
 
 ## 🎯 **Agent 16: AI Features Module**
 
-### **Workspace**: `frontend/src/modules/ai-features/`
+### **Workspace**: `frontend/src/`
 
 ### **Responsibilities**:
 - HR Chatbot interface
@@ -1020,36 +1110,41 @@ export default PerformanceReview;
 - Smart reports viewer
 - Resume parser integration
 
-### **Components to Implement**:
+### **Files to Implement**:
 ```javascript
-ai-features/
+// AI Features files structure
+src/
 ├── components/
-│   ├── HRChatbot.jsx
-│   ├── AttritionPredictor.jsx
-│   ├── AnomalyDetector.jsx
-│   ├── SmartReports.jsx
-│   └── ResumeParser.jsx
+│   └── ai-features/
+│       ├── HRChatbot.jsx
+│       ├── AttritionPredictor.jsx
+│       ├── AnomalyDetector.jsx
+│       ├── SmartReports.jsx
+│       └── ResumeParser.jsx
 ├── pages/
-│   ├── AIFeaturesPage.jsx
-│   ├── ChatbotPage.jsx
-│   └── AttritionPage.jsx
+│   └── ai-features/
+│       ├── AIFeaturesPage.jsx
+│       ├── ChatbotPage.jsx
+│       └── AttritionPage.jsx
 ├── hooks/
 │   ├── useChatbot.js
 │   └── useAIFeatures.js
-└── store/
-    ├── aiSlice.js
-    └── aiAPI.js
+├── store/
+│   └── slices/
+│       └── aiSlice.js
+└── services/
+    └── aiService.js
 ```
 
 ### **Key Implementation Details**:
 
 #### **1. HR Chatbot Component**:
 ```jsx
-// components/HRChatbot.jsx
+// components/ai-features/HRChatbot.jsx
 import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Input } from '@/shared/components/ui/input';
-import { Button } from '@/shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const HRChatbot = () => {
   const [messages, setMessages] = useState([
@@ -1186,7 +1281,7 @@ export default HRChatbot;
 
 ## 🎯 **Agent 17: Reports Module**
 
-### **Workspace**: `frontend/src/modules/reports/`
+### **Workspace**: `frontend/src/`
 
 ### **Responsibilities**:
 - Report generation interface
@@ -1194,31 +1289,36 @@ export default HRChatbot;
 - Export functionality
 - Custom report builder
 
-### **Components to Implement**:
+### **Files to Implement**:
 ```javascript
-reports/
+// Reports files structure
+src/
 ├── components/
-│   ├── ReportBuilder.jsx
-│   ├── ReportViewer.jsx
-│   ├── ChartComponents.jsx
-│   └── ExportOptions.jsx
+│   └── reports/
+│       ├── ReportBuilder.jsx
+│       ├── ReportViewer.jsx
+│       ├── ChartComponents.jsx
+│       └── ExportOptions.jsx
 ├── pages/
-│   ├── ReportsPage.jsx
-│   └── CustomReportPage.jsx
+│   └── reports/
+│       ├── ReportsPage.jsx
+│       └── CustomReportPage.jsx
 ├── hooks/
 │   └── useReports.js
-└── store/
-    ├── reportsSlice.js
-    └── reportsAPI.js
+├── store/
+│   └── slices/
+│       └── reportsSlice.js
+└── services/
+    └── reportService.js
 ```
 
 ### **Key Implementation Details**:
 
 #### **1. Report Viewer Component**:
 ```jsx
-// components/ReportViewer.jsx
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
+// components/reports/ReportViewer.jsx
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const ReportViewer = ({ reportData, title }) => {
@@ -1298,4 +1398,61 @@ export default ReportViewer;
 - [ ] Unit tests for components
 - [ ] Integration tests
 
-This completes all frontend agent tasks with comprehensive implementation guidance for each module.
+## 📦 **Folder Migration Tasks**
+
+### **Step 1: Move Shared Components to Root Level**
+```bash
+# Move all shared components to src/components/
+mv frontend/src/shared/components/* frontend/src/components/
+mv frontend/src/shared/ui/* frontend/src/components/ui/
+mv frontend/src/shared/contexts/* frontend/src/contexts/
+mv frontend/src/shared/lib/* frontend/src/lib/
+```
+
+### **Step 2: Create New Folder Structure**
+```bash
+# Create new folder structure
+mkdir -p frontend/src/{pages,store/slices,hooks,utils,routes,assets,styles,api,services}
+mkdir -p frontend/src/pages/{auth,dashboard,employees,attendance,leave,payroll,performance,ai-features,reports}
+mkdir -p frontend/src/components/{auth,dashboard,employees,attendance,leave,payroll,performance,ai-features,reports,layout,forms,charts}
+```
+
+### **Step 3: Update Import Paths**
+All agents must update import paths from:
+- `@/shared/components/ui/*` → `@/components/ui/*`
+- `@/shared/contexts/*` → `@/contexts/*`
+- `@/shared/lib/*` → `@/lib/*`
+- `@/store/api/*API` → `@/services/*Service`
+- Module-specific imports → Root-level imports
+
+### **Step 4: Remove Old Structure**
+```bash
+# Remove old modules and shared folders after migration
+rm -rf frontend/src/modules/
+rm -rf frontend/src/shared/
+```
+
+---
+
+## 🎯 **Agent Coordination Notes**
+
+### **Import Path Standards**:
+- UI Components: `@/components/ui/button`
+- Feature Components: `@/components/dashboard/StatsCard`
+- Pages: `@/pages/dashboard/DashboardPage`
+- Store: `@/store/slices/authSlice`
+- Services: `@/services/authService`
+- API Config: `@/api/axiosInstance`
+- Hooks: `@/hooks/useAuth`
+- Utils: `@/utils/authHelpers`
+- Routes: `@/routes/ProtectedRoute`
+
+### **File Naming Conventions**:
+- Components: PascalCase (e.g., `LoginForm.jsx`)
+- Hooks: camelCase starting with 'use' (e.g., `useAuth.js`)
+- Utils: camelCase (e.g., `authHelpers.js`)
+- Service files: camelCase ending with 'Service' (e.g., `authService.js`)
+- Slices: camelCase ending with 'Slice' (e.g., `authSlice.js`)
+- API config: camelCase (e.g., `axiosInstance.js`, `endpoints.js`)
+
+This completes all frontend agent tasks with comprehensive implementation guidance for each module and the new folder structure.
