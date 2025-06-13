@@ -3,8 +3,8 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const EmployeeController = require('../controllers/EmployeeController');
-const { authenticateToken, authorizeRoles } = require('../middleware/auth');
-const { validateRequest } = require('../middleware/validation');
+const { authenticateToken, authorize } = require('../middleware/authMiddleware');
+const { validateRequest } = require('../middleware/validationMiddleware');
 const { body, param, query } = require('express-validator');
 
 // Configure multer for document uploads
@@ -47,7 +47,7 @@ const upload = multer({
 // Get all employees
 router.get('/',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
@@ -62,7 +62,7 @@ router.get('/',
 // Get employee by ID
 router.get('/:id',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     param('id').isInt().withMessage('Employee ID must be a valid integer')
   ],
@@ -73,7 +73,7 @@ router.get('/:id',
 // Create new employee
 router.post('/',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     body('firstName').notEmpty().isLength({ min: 1, max: 50 }).withMessage('First name is required (1-50 characters)'),
     body('lastName').notEmpty().isLength({ min: 1, max: 50 }).withMessage('Last name is required (1-50 characters)'),
@@ -96,7 +96,7 @@ router.post('/',
 // Update employee
 router.put('/:id',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     param('id').isInt().withMessage('Employee ID must be valid'),
     body('firstName').optional().isLength({ min: 1, max: 50 }).withMessage('First name must be 1-50 characters'),
@@ -118,7 +118,7 @@ router.put('/:id',
 // Delete employee
 router.delete('/:id',
   authenticateToken,
-  authorizeRoles(['admin']),
+  authorize('admin'),
   [
     param('id').isInt().withMessage('Employee ID must be valid')
   ],
@@ -176,7 +176,7 @@ router.get('/departments/:id',
 // Create new department
 router.post('/departments',
   authenticateToken,
-  authorizeRoles(['admin']),
+  authorize('admin'),
   [
     body('name').notEmpty().isLength({ min: 1, max: 100 }).withMessage('Department name is required (1-100 characters)'),
     body('description').optional().isLength({ max: 500 }).withMessage('Description max 500 characters'),
@@ -189,7 +189,7 @@ router.post('/departments',
 // Update department
 router.put('/departments/:id',
   authenticateToken,
-  authorizeRoles(['admin']),
+  authorize('admin'),
   [
     param('id').isInt().withMessage('Department ID must be valid'),
     body('name').optional().isLength({ min: 1, max: 100 }).withMessage('Department name must be 1-100 characters'),
@@ -203,7 +203,7 @@ router.put('/departments/:id',
 // Delete department
 router.delete('/departments/:id',
   authenticateToken,
-  authorizeRoles(['admin']),
+  authorize('admin'),
   [
     param('id').isInt().withMessage('Department ID must be valid')
   ],
@@ -218,7 +218,7 @@ router.delete('/departments/:id',
 // Upload employee document
 router.post('/:id/documents',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   upload.single('document'),
   [
     param('id').isInt().withMessage('Employee ID must be valid'),
@@ -231,7 +231,7 @@ router.post('/:id/documents',
 // Get employee documents
 router.get('/:id/documents',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   [
     param('id').isInt().withMessage('Employee ID must be valid'),
     query('documentType').optional().isIn(['resume', 'id_proof', 'address_proof', 'education', 'experience', 'other']).withMessage('Invalid document type')
@@ -247,14 +247,14 @@ router.get('/:id/documents',
 // Get employee statistics
 router.get('/stats/employees',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   EmployeeController.getEmployeeStats
 );
 
 // Get department statistics
 router.get('/stats/departments',
   authenticateToken,
-  authorizeRoles(['admin', 'manager']),
+  authorize('admin', 'manager'),
   EmployeeController.getDepartmentStats
 );
 
