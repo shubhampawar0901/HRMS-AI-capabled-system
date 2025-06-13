@@ -1,12 +1,11 @@
 import React from 'react';
-import PlaceholderPage from '@/components/common/PlaceholderPage';
+import TeamAttendance from '@/components/attendance/TeamAttendance';
 
 const TeamAttendancePage = () => {
   return (
-    <PlaceholderPage 
-      title="Team Attendance"
-      description="View and manage team attendance records and analytics."
-    />
+    <div className="p-6">
+      <TeamAttendance />
+    </div>
   );
 };
 

@@ -1,98 +1,120 @@
 import axiosInstance from '@/api/axiosInstance';
 import { API_ENDPOINTS } from '@/api/endpoints';
-import { apiRequest } from '@/api/interceptors';
 
 class AttendanceService {
   // Check in
   async checkIn(data) {
-    return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.ATTENDANCE.CHECK_IN, data),
-      'attendance-check-in'
-    );
+    return await axiosInstance.post(API_ENDPOINTS.ATTENDANCE.CHECK_IN, data);
   }
 
   // Check out
   async checkOut(data) {
-    return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.ATTENDANCE.CHECK_OUT, data),
-      'attendance-check-out'
-    );
+    return await axiosInstance.post(API_ENDPOINTS.ATTENDANCE.CHECK_OUT, data);
   }
 
-  // Get attendance records
-  async getAttendance(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    const url = queryParams ? `${API_ENDPOINTS.ATTENDANCE.BASE}?${queryParams}` : API_ENDPOINTS.ATTENDANCE.BASE;
-    
-    return apiRequest(
-      () => axiosInstance.get(url),
-      'attendance-list'
-    );
+  // Get today's attendance
+  async getTodayAttendance() {
+    return await axiosInstance.get(API_ENDPOINTS.ATTENDANCE.TODAY);
   }
 
-  // Get employee attendance
-  async getEmployeeAttendance(employeeId, params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    const url = queryParams 
-      ? `${API_ENDPOINTS.ATTENDANCE.BY_EMPLOYEE(employeeId)}?${queryParams}` 
-      : API_ENDPOINTS.ATTENDANCE.BY_EMPLOYEE(employeeId);
-    
-    return apiRequest(
-      () => axiosInstance.get(url),
-      `attendance-employee-${employeeId}`
-    );
+  // Get attendance history
+  async getAttendanceHistory(params = {}) {
+    const queryParams = new URLSearchParams();
+
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.employeeId) queryParams.append('employeeId', params.employeeId);
+    if (params.status) queryParams.append('status', params.status);
+
+    const url = queryParams.toString()
+      ? `${API_ENDPOINTS.ATTENDANCE.HISTORY}?${queryParams.toString()}`
+      : API_ENDPOINTS.ATTENDANCE.HISTORY;
+
+    return await axiosInstance.get(url);
   }
 
-  // Get attendance by date range
-  async getAttendanceByDateRange(startDate, endDate, employeeId = null) {
-    const params = { startDate, endDate };
-    if (employeeId) params.employeeId = employeeId;
-    
-    const queryParams = new URLSearchParams(params).toString();
-    
-    return apiRequest(
-      () => axiosInstance.get(`${API_ENDPOINTS.ATTENDANCE.BY_DATE_RANGE}?${queryParams}`),
-      'attendance-date-range'
-    );
+  // Get team attendance (for managers)
+  async getTeamAttendance(params = {}) {
+    const queryParams = new URLSearchParams();
+
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.date) queryParams.append('date', params.date);
+    if (params.departmentId) queryParams.append('departmentId', params.departmentId);
+    if (params.status) queryParams.append('status', params.status);
+
+    const url = queryParams.toString()
+      ? `${API_ENDPOINTS.ATTENDANCE.TEAM}?${queryParams.toString()}`
+      : API_ENDPOINTS.ATTENDANCE.TEAM;
+
+    return await axiosInstance.get(url);
   }
 
   // Get attendance statistics
-  async getStatistics(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    const url = queryParams 
-      ? `${API_ENDPOINTS.ATTENDANCE.STATISTICS}?${queryParams}` 
-      : API_ENDPOINTS.ATTENDANCE.STATISTICS;
-    
-    return apiRequest(
-      () => axiosInstance.get(url),
-      'attendance-statistics'
-    );
+  async getAttendanceStats(params = {}) {
+    const queryParams = new URLSearchParams();
+
+    if (params.period) queryParams.append('period', params.period);
+    if (params.employeeId) queryParams.append('employeeId', params.employeeId);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+
+    const url = queryParams.toString()
+      ? `${API_ENDPOINTS.ATTENDANCE.STATS}?${queryParams.toString()}`
+      : API_ENDPOINTS.ATTENDANCE.STATS;
+
+    return await axiosInstance.get(url);
   }
 
-  // Get team attendance
-  async getTeamAttendance(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    const url = queryParams 
-      ? `${API_ENDPOINTS.ATTENDANCE.TEAM}?${queryParams}` 
-      : API_ENDPOINTS.ATTENDANCE.TEAM;
-    
-    return apiRequest(
-      () => axiosInstance.get(url),
-      'attendance-team'
-    );
+  // Update attendance record
+  async updateAttendance(id, data) {
+    return await axiosInstance.put(`${API_ENDPOINTS.ATTENDANCE.BASE}/${id}`, data);
+  }
+
+  // Get current location (for location-based check-in)
+  getCurrentLocation() {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by this browser'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy
+          });
+        },
+        (error) => {
+          reject(error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        }
+      );
+    });
   }
 
   // Export attendance
-  async exportAttendance(format = 'excel', params = {}) {
-    const exportParams = { format, ...params };
-    const queryParams = new URLSearchParams(exportParams).toString();
-    
-    return apiRequest(
-      () => axiosInstance.get(`${API_ENDPOINTS.ATTENDANCE.EXPORT}?${queryParams}`, {
-        responseType: 'blob'
-      }),
-      'attendance-export'
-    );
+  async exportAttendance(params = {}) {
+    const queryParams = new URLSearchParams();
+
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.employeeIds) queryParams.append('employeeIds', params.employeeIds.join(','));
+    if (params.format) queryParams.append('format', params.format);
+
+    const url = queryParams.toString()
+      ? `${API_ENDPOINTS.ATTENDANCE.EXPORT}?${queryParams.toString()}`
+      : API_ENDPOINTS.ATTENDANCE.EXPORT;
+
+    return await axiosInstance.get(url, { responseType: 'blob' });
   }
 }
 

@@ -35,10 +35,17 @@ export const API_ENDPOINTS = {
     BASE: '/attendance',
     CHECK_IN: '/attendance/check-in',
     CHECK_OUT: '/attendance/check-out',
+    TODAY: '/attendance/today',
+    HISTORY: '/attendance/history',
     BY_EMPLOYEE: (employeeId) => `/attendance/employee/${employeeId}`,
     BY_DATE_RANGE: '/attendance/date-range',
+    STATS: '/attendance/stats',
     STATISTICS: '/attendance/statistics',
     TEAM: '/attendance/team',
+    SUMMARY: '/attendance/summary',
+    CALENDAR: '/attendance/calendar',
+    BULK_UPDATE: '/attendance/bulk-update',
+    VALIDATE_LOCATION: '/attendance/validate-location',
     EXPORT: '/attendance/export'
   },
 
