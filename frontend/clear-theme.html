@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Theme Settings</title>
+</head>
+<body>
+    <h1>Clear Theme Settings</h1>
+    <button onclick="clearTheme()">Clear Theme Settings</button>
+    <div id="result"></div>
+
+    <script>
+        function clearTheme() {
+            // Clear any theme-related localStorage items
+            localStorage.removeItem('hrms-theme');
+            localStorage.removeItem('theme');
+            localStorage.removeItem('darkMode');
+            
+            // Remove any theme classes from document
+            document.documentElement.classList.remove('dark', 'light');
+            
+            // Show result
+            document.getElementById('result').innerHTML = '<p style="color: green;">Theme settings cleared! You can now refresh the main application.</p>';
+            
+            console.log('Theme settings cleared');
+        }
+        
+        // Auto-clear on load
+        clearTheme();
+    </script>
+</body>
+</html>
