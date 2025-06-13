@@ -1,5 +1,20 @@
 # 🏖️ AGENT 4 - LEAVE MANAGEMENT SERVICE DEVELOPMENT
 
+## 🚨 **CRITICAL: USE DEVELOP BRANCH & NEW ARCHITECTURE**
+
+### **🔄 MANDATORY FIRST STEPS:**
+```bash
+# 1. Switch to develop branch and get latest code
+git checkout develop
+git pull origin develop
+
+# 2. Check the new architecture (NO SEQUELIZE, NO SHARED FOLDER)
+ls backend/  # You should see: models/, controllers/, routes/, middleware/, utils/, services/
+```
+
+### **📚 READ THIS FIRST:**
+**BEFORE STARTING**: Read `planning/agent-prompts/BACKEND_AGENTS_ARCHITECTURE_UPDATE.md` for complete architecture changes.
+
 ## 📋 **YOUR ASSIGNMENT**
 - **Agent ID**: Agent 4
 - **Service**: Leave Management Service

@@ -1,6 +1,6 @@
 const SecureChatbotService = require('../chatbot/SecureChatbotService');
 const { ChatbotConversation, ChatbotAuditLog } = require('../models');
-const { successResponse, errorResponse } = require('../../../shared/utils/response');
+const { sendSuccess, sendError } = require('../../../utils/responseHelper');
 const { v4: uuidv4 } = require('uuid');
 
 class ChatbotController {

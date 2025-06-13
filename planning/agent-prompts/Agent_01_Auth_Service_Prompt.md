@@ -1,51 +1,67 @@
 # 🔐 AGENT 1 - AUTHENTICATION SERVICE DEVELOPMENT
 
+## 🚨 **CRITICAL: USE DEVELOP BRANCH & NEW ARCHITECTURE**
+
+### **🔄 MANDATORY FIRST STEPS:**
+```bash
+# 1. Switch to develop branch and get latest code
+git checkout develop
+git pull origin develop
+
+# 2. Check the new architecture (NO SEQUELIZE, NO SHARED FOLDER)
+ls backend/  # You should see: models/, controllers/, routes/, middleware/, utils/, services/
+```
+
 ## 📋 **YOUR ASSIGNMENT**
 - **Agent ID**: Agent 1
 - **Service**: Authentication Service
-- **Workspace Folder**: `backend/services/auth-service/`
-- **Git Branch**: `feature/auth-service-implementation`
-- **Development Phase**: Phase 1 (Foundation)
+- **Architecture**: **PLAIN SQL** (No Sequelize) + **Global Folder Structure**
+- **Your Files**: `AuthController.js`, `authRoutes.js`, `AuthService.js`
 - **Priority**: HIGH (Critical Foundation Service)
 
-## 🚨 **CRITICAL RULES - MUST FOLLOW EXACTLY**
+## 🏗️ **NEW ARCHITECTURE (CRITICAL CHANGES)**
+
+### **✅ CORRECTED STRUCTURE:**
+```
+backend/
+├── models/                  # 🔥 GLOBAL MODELS (Plain SQL)
+├── controllers/             # 🔥 GLOBAL CONTROLLERS
+│   └── AuthController.js    # ← YOUR CONTROLLER
+├── routes/                  # 🔥 GLOBAL ROUTES
+│   └── authRoutes.js        # ← YOUR ROUTES
+├── middleware/              # 🔥 GLOBAL MIDDLEWARE
+├── utils/                   # 🔥 GLOBAL UTILITIES
+└── services/                # 🔥 BUSINESS LOGIC ONLY
+    └── AuthService.js       # ← YOUR SERVICE
+```
 
 ### **🚫 ABSOLUTE PROHIBITIONS:**
 ```bash
 # NEVER RUN THESE COMMANDS:
 git commit -m "..."          # ❌ FORBIDDEN
-git push origin ...          # ❌ FORBIDDEN  
+git push origin ...          # ❌ FORBIDDEN
 git merge ...                # ❌ FORBIDDEN
 git rebase ...               # ❌ FORBIDDEN
-git checkout [other-branch]  # ❌ FORBIDDEN
-git pull origin main         # ❌ FORBIDDEN
 ```
 
-### **✅ ALLOWED GIT OPERATIONS:**
-```bash
-git status                   # ✅ Check file status
-git add .                    # ✅ Stage your changes
-git diff                     # ✅ View changes
-git branch                   # ✅ Check current branch
-git log --oneline -10        # ✅ View recent commits
-```
-
-### **📁 WORKSPACE BOUNDARIES:**
-- ✅ **WORK ONLY** in: `backend/services/auth-service/`
-- ❌ **NEVER TOUCH**: 
-  - `backend/shared/` folder
+### **📁 YOUR EXACT WORKSPACE:**
+- ✅ **WORK ONLY ON**:
+  - `backend/controllers/AuthController.js`
+  - `backend/routes/authRoutes.js`
+  - `backend/services/AuthService.js`
+- ❌ **NEVER TOUCH**:
+  - `backend/models/` (read-only, already created)
+  - `backend/middleware/` (read-only, already created)
   - `backend/config/` folder
   - `backend/app.js`
-  - Other service folders
-  - Package.json files
-  - .env files
+  - Other agents' files
 
 ## 📚 **MANDATORY READING**
 Before starting, read these documents:
-1. `planning/Workflow/backend.md`
-2. `planning/Backend_Agent_Tasks.md` (Agent 1 section)
-3. `planning/API_Integration_Guide.md`
-4. `planning/01_Database_Schema_Design.md` (users table)
+1. `backend/ARCHITECTURE.md` (NEW - explains corrected structure)
+2. `planning/Workflow/backend.md`
+3. `planning/Backend_Agent_Tasks.md` (Agent 1 section)
+4. `backend/database/schema.sql` (users table structure)
 
 ## 🎯 **YOUR SPECIFIC TASKS**
 
@@ -54,41 +70,48 @@ Before starting, read these documents:
 POST /api/auth/login           # User authentication
 POST /api/auth/refresh         # Token refresh
 POST /api/auth/logout          # User logout
-POST /api/auth/forgot-password # Password reset request
-POST /api/auth/reset-password  # Password reset
 GET  /api/auth/profile         # Get user profile
 PUT  /api/auth/profile         # Update user profile
 ```
 
-### **Required File Structure:**
+### **🚨 CRITICAL: NO FORGOT PASSWORD (Per Requirements)**
+**DO NOT IMPLEMENT**: forgot-password and reset-password endpoints (removed per user requirements)
+
+### **YOUR EXACT FILES TO WORK ON:**
 ```
-backend/services/auth-service/
-├── index.js                    # Service entry point
-├── routes.js                   # Route definitions
+backend/
 ├── controllers/
-│   └── AuthController.js       # Authentication logic
-├── services/
-│   └── AuthService.js          # Business logic
-├── models/
-│   └── User.js                 # User database model
-├── middleware/
-│   └── validation.js           # Input validation
-└── tests/
-    ├── auth.test.js            # Unit tests
-    └── integration/
-        └── auth.integration.test.js
+│   └── AuthController.js       # ← IMPLEMENT THIS
+├── routes/
+│   └── authRoutes.js          # ← IMPLEMENT THIS
+└── services/
+    └── AuthService.js         # ← IMPLEMENT THIS
 ```
 
-### **Key Implementation Requirements:**
+### **🔍 EXISTING FILES TO USE (READ-ONLY):**
+```
+backend/
+├── models/
+│   ├── User.js                # ← USE THIS (Plain SQL model)
+│   └── index.js               # ← IMPORT FROM HERE
+├── middleware/
+│   └── authMiddleware.js      # ← USE THIS (already created)
+└── utils/
+    └── responseHelper.js      # ← USE THIS (sendSuccess, sendError)
+```
+
+### **🔥 IMPLEMENTATION REQUIREMENTS (PLAIN SQL):**
 
 #### **1. AuthController.js - Core Methods:**
 ```javascript
+const { User } = require('../models');
+const { sendSuccess, sendError } = require('../utils/responseHelper');
+const AuthService = require('../services/AuthService');
+
 class AuthController {
   static async login(req, res)           // Handle user login
   static async refresh(req, res)         // Handle token refresh
   static async logout(req, res)          // Handle user logout
-  static async forgotPassword(req, res)  // Handle password reset request
-  static async resetPassword(req, res)   // Handle password reset
   static async getProfile(req, res)      // Get user profile
   static async updateProfile(req, res)   // Update user profile
 }
@@ -96,26 +119,46 @@ class AuthController {
 
 #### **2. AuthService.js - Business Logic:**
 ```javascript
+const { User } = require('../models');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 class AuthService {
   static async validateCredentials(email, password)  // Validate login
   static async generateTokens(user)                  // Generate JWT tokens
   static async refreshTokens(refreshToken)           // Refresh access token
   static async hashPassword(password)                // Hash password
   static async comparePassword(password, hash)       // Compare passwords
-  static async generateResetToken(email)             // Generate reset token
-  static async validateResetToken(token)             // Validate reset token
 }
 ```
 
-#### **3. User.js - Database Model:**
+#### **3. authRoutes.js - Route Definitions:**
 ```javascript
-class User {
-  static async findByEmail(email)        // Find user by email
-  static async findById(id)              // Find user by ID
-  static async create(userData)          // Create new user
-  static async updatePassword(id, hash)  // Update user password
-  static async updateProfile(id, data)   // Update user profile
-}
+const express = require('express');
+const router = express.Router();
+const AuthController = require('../controllers/AuthController');
+const { authenticateToken } = require('../middleware/authMiddleware');
+
+// Public routes
+router.post('/login', AuthController.login);
+router.post('/refresh', AuthController.refresh);
+
+// Protected routes
+router.post('/logout', authenticateToken, AuthController.logout);
+router.get('/profile', authenticateToken, AuthController.getProfile);
+router.put('/profile', authenticateToken, AuthController.updateProfile);
+```
+
+#### **4. Use Existing User Model (Plain SQL):**
+The User model is already created with Plain SQL. Import and use it:
+```javascript
+const { User } = require('../models');
+
+// Available methods:
+await User.findByEmail(email)
+await User.findById(id)
+await User.create(userData)
+await User.update(id, updateData)
 ```
 
 #### **4. JWT Implementation:**
@@ -179,31 +222,45 @@ describe('Auth API Integration', () => {
 - Validate JWT tokens properly
 - Implement secure password reset flow
 
-## 📋 **DATABASE INTEGRATION**
-Use the `users` table from the database schema:
+## 📋 **DATABASE INTEGRATION (PLAIN SQL)**
+Use the existing `users` table with **INTEGER IDs** (not UUIDs):
 ```sql
--- Reference the users table structure
+-- Actual users table structure (from schema.sql)
 users (
-  id UUID PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  role VARCHAR(50) NOT NULL,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role ENUM('admin', 'manager', 'employee') DEFAULT 'employee',
+  is_active BOOLEAN DEFAULT TRUE,
+  last_login DATETIME NULL,
+  refresh_token TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )
 ```
 
+### **🔥 CRITICAL: Use Plain SQL, Not Sequelize**
+```javascript
+// ❌ DON'T USE: Sequelize syntax
+// const user = await User.findOne({ where: { email } });
+
+// ✅ USE: Plain SQL methods (already implemented)
+const user = await User.findByEmail(email);
+const users = await User.findAll();
+const newUser = await User.create(userData);
+```
+
 ## 🎯 **SUCCESS CRITERIA**
-- [ ] All 7 API endpoints implemented and working
+- [ ] All 5 API endpoints implemented and working (no forgot/reset password)
 - [ ] JWT authentication system functional
 - [ ] Password hashing and validation working
 - [ ] Input validation and sanitization complete
 - [ ] Rate limiting implemented
-- [ ] Unit tests >90% coverage
-- [ ] Integration tests passing
-- [ ] Security measures implemented
+- [ ] Plain SQL integration working
+- [ ] Uses existing User model correctly
+- [ ] Uses global middleware and utils
 - [ ] Error handling comprehensive
-- [ ] Code follows project standards
+- [ ] Code follows new architecture standards
 
 ## 📋 **COMPLETION PROTOCOL**
 

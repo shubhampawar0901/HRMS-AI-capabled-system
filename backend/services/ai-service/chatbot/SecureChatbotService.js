@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { Employee, User, Attendance, Leave, Performance } = require('../../../shared/models');
+const { Employee, User, Attendance, LeaveApplication, PerformanceReview } = require('../../../models');
 const { ChatbotConversation, ChatbotAuditLog } = require('../models');
 
 class SecureChatbotService {

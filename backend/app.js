@@ -12,17 +12,17 @@ const { authenticateToken } = require('./shared/middleware/authMiddleware');
 const { validateRequest } = require('./shared/middleware/validationMiddleware');
 
 // Import database connection
-const { connectDB, sequelize } = require('./config/database');
+const { connectDB, closeDB } = require('./config/database');
 
-// Import service routes
-const authRoutes = require('./services/auth-service/routes/authRoutes');
-const employeeRoutes = require('./services/employee-service/routes/employeeRoutes');
-const attendanceRoutes = require('./services/attendance-service/routes/attendanceRoutes');
-const leaveRoutes = require('./services/leave-service/routes/leaveRoutes');
-const payrollRoutes = require('./services/payroll-service/routes/payrollRoutes');
-const performanceRoutes = require('./services/performance-service/routes/performanceRoutes');
-const aiRoutes = require('./services/ai-service/routes/aiRoutes');
-const reportsRoutes = require('./services/reports-service/routes/reportsRoutes');
+// Import routes
+const authRoutes = require('./routes/authRoutes');
+const employeeRoutes = require('./routes/employeeRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+const leaveRoutes = require('./routes/leaveRoutes');
+const payrollRoutes = require('./routes/payrollRoutes');
+const performanceRoutes = require('./routes/performanceRoutes');
+const aiRoutes = require('./routes/aiRoutes');
+const reportsRoutes = require('./routes/reportsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -79,13 +79,8 @@ const startServer = async () => {
   try {
     // Connect to database
     await connectDB();
-    
-    // Sync database models (in development)
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('Database synchronized');
-    }
-    
+    console.log('✅ Database connection established');
+
     // Start server
     app.listen(PORT, () => {
       console.log(`🚀 HRMS Backend Server running on port ${PORT}`);
@@ -113,7 +108,7 @@ process.on('uncaughtException', (err) => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received. Shutting down gracefully...');
-  await sequelize.close();
+  await closeDB();
   process.exit(0);
 });
 

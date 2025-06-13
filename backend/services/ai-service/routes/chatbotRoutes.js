@@ -1,6 +1,6 @@
 const express = require('express');
 const ChatbotController = require('../controllers/ChatbotController');
-const { authenticateToken } = require('../../../shared/middleware/auth');
+const { authenticateToken } = require('../../../middleware/authMiddleware');
 const { validateChatbotQuery, validateSessionId } = require('../middleware/validation');
 const rateLimit = require('express-rate-limit');
 

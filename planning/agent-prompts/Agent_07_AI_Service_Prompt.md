@@ -1,52 +1,76 @@
 # 🤖 AGENT 7 - AI FEATURES SERVICE DEVELOPMENT
 
+## 🚨 **CRITICAL: USE DEVELOP BRANCH & NEW ARCHITECTURE**
+
+### **🔄 MANDATORY FIRST STEPS:**
+```bash
+# 1. Switch to develop branch and get latest code
+git checkout develop
+git pull origin develop
+
+# 2. Check the new architecture (NO SEQUELIZE, NO SHARED FOLDER)
+ls backend/  # You should see: models/, controllers/, routes/, middleware/, utils/, services/
+```
+
 ## 📋 **YOUR ASSIGNMENT**
 - **Agent ID**: Agent 7
 - **Service**: AI Features Service
-- **Workspace Folder**: `backend/services/ai-service/`
-- **Git Branch**: `feature/ai-service-implementation`
-- **Development Phase**: Phase 2 (Business Logic)
+- **Architecture**: **PLAIN SQL** (No Sequelize) + **Global Folder Structure**
+- **Your Files**: `AIController.js`, `aiRoutes.js`, `AIService.js`
 - **Priority**: HIGH (Critical AI Features)
-- **Dependencies**: All Phase 1 services (Agents 1-4) must be completed first
 
-## 🚨 **CRITICAL RULES - MUST FOLLOW EXACTLY**
+## 🏗️ **NEW ARCHITECTURE (CRITICAL CHANGES)**
+
+### **✅ CORRECTED STRUCTURE:**
+```
+backend/
+├── models/                     # 🔥 GLOBAL MODELS (Plain SQL) - READ ONLY
+│   ├── AIAttritionPrediction.js # ← ALREADY CREATED (use this)
+│   ├── AISmartFeedback.js      # ← ALREADY CREATED (use this)
+│   ├── AIAttendanceAnomaly.js  # ← ALREADY CREATED (use this)
+│   ├── AIChatbotInteraction.js # ← ALREADY CREATED (use this)
+│   ├── AIResumeParser.js       # ← ALREADY CREATED (use this)
+│   ├── Employee.js             # ← ALREADY CREATED (use this)
+│   ├── User.js                 # ← ALREADY CREATED (use this)
+│   └── Attendance.js           # ← ALREADY CREATED (use this)
+├── controllers/               # 🔥 GLOBAL CONTROLLERS
+│   └── AIController.js        # ← YOUR CONTROLLER (already exists - update it)
+├── routes/                    # 🔥 GLOBAL ROUTES
+│   └── aiRoutes.js           # ← YOUR ROUTES (already exists - update it)
+├── middleware/                # 🔥 GLOBAL MIDDLEWARE - READ ONLY
+├── utils/                     # 🔥 GLOBAL UTILITIES - READ ONLY
+└── services/                  # 🔥 BUSINESS LOGIC ONLY
+    └── AIService.js          # ← YOUR SERVICE (already exists - update it)
+```
 
 ### **🚫 ABSOLUTE PROHIBITIONS:**
 ```bash
 # NEVER RUN THESE COMMANDS:
 git commit -m "..."          # ❌ FORBIDDEN
-git push origin ...          # ❌ FORBIDDEN  
+git push origin ...          # ❌ FORBIDDEN
 git merge ...                # ❌ FORBIDDEN
 git rebase ...               # ❌ FORBIDDEN
-git checkout [other-branch]  # ❌ FORBIDDEN
-git pull origin main         # ❌ FORBIDDEN
 ```
 
-### **✅ ALLOWED GIT OPERATIONS:**
-```bash
-git status                   # ✅ Check file status
-git add .                    # ✅ Stage your changes
-git diff                     # ✅ View changes
-git branch                   # ✅ Check current branch
-git log --oneline -10        # ✅ View recent commits
-```
-
-### **📁 WORKSPACE BOUNDARIES:**
-- ✅ **WORK ONLY** in: `backend/services/ai-service/`
-- ❌ **NEVER TOUCH**: 
-  - `backend/shared/` folder
+### **📁 YOUR EXACT WORKSPACE:**
+- ✅ **WORK ONLY ON**:
+  - `backend/controllers/AIController.js` (UPDATE EXISTING)
+  - `backend/routes/aiRoutes.js` (UPDATE EXISTING)
+  - `backend/services/AIService.js` (UPDATE EXISTING)
+- ❌ **NEVER TOUCH**:
+  - `backend/models/` (read-only, already created with Plain SQL)
+  - `backend/middleware/` (read-only, already created)
   - `backend/config/` folder
   - `backend/app.js`
-  - Other service folders
-  - Package.json files
-  - .env files
+  - Other agents' files
 
 ## 📚 **MANDATORY READING**
 Before starting, read these documents:
-1. `planning/Workflow/backend.md`
-2. `planning/Backend_Agent_Tasks.md` (Agent 7 section)
-3. `planning/AI_Features_Implementation_Logic.md` (CRITICAL - Complete AI specs)
-4. `planning/API_Integration_Guide.md`
+1. `backend/ARCHITECTURE.md` (NEW - explains corrected structure)
+2. `planning/Workflow/backend.md`
+3. `planning/Backend_Agent_Tasks.md` (Agent 7 section)
+4. `planning/AI_Features_Implementation_Logic.md` (CRITICAL - Complete AI specs)
+5. `backend/database/schema.sql` (AI tables structure)
 
 ## 🎯 **YOUR SPECIFIC TASKS**
 
@@ -54,43 +78,46 @@ Before starting, read these documents:
 ```javascript
 POST /api/ai/parse-resume           # Parse resume with LLM
 GET  /api/ai/attrition-predictions  # Get attrition predictions
-POST /api/ai/generate-feedback      # Generate AI feedback for reviews
-GET  /api/ai/anomaly-detections     # Get anomaly detections
+POST /api/ai/attrition-predictions  # Generate attrition prediction
+POST /api/ai/smart-feedback         # Generate AI feedback for reviews
+GET  /api/ai/smart-feedback/:empId  # Get feedback history
+GET  /api/ai/attendance-anomalies   # Get anomaly detections
+POST /api/ai/detect-anomalies       # Detect new anomalies
 POST /api/ai/chatbot/query          # HR chatbot query
-POST /api/ai/generate-report        # Generate smart reports
+GET  /api/ai/chatbot/history/:sessionId # Get chat history
+POST /api/ai/smart-reports          # Generate smart reports
+GET  /api/ai/feature-status         # Get AI feature status
 ```
 
-### **Required File Structure:**
+### **🚨 CRITICAL: FILES ALREADY EXIST - UPDATE THEM**
+The files are already created with complete structure. **DO NOT CREATE NEW FILES**. Update existing ones:
+
 ```
-backend/services/ai-service/
-├── index.js                    # Service entry point
-├── routes.js                   # Route definitions
+backend/
 ├── controllers/
-│   ├── ResumeParserController.js    # Resume parsing
-│   ├── AttritionController.js       # Attrition prediction
-│   ├── FeedbackController.js        # AI feedback generation
-│   ├── AnomalyController.js         # Anomaly detection
-│   ├── ChatbotController.js         # HR chatbot
-│   └── ReportsController.js         # Smart reports
-├── services/
-│   ├── LLMService.js               # LLM integration
-│   ├── ResumeParserService.js      # Resume processing
-│   ├── AttritionService.js         # Attrition prediction
-│   ├── AnomalyService.js           # Anomaly detection
-│   ├── ChatbotService.js           # Chatbot logic
-│   └── ReportsService.js           # Report generation
+│   └── AIController.js        # ← UPDATE THIS (already has all methods)
+├── routes/
+│   └── aiRoutes.js           # ← UPDATE THIS (already has all routes)
+└── services/
+    └── AIService.js          # ← UPDATE THIS (already has all methods)
+```
+
+### **🔍 EXISTING FILES TO USE (READ-ONLY):**
+```
+backend/
 ├── models/
-│   ├── AttritionPrediction.js      # Attrition prediction model
-│   ├── AnomalyDetection.js         # Anomaly detection model
-│   ├── ChatbotConversation.js      # Chatbot conversation model
-│   └── FeedbackGenerated.js        # Generated feedback model
-├── utils/
-│   ├── pdfParser.js                # PDF text extraction
-│   └── vectorDatabase.js           # Vector DB for RAG
-└── tests/
-    ├── ai.test.js                  # Unit tests
-    └── integration/
-        └── ai.integration.test.js
+│   ├── AIAttritionPrediction.js # ← USE THIS (Plain SQL model - complete)
+│   ├── AISmartFeedback.js      # ← USE THIS (Plain SQL model - complete)
+│   ├── AIAttendanceAnomaly.js  # ← USE THIS (Plain SQL model - complete)
+│   ├── AIChatbotInteraction.js # ← USE THIS (Plain SQL model - complete)
+│   ├── AIResumeParser.js       # ← USE THIS (Plain SQL model - complete)
+│   ├── Employee.js             # ← USE THIS (for employee data)
+│   ├── User.js                 # ← USE THIS (for user context)
+│   └── Attendance.js           # ← USE THIS (for anomaly detection)
+├── middleware/
+│   └── authMiddleware.js       # ← USE THIS (authentication)
+└── utils/
+    └── responseHelper.js       # ← USE THIS (sendSuccess, sendError, sendCreated)
 ```
 
 ### **Key Implementation Requirements:**

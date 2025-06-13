@@ -1,5 +1,15 @@
 # 📋 All Agent Prompts Summary - Quick Reference
 
+## 🚨 **CRITICAL: BACKEND ARCHITECTURE UPDATED**
+
+**ALL BACKEND AGENTS (1-8) MUST READ**: `BACKEND_AGENTS_ARCHITECTURE_UPDATE.md` before starting work.
+
+### **⚠️ MAJOR CHANGES:**
+- ✅ **Use develop branch** (not feature branches)
+- ✅ **Plain SQL** (no Sequelize)
+- ✅ **Global folder structure** (no shared folder)
+- ✅ **Update existing files** (don't create new ones)
+
 ## 🎯 **Agent Prompt Files Created**
 
 ### **✅ Backend Services (Phase 1 & 2) - COMPLETED**
