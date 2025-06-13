@@ -9,7 +9,6 @@ console.log('DB_HOST:', process.env.DB_HOST ? '[SET]' : '[NOT SET]');
 console.log('DB_USER:', process.env.DB_USER ? '[SET]' : '[NOT SET]');
 
 const express = require('express');
-const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');

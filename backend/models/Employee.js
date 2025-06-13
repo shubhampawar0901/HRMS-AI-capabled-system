@@ -125,49 +125,19 @@ class Employee {
   }
 
   static async findAll(options = {}) {
-    let query = `
-      SELECT e.*, d.name as department_name,
-             CONCAT(m.first_name, ' ', m.last_name) as manager_name
-      FROM employees e
-      LEFT JOIN departments d ON e.department_id = d.id
-      LEFT JOIN employees m ON e.manager_id = m.id
-      WHERE e.status != 'deleted'
-    `;
+    // Start with the simplest possible query for testing
+    let query = 'SELECT * FROM employees WHERE status != "deleted"';
     const params = [];
-    
-    if (options.departmentId) {
-      query += ' AND e.department_id = ?';
-      params.push(options.departmentId);
-    }
-    
+
+    // Only add status filter for now
     if (options.status) {
-      query += ' AND e.status = ?';
+      query += ' AND status = ?';
       params.push(options.status);
     }
-    
-    if (options.managerId) {
-      query += ' AND e.manager_id = ?';
-      params.push(options.managerId);
-    }
-    
-    if (options.search) {
-      query += ' AND (e.first_name LIKE ? OR e.last_name LIKE ? OR e.employee_code LIKE ? OR e.email LIKE ?)';
-      const searchTerm = `%${options.search}%`;
-      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-    }
-    
-    query += ' ORDER BY e.first_name, e.last_name';
-    
-    if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
-    }
-    
-    if (options.offset) {
-      query += ' OFFSET ?';
-      params.push(options.offset);
-    }
-    
+
+    // Add simple ordering
+    query += ' ORDER BY first_name, last_name';
+
     const rows = await executeQuery(query, params);
     return rows.map(row => new Employee(row));
   }
