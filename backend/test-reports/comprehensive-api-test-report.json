@@ -1,0 +1,605 @@
+{
+  "summary": {
+    "totalTests": 52,
+    "passed": 18,
+    "failed": 34,
+    "skipped": 0,
+    "successRate": "34.62%",
+    "timestamp": "2025-06-13T18:01:47.820Z"
+  },
+  "testsByCategory": {
+    "Server Health": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "Authentication": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0
+    },
+    "Employee API": {
+      "total": 18,
+      "passed": 9,
+      "failed": 9
+    },
+    "Department API": {
+      "total": 5,
+      "passed": 0,
+      "failed": 5
+    },
+    "AI API": {
+      "total": 19,
+      "passed": 1,
+      "failed": 18
+    },
+    "Auth Service": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "Attendance Service": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "Leave Service": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "Payroll Service": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "Performance Service": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "Reports Service": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "Error Handling": {
+      "total": 4,
+      "passed": 2,
+      "failed": 2
+    }
+  },
+  "results": [
+    {
+      "category": "Server Health",
+      "endpoint": "GET /health",
+      "success": true,
+      "statusCode": 200,
+      "details": {
+        "status": "OK",
+        "message": "HRMS Test Server is running",
+        "timestamp": "2025-06-13T18:01:47.672Z"
+      },
+      "timestamp": "2025-06-13T18:01:47.678Z"
+    },
+    {
+      "category": "Authentication",
+      "endpoint": "POST /auth/login (admin)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Login successful",
+      "timestamp": "2025-06-13T18:01:47.683Z"
+    },
+    {
+      "category": "Authentication",
+      "endpoint": "POST /auth/login (manager)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Login successful",
+      "timestamp": "2025-06-13T18:01:47.685Z"
+    },
+    {
+      "category": "Authentication",
+      "endpoint": "POST /auth/login (employee)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Login successful",
+      "timestamp": "2025-06-13T18:01:47.688Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "GET /employees (basic)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Found 3 employees",
+      "timestamp": "2025-06-13T18:01:47.691Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "GET /employees (with pagination)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Pagination: page=undefined, limit=undefined",
+      "timestamp": "2025-06-13T18:01:47.694Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "GET /employees (with search)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Search results: 3 employees found",
+      "timestamp": "2025-06-13T18:01:47.696Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "GET /employees (with status filter)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Active employees: 3",
+      "timestamp": "2025-06-13T18:01:47.698Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "GET /employees (with department filter)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Department 1 employees: 3",
+      "timestamp": "2025-06-13T18:01:47.703Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "GET /employees (manager access)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Manager can see 3 employees",
+      "timestamp": "2025-06-13T18:01:47.705Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "POST /employees (valid data)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.710Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "POST /employees (missing required fields)",
+      "success": false,
+      "statusCode": 500,
+      "details": "Validation error: 404",
+      "timestamp": "2025-06-13T18:01:47.713Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "POST /employees (duplicate email)",
+      "success": false,
+      "statusCode": 500,
+      "details": "Duplicate email error: 404",
+      "timestamp": "2025-06-13T18:01:47.715Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "GET /employees/:id (valid ID)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.718Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "GET /employees/:id (invalid ID)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Not found error: 404",
+      "timestamp": "2025-06-13T18:01:47.720Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "GET /employees/:id (non-numeric ID)",
+      "success": false,
+      "statusCode": 500,
+      "details": "Validation error: 404",
+      "timestamp": "2025-06-13T18:01:47.721Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "PUT /employees/:id (valid update)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.724Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "PUT /employees/:id (invalid ID)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Not found error: 404",
+      "timestamp": "2025-06-13T18:01:47.726Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "PUT /employees/:id (invalid data)",
+      "success": false,
+      "statusCode": 500,
+      "details": "Validation error: 404",
+      "timestamp": "2025-06-13T18:01:47.729Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "DELETE /employees/:id (admin only)",
+      "success": true,
+      "statusCode": 200,
+      "details": "Employee not found (expected): 404",
+      "timestamp": "2025-06-13T18:01:47.731Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "DELETE /employees/:id (manager access denied)",
+      "success": false,
+      "statusCode": 500,
+      "details": "Access denied (expected): 404",
+      "timestamp": "2025-06-13T18:01:47.733Z"
+    },
+    {
+      "category": "Employee API",
+      "endpoint": "GET /employees/stats/employees",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.735Z"
+    },
+    {
+      "category": "Department API",
+      "endpoint": "GET /employees/departments/all",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.737Z"
+    },
+    {
+      "category": "Department API",
+      "endpoint": "GET /employees/departments/all (with search)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.739Z"
+    },
+    {
+      "category": "Department API",
+      "endpoint": "GET /employees/departments/:id",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.741Z"
+    },
+    {
+      "category": "Department API",
+      "endpoint": "POST /employees/departments",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.744Z"
+    },
+    {
+      "category": "Department API",
+      "endpoint": "POST /employees/departments (invalid data)",
+      "success": false,
+      "statusCode": 500,
+      "details": "Validation error: 404",
+      "timestamp": "2025-06-13T18:01:47.745Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "GET /ai/feature-status",
+      "success": true,
+      "statusCode": 200,
+      "details": "AI features: 6 features available",
+      "timestamp": "2025-06-13T18:01:47.748Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "GET /ai/health",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.750Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "GET /ai/attrition-predictions",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.752Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "GET /ai/attrition-predictions (with threshold)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.754Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/attrition-predictions",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.756Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/smart-feedback",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.759Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/smart-feedback (invalid type)",
+      "success": false,
+      "statusCode": 500,
+      "details": "Validation error: 404",
+      "timestamp": "2025-06-13T18:01:47.762Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "GET /ai/attendance-anomalies",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.763Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "GET /ai/attendance-anomalies (with status)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.765Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/detect-anomalies",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.767Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/chatbot/query",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.770Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/chatbot/query (empty message)",
+      "success": false,
+      "statusCode": 500,
+      "details": "Validation error: 404",
+      "timestamp": "2025-06-13T18:01:47.772Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "GET /ai/chatbot/history/:sessionId",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.774Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/smart-reports (employee)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.777Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/smart-reports (attendance)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.779Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/smart-reports (leave)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.781Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/smart-reports (performance)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.783Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/smart-reports (payroll)",
+      "success": false,
+      "statusCode": 404,
+      "details": "Request failed with status code 404",
+      "timestamp": "2025-06-13T18:01:47.785Z"
+    },
+    {
+      "category": "AI API",
+      "endpoint": "POST /ai/smart-reports (invalid type)",
+      "success": false,
+      "statusCode": 500,
+      "details": "Validation error: 404",
+      "timestamp": "2025-06-13T18:01:47.787Z"
+    },
+    {
+      "category": "Auth Service",
+      "endpoint": "GET /auth/health",
+      "success": true,
+      "statusCode": 200,
+      "details": "Auth service status: ready for implementation",
+      "timestamp": "2025-06-13T18:01:47.789Z"
+    },
+    {
+      "category": "Attendance Service",
+      "endpoint": "GET /attendance/health",
+      "success": true,
+      "statusCode": 200,
+      "details": "Attendance service status: ready for implementation",
+      "timestamp": "2025-06-13T18:01:47.791Z"
+    },
+    {
+      "category": "Leave Service",
+      "endpoint": "GET /leave/health",
+      "success": true,
+      "statusCode": 200,
+      "details": "Leave service status: ready for implementation",
+      "timestamp": "2025-06-13T18:01:47.794Z"
+    },
+    {
+      "category": "Payroll Service",
+      "endpoint": "GET /payroll/health",
+      "success": true,
+      "statusCode": 200,
+      "details": "Payroll service status: ready for implementation",
+      "timestamp": "2025-06-13T18:01:47.796Z"
+    },
+    {
+      "category": "Performance Service",
+      "endpoint": "GET /performance/health",
+      "success": true,
+      "statusCode": 200,
+      "details": "Performance service status: ready for implementation",
+      "timestamp": "2025-06-13T18:01:47.798Z"
+    },
+    {
+      "category": "Reports Service",
+      "endpoint": "GET /reports/health",
+      "success": true,
+      "statusCode": 200,
+      "details": "Reports service status: ready for implementation",
+      "timestamp": "2025-06-13T18:01:47.800Z"
+    },
+    {
+      "category": "Error Handling",
+      "endpoint": "Unauthorized access",
+      "success": false,
+      "statusCode": 500,
+      "details": "Should have required authentication",
+      "timestamp": "2025-06-13T18:01:47.802Z"
+    },
+    {
+      "category": "Error Handling",
+      "endpoint": "Invalid token",
+      "success": false,
+      "statusCode": 500,
+      "details": "Should have rejected invalid token",
+      "timestamp": "2025-06-13T18:01:47.804Z"
+    },
+    {
+      "category": "Error Handling",
+      "endpoint": "Rate limiting test",
+      "success": true,
+      "statusCode": 200,
+      "details": "Rate limiting test completed (may not be enforced in test environment)",
+      "timestamp": "2025-06-13T18:01:47.817Z"
+    },
+    {
+      "category": "Error Handling",
+      "endpoint": "Malformed JSON",
+      "success": true,
+      "statusCode": 200,
+      "details": "JSON parse error: 400",
+      "timestamp": "2025-06-13T18:01:47.820Z"
+    }
+  ],
+  "logs": [
+    "[2025-06-13T18:01:47.631Z] 🚀 Starting COMPREHENSIVE API testing for ALL endpoints...",
+    "[2025-06-13T18:01:47.635Z] 🏥 Testing server health...",
+    "[2025-06-13T18:01:47.678Z] ✅ Server is healthy",
+    "[2025-06-13T18:01:47.678Z] 🔐 Testing authentication...",
+    "[2025-06-13T18:01:47.683Z] ✅ admin login successful",
+    "[2025-06-13T18:01:47.685Z] ✅ manager login successful",
+    "[2025-06-13T18:01:47.688Z] ✅ employee login successful",
+    "[2025-06-13T18:01:47.688Z] 👥 Testing Employee Management APIs (Complete CRUD)...",
+    "[2025-06-13T18:01:47.691Z] ✅ GET /employees (basic) - Found 3 employees",
+    "[2025-06-13T18:01:47.694Z] ✅ GET /employees (with pagination) - Pagination: page=undefined, limit=undefined",
+    "[2025-06-13T18:01:47.696Z] ✅ GET /employees (with search) - Search results: 3 employees found",
+    "[2025-06-13T18:01:47.698Z] ✅ GET /employees (with status filter) - Active employees: 3",
+    "[2025-06-13T18:01:47.703Z] ✅ GET /employees (with department filter) - Department 1 employees: 3",
+    "[2025-06-13T18:01:47.705Z] ✅ GET /employees (manager access) - Manager can see 3 employees",
+    "[2025-06-13T18:01:47.710Z] ❌ POST /employees (valid data) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.713Z] ❌ POST /employees (missing required fields) - Validation error: 404",
+    "[2025-06-13T18:01:47.715Z] ❌ POST /employees (duplicate email) - Duplicate email error: 404",
+    "[2025-06-13T18:01:47.718Z] ❌ GET /employees/:id (valid ID) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.720Z] ✅ GET /employees/:id (invalid ID) - Not found error: 404",
+    "[2025-06-13T18:01:47.721Z] ❌ GET /employees/:id (non-numeric ID) - Validation error: 404",
+    "[2025-06-13T18:01:47.724Z] ❌ PUT /employees/:id (valid update) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.726Z] ✅ PUT /employees/:id (invalid ID) - Not found error: 404",
+    "[2025-06-13T18:01:47.729Z] ❌ PUT /employees/:id (invalid data) - Validation error: 404",
+    "[2025-06-13T18:01:47.731Z] ✅ DELETE /employees/:id (admin only) - Employee not found (expected): 404",
+    "[2025-06-13T18:01:47.733Z] ❌ DELETE /employees/:id (manager access denied) - Access denied (expected): 404",
+    "[2025-06-13T18:01:47.735Z] ❌ GET /employees/stats/employees failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.736Z] 🏢 Testing Department Management APIs...",
+    "[2025-06-13T18:01:47.737Z] ❌ GET /employees/departments/all failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.739Z] ❌ GET /employees/departments/all (with search) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.741Z] ❌ GET /employees/departments/:id failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.744Z] ❌ POST /employees/departments failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.745Z] ❌ POST /employees/departments (invalid data) - Validation error: 404",
+    "[2025-06-13T18:01:47.746Z] 🤖 Testing AI Service APIs (All endpoints)...",
+    "[2025-06-13T18:01:47.748Z] ✅ GET /ai/feature-status - AI features: 6 features available",
+    "[2025-06-13T18:01:47.750Z] ❌ GET /ai/health failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.752Z] ❌ GET /ai/attrition-predictions failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.754Z] ❌ GET /ai/attrition-predictions (with threshold) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.756Z] ❌ POST /ai/attrition-predictions failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.759Z] ❌ POST /ai/smart-feedback failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.762Z] ❌ POST /ai/smart-feedback (invalid type) - Validation error: 404",
+    "[2025-06-13T18:01:47.763Z] ❌ GET /ai/attendance-anomalies failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.765Z] ❌ GET /ai/attendance-anomalies (with status) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.767Z] ❌ POST /ai/detect-anomalies failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.770Z] ❌ POST /ai/chatbot/query failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.772Z] ❌ POST /ai/chatbot/query (empty message) - Validation error: 404",
+    "[2025-06-13T18:01:47.774Z] ❌ GET /ai/chatbot/history/:sessionId failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.777Z] ❌ POST /ai/smart-reports (employee) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.779Z] ❌ POST /ai/smart-reports (attendance) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.781Z] ❌ POST /ai/smart-reports (leave) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.783Z] ❌ POST /ai/smart-reports (performance) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.785Z] ❌ POST /ai/smart-reports (payroll) failed: Request failed with status code 404",
+    "[2025-06-13T18:01:47.787Z] ❌ POST /ai/smart-reports (invalid type) - Validation error: 404",
+    "[2025-06-13T18:01:47.787Z] 🔐 Testing Auth Service APIs...",
+    "[2025-06-13T18:01:47.789Z] ✅ GET /auth/health - Auth service status: ready for implementation",
+    "[2025-06-13T18:01:47.789Z] ⏰ Testing Attendance Service APIs...",
+    "[2025-06-13T18:01:47.791Z] ✅ GET /attendance/health - Attendance service status: ready for implementation",
+    "[2025-06-13T18:01:47.792Z] 🏖️ Testing Leave Service APIs...",
+    "[2025-06-13T18:01:47.794Z] ✅ GET /leave/health - Leave service status: ready for implementation",
+    "[2025-06-13T18:01:47.794Z] 💰 Testing Payroll Service APIs...",
+    "[2025-06-13T18:01:47.796Z] ✅ GET /payroll/health - Payroll service status: ready for implementation",
+    "[2025-06-13T18:01:47.796Z] 📈 Testing Performance Service APIs...",
+    "[2025-06-13T18:01:47.798Z] ✅ GET /performance/health - Performance service status: ready for implementation",
+    "[2025-06-13T18:01:47.799Z] 📊 Testing Reports Service APIs...",
+    "[2025-06-13T18:01:47.800Z] ✅ GET /reports/health - Reports service status: ready for implementation",
+    "[2025-06-13T18:01:47.801Z] 🚨 Testing Error Handling & Edge Cases...",
+    "[2025-06-13T18:01:47.802Z] ❌ Unauthorized access - Should have required authentication",
+    "[2025-06-13T18:01:47.804Z] ❌ Invalid token - Should have rejected invalid token",
+    "[2025-06-13T18:01:47.817Z] ✅ Rate limiting test - Rate limiting test completed (may not be enforced in test environment)",
+    "[2025-06-13T18:01:47.820Z] ✅ Malformed JSON - JSON parse error: 400",
+    "[2025-06-13T18:01:47.820Z] 📊 Generating comprehensive test report..."
+  ],
+  "createdResources": {
+    "employees": [],
+    "departments": [],
+    "sessions": [
+      "e5473aad-c6af-44c4-990c-005b5cccd72b"
+    ]
+  }
+}
