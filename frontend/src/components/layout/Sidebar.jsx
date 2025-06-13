@@ -10,9 +10,9 @@ import {
   Brain,
   X
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../ui/button';
-import { cn } from '../lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user } = useAuth();

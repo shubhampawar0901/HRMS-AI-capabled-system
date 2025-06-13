@@ -20,6 +20,7 @@ import DashboardPage from '@/pages/dashboard/DashboardPage';
 import EmployeesPage from '@/pages/employees/EmployeesPage';
 import EmployeeDetailsPage from '@/pages/employees/EmployeeDetailsPage';
 import AddEmployeePage from '@/pages/employees/AddEmployeePage';
+import EditEmployeePage from '@/pages/employees/EditEmployeePage';
 
 // Attendance Pages
 import AttendancePage from '@/pages/attendance/AttendancePage';
@@ -83,6 +84,7 @@ const AppRoutes = () => {
         <Route path="employees" element={<EmployeesPage />} />
         <Route path="employees/add" element={<AddEmployeePage />} />
         <Route path="employees/:id" element={<EmployeeDetailsPage />} />
+        <Route path="employees/:id/edit" element={<EditEmployeePage />} />
 
         {/* Attendance */}
         <Route path="attendance" element={<AttendancePage />} />

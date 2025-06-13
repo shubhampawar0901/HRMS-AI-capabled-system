@@ -3,7 +3,7 @@ import { configureStore } from '@reduxjs/toolkit';
 // Import slices
 import authSlice from './slices/authSlice';
 import dashboardSlice from './slices/dashboardSlice';
-// import employeesSlice from './slices/employeesSlice';
+import employeesSlice from './slices/employeesSlice';
 // import attendanceSlice from './slices/attendanceSlice';
 // import leaveSlice from './slices/leaveSlice';
 // import payrollSlice from './slices/payrollSlice';
@@ -15,7 +15,7 @@ export const store = configureStore({
   reducer: {
     auth: authSlice,
     dashboard: dashboardSlice,
-    // employees: employeesSlice,
+    employees: employeesSlice,
     // attendance: attendanceSlice,
     // leave: leaveSlice,
     // payroll: payrollSlice,
