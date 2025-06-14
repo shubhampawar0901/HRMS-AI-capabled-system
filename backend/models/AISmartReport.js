@@ -19,15 +19,16 @@ class AISmartReport {
   // Static methods for database operations
   static async findById(id) {
     const query = `
-      SELECT sr.*, 
-             CONCAT(u.first_name, ' ', u.last_name) as generated_by_name,
-             CASE 
+      SELECT sr.*,
+             CONCAT(gen_emp.first_name, ' ', gen_emp.last_name) as generated_by_name,
+             CASE
                WHEN sr.report_type = 'employee' THEN CONCAT(e.first_name, ' ', e.last_name)
                WHEN sr.report_type = 'team' THEN CONCAT('Team of ', m.first_name, ' ', m.last_name)
                ELSE 'Department Report'
              END as target_name
       FROM ai_smart_reports sr
       LEFT JOIN users u ON sr.generated_by = u.id
+      LEFT JOIN employees gen_emp ON u.id = gen_emp.user_id
       LEFT JOIN employees e ON sr.report_type = 'employee' AND sr.target_id = e.id
       LEFT JOIN employees m ON sr.report_type = 'team' AND sr.target_id = m.id
       WHERE sr.id = ?
@@ -99,15 +100,16 @@ class AISmartReport {
 
   static async findAll(options = {}) {
     let query = `
-      SELECT sr.*, 
-             CONCAT(u.first_name, ' ', u.last_name) as generated_by_name,
-             CASE 
+      SELECT sr.*,
+             CONCAT(gen_emp.first_name, ' ', gen_emp.last_name) as generated_by_name,
+             CASE
                WHEN sr.report_type = 'employee' THEN CONCAT(e.first_name, ' ', e.last_name)
                WHEN sr.report_type = 'team' THEN CONCAT('Team of ', m.first_name, ' ', m.last_name)
                ELSE 'Department Report'
              END as target_name
       FROM ai_smart_reports sr
       LEFT JOIN users u ON sr.generated_by = u.id
+      LEFT JOIN employees gen_emp ON u.id = gen_emp.user_id
       LEFT JOIN employees e ON sr.report_type = 'employee' AND sr.target_id = e.id
       LEFT JOIN employees m ON sr.report_type = 'team' AND sr.target_id = m.id
       WHERE 1=1
