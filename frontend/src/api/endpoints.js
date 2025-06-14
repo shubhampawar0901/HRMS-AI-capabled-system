@@ -81,6 +81,10 @@ export const API_ENDPOINTS = {
   // 💰 PAYROLL APIS
   // ==========================================
   PAYROLL: {
+    // Base
+    BASE: '/payroll',
+    EXPORT: '/payroll/export',
+
     // Admin Operations
     GENERATE: '/payroll/generate',           // POST - Generate payroll (admin)
     BULK_GENERATE: '/payroll/bulk-generate', // POST - Bulk generate payroll (admin)
@@ -88,6 +92,10 @@ export const API_ENDPOINTS = {
     PROCESS: (id) => `/payroll/${id}/process`,  // PUT - Process payroll (admin)
     MARK_PAID: (id) => `/payroll/${id}/pay`,    // PUT - Mark as paid (admin)
     SUMMARY: '/payroll/summary',             // GET - Get payroll summary (admin)
+
+    // Admin-specific employee access
+    ADMIN_EMPLOYEE_PAYROLL: (employeeId) => `/payroll/admin/employee/${employeeId}/payslips`,  // GET - Admin get employee payslips
+    ADMIN_ALL_EMPLOYEES: '/payroll/admin/employees',  // GET - Admin get all employees payroll
 
     // Employee/Manager Operations
     PAYSLIP: (id) => `/payroll/payslip/${id}`,      // GET - Get specific payslip

@@ -91,12 +91,12 @@ export const usePayroll = () => {
     }
   }, [filters, pagination.page, pagination.limit]);
 
-  // Fetch employee payslips
+  // Fetch employee payslips (role-based)
   const fetchEmployeePayslips = useCallback(async (params = {}) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const queryParams = {
         year: filters.year,
         month: filters.month,
@@ -105,13 +105,31 @@ export const usePayroll = () => {
         limit: pagination.limit
       };
 
-      if (!employeeId) {
+      // For admin users, allow fetching payslips for any employee
+      if (isAdmin && params.employeeId) {
+        // Admin fetching specific employee's payslips
+        const response = await payrollService.getEmployeePayrollByAdmin(params.employeeId, queryParams);
+        const apiData = response.data || response;
+
+        if (apiData.success) {
+          setPayslips(apiData.data.payslips || []);
+          setPagination(prev => ({
+            ...prev,
+            ...apiData.data.pagination
+          }));
+        } else {
+          throw new Error(apiData.message || 'Failed to fetch payslips');
+        }
+        return;
+      }
+
+      // For employees/managers, require their own employeeId
+      if (!employeeId && !isAdmin) {
         throw new Error('Employee ID is required but not found. Please logout and login again.');
       }
 
+      // Fetch current user's payslips
       const response = await payrollService.getEmployeePayroll(employeeId, queryParams);
-
-      // Handle wrapped response from apiRequest
       const apiData = response.data || response;
 
       if (apiData.success) {
@@ -130,7 +148,7 @@ export const usePayroll = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters.year, filters.month, pagination.page, pagination.limit, employeeId]);
+  }, [filters.year, filters.month, pagination.page, pagination.limit, employeeId, isAdmin]);
 
   // Fetch specific payslip
   const fetchPayslip = useCallback(async (payrollId) => {
@@ -158,7 +176,7 @@ export const usePayroll = () => {
     }
   }, []);
 
-  // Fetch salary structure
+  // Fetch salary structure (role-based)
   const fetchSalaryStructure = useCallback(async (paramEmployeeId = null) => {
     try {
       setLoading(true);
@@ -166,12 +184,31 @@ export const usePayroll = () => {
 
       const targetEmployeeId = paramEmployeeId || employeeId;
 
-      if (!targetEmployeeId) {
+      // For admin users, allow fetching any employee's salary structure
+      if (isAdmin && paramEmployeeId) {
+        const response = await payrollService.getSalaryStructure(paramEmployeeId);
+        const apiData = response.data || response;
+
+        if (apiData.success) {
+          setSalaryStructure(apiData.data);
+          return apiData.data;
+        } else {
+          throw new Error(apiData.message || 'Failed to fetch salary structure');
+        }
+      }
+
+      // For employees/managers, require their own employeeId
+      if (!targetEmployeeId && !isAdmin) {
         throw new Error('Employee ID is required but not found. Please logout and login again.');
       }
-      const response = await payrollService.getSalaryStructure(targetEmployeeId);
 
-      // Handle wrapped response from apiRequest
+      // Admin users without paramEmployeeId should not fetch their own salary structure
+      if (isAdmin && !paramEmployeeId) {
+        console.log('Admin user - no salary structure to fetch without specific employee ID');
+        return null;
+      }
+
+      const response = await payrollService.getSalaryStructure(targetEmployeeId);
       const apiData = response.data || response;
 
       if (apiData.success) {
@@ -187,7 +224,7 @@ export const usePayroll = () => {
     } finally {
       setLoading(false);
     }
-  }, [employeeId]);
+  }, [employeeId, isAdmin]);
 
   // Generate payroll (admin only)
   const generatePayroll = useCallback(async (employeeId, month, year) => {
@@ -300,6 +337,86 @@ export const usePayroll = () => {
     }));
   }, []);
 
+  // Admin-specific methods
+  const fetchEmployeePayrollByAdmin = useCallback(async (targetEmployeeId, params = {}) => {
+    if (!isAdmin) {
+      setError('Access denied: Admin privileges required');
+      return null;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const queryParams = {
+        year: filters.year,
+        month: filters.month,
+        ...params,
+        page: pagination.page,
+        limit: pagination.limit
+      };
+
+      const response = await payrollService.getEmployeePayrollByAdmin(targetEmployeeId, queryParams);
+      const apiData = response.data || response;
+
+      if (apiData.success) {
+        setPayslips(apiData.data.payslips || []);
+        setPagination(prev => ({
+          ...prev,
+          ...apiData.data.pagination
+        }));
+        return apiData.data;
+      } else {
+        throw new Error(apiData.message || 'Failed to fetch employee payroll');
+      }
+    } catch (err) {
+      console.error('Fetch employee payroll by admin error:', err);
+      setError(err.message || 'Failed to fetch employee payroll');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [isAdmin, filters.year, filters.month, pagination.page, pagination.limit]);
+
+  const fetchAllEmployeesPayroll = useCallback(async (params = {}) => {
+    if (!isAdmin) {
+      setError('Access denied: Admin privileges required');
+      return null;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const queryParams = {
+        ...filters,
+        ...params,
+        page: pagination.page,
+        limit: pagination.limit
+      };
+
+      const response = await payrollService.getAllEmployeesPayroll(queryParams);
+      const apiData = response.data || response;
+
+      if (apiData.success) {
+        setPayrollRecords(apiData.data.records || []);
+        setPagination(prev => ({
+          ...prev,
+          ...apiData.data.pagination
+        }));
+        return apiData.data;
+      } else {
+        throw new Error(apiData.message || 'Failed to fetch all employees payroll');
+      }
+    } catch (err) {
+      console.error('Fetch all employees payroll error:', err);
+      setError(err.message || 'Failed to fetch all employees payroll');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [isAdmin, filters, pagination.page, pagination.limit]);
+
   // Computed values
   const hasPayrollAccess = useMemo(() => {
     return isAdmin || isManager || isEmployee;
@@ -318,10 +435,17 @@ export const usePayroll = () => {
     if (!user || !hasPayrollAccess) return;
 
     if (isEmployee) {
+      // Employees fetch their own payslips and salary structure
       fetchEmployeePayslips();
       fetchSalaryStructure();
-    } else if (isAdmin || isManager) {
+    } else if (isManager) {
+      // Managers fetch their own payslips and salary structure
+      fetchEmployeePayslips();
+      fetchSalaryStructure();
+    } else if (isAdmin) {
+      // Admins fetch all payroll records but not their own payslips
       fetchPayrollRecords();
+      // Don't auto-fetch salary structure for admin as they don't have one
     }
   }, [user, hasPayrollAccess, isEmployee, isAdmin, isManager, fetchEmployeePayslips, fetchSalaryStructure, fetchPayrollRecords]);
 
@@ -348,6 +472,10 @@ export const usePayroll = () => {
     updateFilters,
     updatePagination,
     clearError,
+
+    // Admin-specific actions
+    fetchEmployeePayrollByAdmin,
+    fetchAllEmployeesPayroll,
 
     // Computed values
     hasPayrollAccess,

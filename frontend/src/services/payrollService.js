@@ -114,6 +114,46 @@ class PayrollService {
       `salary-structure-${employeeId}`
     );
   }
+
+  // Admin-specific methods
+  // Get employee payroll by admin (can specify any employee ID)
+  async getEmployeePayrollByAdmin(employeeId, params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const url = queryParams
+      ? `${API_ENDPOINTS.PAYROLL.ADMIN_EMPLOYEE_PAYROLL(employeeId)}?${queryParams}`
+      : API_ENDPOINTS.PAYROLL.ADMIN_EMPLOYEE_PAYROLL(employeeId);
+
+    return apiRequest(
+      () => axiosInstance.get(url),
+      `admin-payroll-employee-${employeeId}`
+    );
+  }
+
+  // Get all employees payroll data (admin only)
+  async getAllEmployeesPayroll(params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const url = queryParams
+      ? `${API_ENDPOINTS.PAYROLL.ADMIN_ALL_EMPLOYEES}?${queryParams}`
+      : API_ENDPOINTS.PAYROLL.ADMIN_ALL_EMPLOYEES;
+
+    return apiRequest(
+      () => axiosInstance.get(url),
+      'admin-all-employees-payroll'
+    );
+  }
+
+  // Get employees list for admin selection
+  async getEmployeesForPayroll(params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const url = queryParams
+      ? `${API_ENDPOINTS.EMPLOYEES.BASE}?${queryParams}`
+      : API_ENDPOINTS.EMPLOYEES.BASE;
+
+    return apiRequest(
+      () => axiosInstance.get(url),
+      'employees-for-payroll'
+    );
+  }
 }
 
 export const payrollService = new PayrollService();
