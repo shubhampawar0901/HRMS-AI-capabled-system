@@ -248,3 +248,14 @@ backend/reports/
 backend/ai-cache/
 # Session files
 backend/sessions/
+
+# =============================================
+# PROJECT DOCUMENTATION AND TEST FILES (DO NOT COMMIT)
+# =============================================
+# Project planning and documentation
+Final plan/
+"Final plan/"
+
+# Test authentication files
+test-auth.html
+**/test-auth.html
