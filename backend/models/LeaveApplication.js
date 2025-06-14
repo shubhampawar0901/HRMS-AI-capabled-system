@@ -119,12 +119,17 @@ class LeaveApplication {
     }
     
     query += ' ORDER BY la.created_at DESC';
-    
+
+    // Add pagination
     if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
+      const limit = parseInt(options.limit);
+      const page = parseInt(options.page) || 1;
+      const offset = (page - 1) * limit;
+
+      // Use string concatenation instead of parameters for LIMIT/OFFSET to avoid MySQL issues
+      query += ` LIMIT ${limit} OFFSET ${offset}`;
     }
-    
+
     const rows = await executeQuery(query, params);
     return rows.map(row => new LeaveApplication(row));
   }
@@ -339,14 +344,12 @@ class LeaveApplication {
     query += ' ORDER BY la.created_at DESC';
 
     if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
-    }
+      const limit = parseInt(options.limit);
+      const page = parseInt(options.page) || 1;
+      const offset = (page - 1) * limit;
 
-    if (options.page && options.limit) {
-      const offset = (options.page - 1) * options.limit;
-      query += ' OFFSET ?';
-      params.push(offset);
+      // Use string concatenation instead of parameters for LIMIT/OFFSET to avoid MySQL issues
+      query += ` LIMIT ${limit} OFFSET ${offset}`;
     }
 
     const rows = await executeQuery(query, params);
@@ -387,14 +390,12 @@ class LeaveApplication {
     query += ' ORDER BY la.created_at DESC';
 
     if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
-    }
+      const limit = parseInt(options.limit);
+      const page = parseInt(options.page) || 1;
+      const offset = (page - 1) * limit;
 
-    if (options.page && options.limit) {
-      const offset = (options.page - 1) * options.limit;
-      query += ' OFFSET ?';
-      params.push(offset);
+      // Use string concatenation instead of parameters for LIMIT/OFFSET to avoid MySQL issues
+      query += ` LIMIT ${limit} OFFSET ${offset}`;
     }
 
     const rows = await executeQuery(query, params);

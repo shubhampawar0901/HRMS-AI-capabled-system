@@ -104,10 +104,11 @@ class PerformanceReview {
     }
     
     query += ' ORDER BY pr.created_at DESC';
-    
+
     if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
+      const limit = parseInt(options.limit);
+      // Use string concatenation instead of parameters for LIMIT to avoid MySQL issues
+      query += ` LIMIT ${limit}`;
     }
     
     const rows = await executeQuery(query, params);
@@ -158,14 +159,12 @@ class PerformanceReview {
     query += ' ORDER BY pr.created_at DESC';
 
     if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
-    }
+      const limit = parseInt(options.limit);
+      const page = parseInt(options.page) || 1;
+      const offset = (page - 1) * limit;
 
-    if (options.page && options.limit) {
-      const offset = (options.page - 1) * options.limit;
-      query += ' OFFSET ?';
-      params.push(offset);
+      // Use string concatenation instead of parameters for LIMIT/OFFSET to avoid MySQL issues
+      query += ` LIMIT ${limit} OFFSET ${offset}`;
     }
 
     const rows = await executeQuery(query, params);
@@ -204,14 +203,12 @@ class PerformanceReview {
     query += ' ORDER BY pr.created_at DESC';
 
     if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
-    }
+      const limit = parseInt(options.limit);
+      const page = parseInt(options.page) || 1;
+      const offset = (page - 1) * limit;
 
-    if (options.page && options.limit) {
-      const offset = (options.page - 1) * options.limit;
-      query += ' OFFSET ?';
-      params.push(offset);
+      // Use string concatenation instead of parameters for LIMIT/OFFSET to avoid MySQL issues
+      query += ` LIMIT ${limit} OFFSET ${offset}`;
     }
 
     const rows = await executeQuery(query, params);

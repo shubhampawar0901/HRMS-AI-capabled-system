@@ -39,14 +39,14 @@ class AIChatbotInteraction {
     `;
     
     const result = await executeQuery(query, [
-      interactionData.userId,
-      interactionData.sessionId,
-      interactionData.userQuery,
-      interactionData.botResponse,
-      interactionData.intent,
-      interactionData.confidence,
-      interactionData.responseTime,
-      interactionData.feedback
+      interactionData.userId || null,
+      interactionData.sessionId || null,
+      interactionData.userQuery || null,
+      interactionData.botResponse || null,
+      interactionData.intent || null,
+      interactionData.confidence || 0.0,
+      interactionData.responseTime || 0,
+      interactionData.feedback || null
     ]);
     
     return await AIChatbotInteraction.findById(result.insertId);
@@ -62,10 +62,11 @@ class AIChatbotInteraction {
     }
     
     query += ' ORDER BY created_at DESC';
-    
+
     if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
+      const limit = parseInt(options.limit);
+      // Use string concatenation instead of parameters for LIMIT to avoid MySQL issues
+      query += ` LIMIT ${limit}`;
     }
     
     const rows = await executeQuery(query, params);

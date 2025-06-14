@@ -37,13 +37,13 @@ class AISmartFeedback {
     `;
     
     const result = await executeQuery(query, [
-      feedbackData.employeeId,
-      feedbackData.feedbackType,
-      feedbackData.generatedFeedback,
-      JSON.stringify(feedbackData.performanceData),
-      JSON.stringify(feedbackData.suggestions),
-      feedbackData.confidence,
-      feedbackData.generatedBy
+      feedbackData.employeeId || null,
+      feedbackData.feedbackType || null,
+      feedbackData.generatedFeedback || null,
+      JSON.stringify(feedbackData.performanceData || {}),
+      JSON.stringify(feedbackData.suggestions || []),
+      feedbackData.confidence || 0.0,
+      feedbackData.generatedBy || null
     ]);
     
     return await AISmartFeedback.findById(result.insertId);
@@ -59,10 +59,11 @@ class AISmartFeedback {
     }
     
     query += ' ORDER BY created_at DESC';
-    
+
     if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
+      const limit = parseInt(options.limit);
+      // Use string concatenation instead of parameters for LIMIT to avoid MySQL issues
+      query += ` LIMIT ${limit}`;
     }
     
     const rows = await executeQuery(query, params);

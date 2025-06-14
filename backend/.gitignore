@@ -81,6 +81,65 @@ uploads/resumes/
 # Generated reports
 reports/
 # AI model cache
+
+# =============================================
+# TEST FILES AND TESTING ARTIFACTS (DO NOT COMMIT)
+# =============================================
+# API Testing logs and results
+api-testing-log.json
+api-testing-detailed-log.txt
+api-test-results.json
+api-test-*.json
+api-test-*.txt
+api-test-*.log
+test-results/
+test-logs/
+test-output/
+testing-artifacts/
+
+# Unit test artifacts
+test-coverage/
+test-reports/
+*.test.log
+*.spec.log
+test-*.json
+test-*.txt
+
+# Integration test files
+integration-test-results/
+integration-test-logs/
+e2e-test-results/
+e2e-test-logs/
+
+# Performance test results
+performance-test-results/
+load-test-results/
+benchmark-results/
+
+# Mock data for testing
+test-data/
+mock-data/
+test-fixtures/
+test-seeds/
+
+# Test database files
+test.db
+test.sqlite
+test.sqlite3
+*-test.db
+*-test.sqlite
+*-test.sqlite3
+
+# Jest/Mocha/Testing framework artifacts
+jest-results/
+mocha-results/
+.jest-cache/
+.mocha-cache/
+
+# Postman/Insomnia test collections (if auto-generated)
+postman-test-results/
+insomnia-test-results/
+
 ai-cache/
 # Session files
 sessions/

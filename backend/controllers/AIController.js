@@ -14,6 +14,17 @@ const { sendSuccess, sendError, sendCreated } = require('../utils/responseHelper
 const AIService = require('../services/AIService');
 
 class AIController {
+  constructor() {
+    this.aiService = new AIService();
+  }
+
+  // Get singleton instance
+  static getAIService() {
+    if (!this.aiServiceInstance) {
+      this.aiServiceInstance = new AIService();
+    }
+    return this.aiServiceInstance;
+  }
   // ==========================================
   // RESUME PARSER ENDPOINTS
   // ==========================================
@@ -24,7 +35,8 @@ class AIController {
         return sendError(res, 'No file uploaded', 400);
       }
 
-      const result = await AIService.parseResume(req.file);
+      const aiService = AIController.getAIService();
+      const result = await aiService.parseResume(req.file);
       
       // Save to database
       const parserRecord = await AIResumeParser.create({
@@ -84,7 +96,8 @@ class AIController {
       }
 
       // Generate prediction using AI service
-      const prediction = await AIService.predictAttrition(employeeId);
+      const aiService = AIController.getAIService();
+      const prediction = await aiService.predictAttrition(employeeId);
       
       // Save prediction
       const predictionRecord = await AIAttritionPrediction.create({
@@ -110,10 +123,11 @@ class AIController {
   static async generateSmartFeedback(req, res) {
     try {
       const { employeeId, feedbackType, performanceData } = req.body;
-      const { userId } = req.user;
+      const userId = req.user.id;
 
       // Generate feedback using AI service
-      const feedback = await AIService.generateSmartFeedback({
+      const aiService = AIController.getAIService();
+      const feedback = await aiService.generateSmartFeedback({
         employeeId,
         feedbackType,
         performanceData
@@ -171,7 +185,8 @@ class AIController {
       const { employeeId, dateRange } = req.body;
       
       // Run anomaly detection
-      const anomalies = await AIService.detectAttendanceAnomalies(employeeId, dateRange);
+      const aiService = AIController.getAIService();
+      const anomalies = await aiService.detectAttendanceAnomalies(employeeId, dateRange);
       
       // Save detected anomalies
       const savedAnomalies = [];
@@ -213,7 +228,8 @@ class AIController {
       }
 
       // Process query with AI service
-      const response = await AIService.processChatbotQuery(message, userContext);
+      const aiService = AIController.getAIService();
+      const response = await aiService.processChatbotQuery(message, userContext);
       
       // Save conversation
       await AIChatbotInteraction.create({
@@ -235,7 +251,7 @@ class AIController {
   static async getChatHistory(req, res) {
     try {
       const { sessionId } = req.params;
-      const { userId } = req.user;
+      const userId = req.user.id;
       const { limit = 50 } = req.query;
 
       const history = await AIChatbotInteraction.findBySession(sessionId);
@@ -258,7 +274,8 @@ class AIController {
       const { reportType, parameters } = req.body;
       
       // Generate report using AI service
-      const report = await AIService.generateSmartReport(reportType, parameters);
+      const aiService = AIController.getAIService();
+      const report = await aiService.generateSmartReport(reportType, parameters);
       
       return sendSuccess(res, report, 'Smart report generated');
     } catch (error) {

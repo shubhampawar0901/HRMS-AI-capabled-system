@@ -8,20 +8,33 @@ class AttendanceController {
   // ==========================================
   static async checkIn(req, res) {
     try {
+      console.log('🔍 CHECK-IN API CALLED');
+      console.log('Request body:', req.body);
+      console.log('User from token:', req.user);
+
       const employeeId = req.user.employeeId;
       const { location, notes } = req.body;
       const today = moment().format('YYYY-MM-DD');
       const checkInTime = moment().format('HH:mm:ss');
 
+      console.log('Employee ID:', employeeId);
+      console.log('Today:', today);
+      console.log('Check-in time:', checkInTime);
+
       // Check if already checked in today
+      console.log('Checking existing attendance...');
       const existingRecord = await Attendance.findByEmployeeAndDate(employeeId, today);
+      console.log('Existing record:', existingRecord);
+
       if (existingRecord && existingRecord.checkInTime) {
+        console.log('Already checked in today');
         return sendError(res, 'Already checked in today', 400);
       }
 
       // Create or update attendance record
       let attendance;
       if (existingRecord) {
+        console.log('Updating existing record...');
         attendance = await Attendance.update(existingRecord.id, {
           checkInTime,
           location,
@@ -29,19 +42,24 @@ class AttendanceController {
           status: 'present'
         });
       } else {
-        attendance = await Attendance.create({
+        console.log('Creating new attendance record...');
+        const attendanceData = {
           employeeId,
           date: today,
           checkInTime,
           location,
           notes,
           status: 'present'
-        });
+        };
+        console.log('Attendance data:', attendanceData);
+        attendance = await Attendance.create(attendanceData);
+        console.log('Created attendance:', attendance);
       }
 
       return sendCreated(res, attendance, 'Check-in successful');
     } catch (error) {
-      console.error('Check-in error:', error);
+      console.error('❌ Check-in error:', error);
+      console.error('Error stack:', error.stack);
       return sendError(res, 'Check-in failed', 500);
     }
   }

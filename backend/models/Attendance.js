@@ -3,16 +3,16 @@ const { executeQuery } = require('../config/database');
 class Attendance {
   constructor(data) {
     this.id = data.id;
-    this.employeeId = data.employee_id;
+    this.employeeId = data.employeeId;
     this.date = data.date;
-    this.checkInTime = data.check_in_time;
-    this.checkOutTime = data.check_out_time;
-    this.totalHours = data.total_hours;
+    this.checkInTime = data.checkInTime;
+    this.checkOutTime = data.checkOutTime;
+    this.totalHours = data.totalHours;
     this.status = data.status;
     this.location = data.location;
     this.notes = data.notes;
-    this.createdAt = data.created_at;
-    this.updatedAt = data.updated_at;
+    this.createdAt = data.createdAt;
+    this.updatedAt = data.updatedAt;
   }
 
   // Static methods for database operations
@@ -21,8 +21,8 @@ class Attendance {
       SELECT a.*, 
              CONCAT(e.first_name, ' ', e.last_name) as employee_name,
              e.employee_code
-      FROM attendance_records a
-      LEFT JOIN employees e ON a.employee_id = e.id
+      FROM attendance a
+      LEFT JOIN employees e ON a.employeeId = e.id
       WHERE a.id = ?
     `;
     const rows = await executeQuery(query, [id]);
@@ -30,28 +30,28 @@ class Attendance {
   }
 
   static async findByEmployeeAndDate(employeeId, date) {
-    const query = 'SELECT * FROM attendance_records WHERE employee_id = ? AND date = ?';
+    const query = 'SELECT * FROM attendance WHERE employeeId = ? AND date = ?';
     const rows = await executeQuery(query, [employeeId, date]);
     return rows.length > 0 ? new Attendance(rows[0]) : null;
   }
 
   static async create(attendanceData) {
     const query = `
-      INSERT INTO attendance_records (
-        employee_id, date, check_in_time, check_out_time, 
-        total_hours, status, location, notes, created_at, updated_at
+      INSERT INTO attendance (
+        employeeId, date, checkInTime, checkOutTime, 
+        totalHours, status, location, notes, createdAt, updatedAt
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
     
     const result = await executeQuery(query, [
       attendanceData.employeeId,
       attendanceData.date,
-      attendanceData.checkInTime,
-      attendanceData.checkOutTime,
+      attendanceData.checkInTime || null,
+      attendanceData.checkOutTime || null,
       attendanceData.totalHours || 0,
       attendanceData.status || 'present',
-      attendanceData.location,
-      attendanceData.notes
+      attendanceData.location || null,
+      attendanceData.notes || null
     ]);
     
     return await Attendance.findById(result.insertId);
@@ -62,7 +62,7 @@ class Attendance {
     const values = [];
     
     const fields = [
-      'check_in_time', 'check_out_time', 'total_hours', 
+      'checkInTime', 'checkOutTime', 'totalHours', 
       'status', 'location', 'notes'
     ];
     
@@ -76,28 +76,25 @@ class Attendance {
     
     if (updates.length === 0) return await Attendance.findById(id);
     
-    updates.push('updated_at = NOW()');
+    updates.push('updatedAt = NOW()');
     values.push(id);
     
-    const query = `UPDATE attendance_records SET ${updates.join(', ')} WHERE id = ?`;
+    const query = `UPDATE attendance SET ${updates.join(', ')} WHERE id = ?`;
     await executeQuery(query, values);
     
     return await Attendance.findById(id);
   }
 
   static async delete(id) {
-    const query = 'DELETE FROM attendance_records WHERE id = ?';
+    const query = 'DELETE FROM attendance WHERE id = ?';
     await executeQuery(query, [id]);
   }
 
   static async findByEmployee(employeeId, options = {}) {
     let query = `
-      SELECT a.*, 
-             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
-             e.employee_code
-      FROM attendance_records a
-      LEFT JOIN employees e ON a.employee_id = e.id
-      WHERE a.employee_id = ?
+      SELECT a.*
+      FROM attendance a
+      WHERE a.employeeId = ?
     `;
     const params = [employeeId];
     
@@ -112,12 +109,22 @@ class Attendance {
     }
     
     query += ' ORDER BY a.date DESC';
-    
+
+    // Add pagination
     if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
+      const limit = parseInt(options.limit);
+      const page = parseInt(options.page) || 1;
+      const offset = (page - 1) * limit;
+
+      // Use string concatenation instead of parameters for LIMIT/OFFSET to avoid MySQL issues
+      query += ` LIMIT ${limit} OFFSET ${offset}`;
     }
-    
+
+    console.log('🔍 Attendance.findByEmployee Debug:');
+    console.log('Query:', query);
+    console.log('Params:', params);
+    console.log('Params length:', params.length);
+
     const rows = await executeQuery(query, params);
     return rows.map(row => new Attendance(row));
   }
@@ -130,11 +137,11 @@ class Attendance {
         SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_days,
         SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_days,
         SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END) as half_days,
-        AVG(total_hours) as avg_hours,
-        SUM(total_hours) as total_hours
-      FROM attendance_records 
-      WHERE employee_id = ? 
-        AND MONTH(date) = ? 
+        AVG(totalHours) as avg_hours,
+        SUM(totalHours) as totalHours
+      FROM attendance
+      WHERE employeeId = ?
+        AND MONTH(date) = ?
         AND YEAR(date) = ?
     `;
     
@@ -207,11 +214,11 @@ class Attendance {
         SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count,
         SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_count,
         SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END) as half_day_count,
-        AVG(total_hours) as avg_hours_per_day,
-        SUM(total_hours) as total_hours_worked,
+        AVG(totalHours) as avg_hours_per_day,
+        SUM(totalHours) as totalHours_worked,
         (SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) / COUNT(*)) * 100 as attendance_percentage
-      FROM attendance_records 
-      WHERE employee_id = ? 
+      FROM attendance
+      WHERE employeeId = ?
         AND date BETWEEN ? AND ?
     `;
     
@@ -222,19 +229,19 @@ class Attendance {
   static async getDepartmentAttendance(departmentId, date) {
     const query = `
       SELECT
-        e.id as employee_id,
+        e.id as employeeId,
         e.employee_code,
         CONCAT(e.first_name, ' ', e.last_name) as employee_name,
-        a.check_in_time,
-        a.check_out_time,
-        a.total_hours,
+        a.checkInTime,
+        a.checkOutTime,
+        a.totalHours,
         a.status,
         CASE
           WHEN a.id IS NULL THEN 'absent'
           ELSE a.status
         END as final_status
       FROM employees e
-      LEFT JOIN attendance_records a ON e.id = a.employee_id AND a.date = ?
+      LEFT JOIN attendance a ON e.id = a.employeeId AND a.date = ?
       WHERE e.department_id = ? AND e.status = 'active'
       ORDER BY e.first_name, e.last_name
     `;
@@ -246,8 +253,8 @@ class Attendance {
     const query = `
       SELECT ar.*, CONCAT(e.first_name, ' ', e.last_name) as employee_name,
              e.employee_code, d.name as department_name
-      FROM attendance_records ar
-      JOIN employees e ON ar.employee_id = e.id
+      FROM attendance ar
+      JOIN employees e ON ar.employeeId = e.id
       LEFT JOIN departments d ON e.department_id = d.id
       WHERE ar.date = ?
       ORDER BY e.first_name, e.last_name
@@ -260,8 +267,8 @@ class Attendance {
     const query = `
       SELECT ar.*, CONCAT(e.first_name, ' ', e.last_name) as employee_name,
              e.employee_code, d.name as department_name
-      FROM attendance_records ar
-      JOIN employees e ON ar.employee_id = e.id
+      FROM attendance ar
+      JOIN employees e ON ar.employeeId = e.id
       LEFT JOIN departments d ON e.department_id = d.id
       WHERE e.manager_id = ? AND ar.date = ?
       ORDER BY e.first_name, e.last_name
@@ -271,7 +278,7 @@ class Attendance {
   }
 
   static async countByEmployee(employeeId, options = {}) {
-    let query = 'SELECT COUNT(*) as total FROM attendance_records WHERE employee_id = ?';
+    let query = 'SELECT COUNT(*) as total FROM attendance WHERE employeeId = ?';
     const params = [employeeId];
 
     if (options.startDate) {
@@ -296,10 +303,10 @@ class Attendance {
         SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_days,
         SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_days,
         SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END) as half_days,
-        ROUND(AVG(total_hours), 2) as avg_hours,
-        SUM(total_hours) as total_hours
-      FROM attendance_records
-      WHERE employee_id = ? AND MONTH(date) = ? AND YEAR(date) = ?
+        ROUND(AVG(totalHours), 2) as avg_hours,
+        SUM(totalHours) as totalHours
+      FROM attendance
+      WHERE employeeId = ? AND MONTH(date) = ? AND YEAR(date) = ?
     `;
     const rows = await executeQuery(query, [employeeId, month, year]);
     return rows[0];
