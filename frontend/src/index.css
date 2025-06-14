@@ -399,6 +399,29 @@
     transition: transform var(--duration-normal) var(--ease-out);
   }
 
+  /* Modal Overlay System */
+  .hrms-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .hrms-modal-content {
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 10000;
+  }
+
   /* Focus States */
   .focus-ring-admin:focus-visible {
     @apply outline-none;

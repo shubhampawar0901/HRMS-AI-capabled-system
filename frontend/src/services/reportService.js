@@ -3,152 +3,154 @@ import { API_ENDPOINTS } from '@/api/endpoints';
 import { apiRequest } from '@/api/interceptors';
 
 class ReportService {
-  // Get reports
-  async getReports(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    const url = queryParams ? `${API_ENDPOINTS.REPORTS.BASE}?${queryParams}` : API_ENDPOINTS.REPORTS.BASE;
-    
-    return apiRequest(
-      () => axiosInstance.get(url),
-      'reports-list'
-    );
-  }
-
-  // Generate report
-  async generateReport(reportConfig) {
-    return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.REPORTS.GENERATE, reportConfig),
-      'report-generate'
-    );
-  }
-
-  // Create custom report
-  async createCustomReport(reportData) {
-    return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.REPORTS.CUSTOM, reportData),
-      'report-custom-create'
-    );
-  }
-
-  // Get report templates
-  async getReportTemplates() {
-    return apiRequest(
-      () => axiosInstance.get(API_ENDPOINTS.REPORTS.TEMPLATES),
-      'report-templates'
-    );
-  }
-
-  // Export report
-  async exportReport(reportId, format = 'pdf', options = {}) {
-    const params = { format, ...options };
-    const queryParams = new URLSearchParams(params).toString();
-    
-    return apiRequest(
-      () => axiosInstance.get(`${API_ENDPOINTS.REPORTS.EXPORT}/${reportId}?${queryParams}`, {
-        responseType: 'blob'
-      }),
-      `report-export-${reportId}`
-    );
-  }
-
-  // Schedule report
-  async scheduleReport(scheduleData) {
-    return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.REPORTS.SCHEDULE, scheduleData),
-      'report-schedule'
-    );
-  }
-
-  // Get report history
-  async getReportHistory(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    const url = queryParams ? `${API_ENDPOINTS.REPORTS.HISTORY}?${queryParams}` : API_ENDPOINTS.REPORTS.HISTORY;
-    
-    return apiRequest(
-      () => axiosInstance.get(url),
-      'report-history'
-    );
-  }
+  // ==========================================
+  // STANDARD REPORTS (Match Backend APIs)
+  // ==========================================
 
   // Get attendance report
   async getAttendanceReport(params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const url = queryParams ? `${API_ENDPOINTS.REPORTS.ATTENDANCE}?${queryParams}` : API_ENDPOINTS.REPORTS.ATTENDANCE;
+
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.REPORTS.GENERATE, {
-        type: 'attendance',
-        parameters: params
-      }),
+      () => axiosInstance.get(url),
       'attendance-report'
     );
   }
 
   // Get leave report
   async getLeaveReport(params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const url = queryParams ? `${API_ENDPOINTS.REPORTS.LEAVE}?${queryParams}` : API_ENDPOINTS.REPORTS.LEAVE;
+
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.REPORTS.GENERATE, {
-        type: 'leave',
-        parameters: params
-      }),
+      () => axiosInstance.get(url),
       'leave-report'
     );
   }
 
-  // Get payroll report
+  // Get payroll report (Admin only)
   async getPayrollReport(params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const url = queryParams ? `${API_ENDPOINTS.REPORTS.PAYROLL}?${queryParams}` : API_ENDPOINTS.REPORTS.PAYROLL;
+
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.REPORTS.GENERATE, {
-        type: 'payroll',
-        parameters: params
-      }),
+      () => axiosInstance.get(url),
       'payroll-report'
     );
   }
 
   // Get performance report
   async getPerformanceReport(params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const url = queryParams ? `${API_ENDPOINTS.REPORTS.PERFORMANCE}?${queryParams}` : API_ENDPOINTS.REPORTS.PERFORMANCE;
+
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.REPORTS.GENERATE, {
-        type: 'performance',
-        parameters: params
-      }),
+      () => axiosInstance.get(url),
       'performance-report'
     );
   }
 
-  // Get employee report
-  async getEmployeeReport(params = {}) {
+  // ==========================================
+  // AI SMART REPORTS
+  // ==========================================
+
+  // Generate AI smart report (Admin/Manager only)
+  async generateSmartReport(reportType, parameters = {}) {
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.REPORTS.GENERATE, {
-        type: 'employee',
-        parameters: params
+      () => axiosInstance.post(API_ENDPOINTS.REPORTS.SMART, {
+        reportType,
+        parameters
       }),
-      'employee-report'
+      'smart-report'
     );
   }
 
-  // Get dashboard report
-  async getDashboardReport(params = {}) {
+  // ==========================================
+  // DASHBOARD ANALYTICS
+  // ==========================================
+
+  // Get dashboard analytics
+  async getDashboardAnalytics() {
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.REPORTS.GENERATE, {
-        type: 'dashboard',
-        parameters: params
-      }),
-      'dashboard-report'
+      () => axiosInstance.get(API_ENDPOINTS.REPORTS.ANALYTICS),
+      'dashboard-analytics'
     );
   }
 
-  // Delete report
-  async deleteReport(reportId) {
-    return apiRequest(
-      () => axiosInstance.delete(`${API_ENDPOINTS.REPORTS.BASE}/${reportId}`),
-      `report-delete-${reportId}`
-    );
+  // ==========================================
+  // UTILITY METHODS
+  // ==========================================
+
+  // Get all available report types based on user role
+  getAvailableReports(userRole) {
+    const baseReports = [
+      {
+        id: 'attendance',
+        name: 'Attendance Report',
+        description: 'Employee attendance tracking and statistics',
+        icon: '📊',
+        roles: ['admin', 'manager', 'employee']
+      },
+      {
+        id: 'leave',
+        name: 'Leave Report',
+        description: 'Leave applications and balance tracking',
+        icon: '🏖️',
+        roles: ['admin', 'manager', 'employee']
+      },
+      {
+        id: 'performance',
+        name: 'Performance Report',
+        description: 'Employee performance reviews and goals',
+        icon: '🎯',
+        roles: ['admin', 'manager', 'employee']
+      }
+    ];
+
+    const adminReports = [
+      {
+        id: 'payroll',
+        name: 'Payroll Report',
+        description: 'Salary and payroll processing data',
+        icon: '💰',
+        roles: ['admin']
+      }
+    ];
+
+    const smartReports = [
+      {
+        id: 'smart',
+        name: 'AI Smart Reports',
+        description: 'AI-powered insights and recommendations',
+        icon: '🤖',
+        roles: ['admin', 'manager']
+      }
+    ];
+
+    let availableReports = [...baseReports];
+
+    if (userRole === 'admin') {
+      availableReports = [...availableReports, ...adminReports, ...smartReports];
+    } else if (userRole === 'manager') {
+      availableReports = [...availableReports, ...smartReports];
+    }
+
+    return availableReports.filter(report => report.roles.includes(userRole));
   }
 
-  // Share report
-  async shareReport(reportId, shareData) {
-    return apiRequest(
-      () => axiosInstance.post(`${API_ENDPOINTS.REPORTS.BASE}/${reportId}/share`, shareData),
-      `report-share-${reportId}`
+  // Format report parameters for API calls
+  formatReportParams(reportType, filters = {}) {
+    const baseParams = {
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      departmentId: filters.departmentId,
+      employeeId: filters.employeeId
+    };
+
+    // Remove undefined values
+    return Object.fromEntries(
+      Object.entries(baseParams).filter(([_, value]) => value !== undefined)
     );
   }
 }

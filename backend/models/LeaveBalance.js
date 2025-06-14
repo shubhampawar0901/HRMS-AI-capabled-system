@@ -11,6 +11,12 @@ class LeaveBalance {
     this.remainingDays = data.remaining_days;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
+
+    // Additional fields from joins
+    this.leave_type_name = data.leave_type_name;
+    this.maxDaysPerYear = data.max_days_per_year;
+    this.employeeName = data.employee_name;
+    this.employeeCode = data.employee_code;
   }
 
   // Static methods for database operations
