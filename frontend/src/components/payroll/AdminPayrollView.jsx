@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  DollarSign, 
-  FileText, 
-  Users, 
-  Download,
-  Eye,
+import {
+  DollarSign,
+  FileText,
+  Users,
   Shield,
   AlertTriangle
 } from 'lucide-react';

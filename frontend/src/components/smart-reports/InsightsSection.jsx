@@ -22,26 +22,7 @@ const InsightsSection = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
-  /**
-   * Categorize insights based on content keywords
-   */
-  const categorizeInsight = (insight) => {
-    const lowerInsight = insight.toLowerCase();
-    
-    if (lowerInsight.includes('improving') || lowerInsight.includes('excellent') || lowerInsight.includes('outstanding')) {
-      return 'positive';
-    }
-    
-    if (lowerInsight.includes('declining') || lowerInsight.includes('concerning') || lowerInsight.includes('poor')) {
-      return 'negative';
-    }
-    
-    if (lowerInsight.includes('attention') || lowerInsight.includes('monitor') || lowerInsight.includes('watch')) {
-      return 'warning';
-    }
-    
-    return 'neutral';
-  };
+
 
   /**
    * Get insight icon and styling based on category

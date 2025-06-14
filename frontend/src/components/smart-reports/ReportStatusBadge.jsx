@@ -138,15 +138,12 @@ const ReportStatusBadge = ({
  * Report Status Indicator with Progress
  * Enhanced version with progress indication for generating reports
  */
-export const ReportStatusIndicator = ({ 
-  status, 
-  progress = null, 
+export const ReportStatusIndicator = ({
+  status,
+  progress = null,
   size = 'md',
-  className = '' 
+  className = ''
 }) => {
-  const config = getStatusConfig(status);
-  const sizeClasses = getSizeClasses(size);
-
   if (status === 'generating' && progress !== null) {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>

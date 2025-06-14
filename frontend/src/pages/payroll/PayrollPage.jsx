@@ -2,7 +2,8 @@ import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import PayrollDashboard from '@/components/payroll/PayrollDashboard';
 import AdminPayrollView from '@/components/payroll/AdminPayrollView';
-import AccessDenied from '@/components/layout/AccessDenied';
+import { Card, CardContent } from '@/components/ui/card';
+import { Shield } from 'lucide-react';
 
 const PayrollPage = () => {
   const { user } = useAuth();
@@ -11,7 +12,19 @@ const PayrollPage = () => {
   const hasPayrollAccess = user?.role === 'admin' || user?.role === 'manager' || user?.role === 'employee';
 
   if (!hasPayrollAccess) {
-    return <AccessDenied />;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="p-8 text-center">
+            <Shield className="h-16 w-16 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Access Denied</h3>
+            <p className="text-red-600">
+              You don't have permission to access the payroll section. This feature is only available to employees, managers, and administrators.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   // Render different views based on user role

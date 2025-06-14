@@ -25,70 +25,7 @@ const RecommendationsSection = ({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [completedActions, setCompletedActions] = useState(new Set());
 
-  /**
-   * Categorize recommendations based on content keywords
-   */
-  const categorizeRecommendation = (recommendation) => {
-    const lowerRec = recommendation.toLowerCase();
-    
-    if (lowerRec.includes('urgent') || lowerRec.includes('immediate') || lowerRec.includes('critical')) {
-      return 'high';
-    }
-    
-    if (lowerRec.includes('consider') || lowerRec.includes('explore') || lowerRec.includes('opportunity')) {
-      return 'medium';
-    }
-    
-    if (lowerRec.includes('maintain') || lowerRec.includes('continue') || lowerRec.includes('monitor')) {
-      return 'low';
-    }
-    
-    return 'medium'; // default
-  };
 
-  /**
-   * Get recommendation configuration based on priority
-   */
-  const getRecommendationConfig = (priority) => {
-    switch (priority) {
-      case 'high':
-        return {
-          icon: ExclamationCircleIcon,
-          iconColor: 'text-red-600',
-          bgColor: 'bg-red-50',
-          borderColor: 'border-red-200',
-          priorityLabel: 'High Priority',
-          priorityColor: 'text-red-700 bg-red-100'
-        };
-      case 'medium':
-        return {
-          icon: InformationCircleIcon,
-          iconColor: 'text-yellow-600',
-          bgColor: 'bg-yellow-50',
-          borderColor: 'border-yellow-200',
-          priorityLabel: 'Medium Priority',
-          priorityColor: 'text-yellow-700 bg-yellow-100'
-        };
-      case 'low':
-        return {
-          icon: StarIcon,
-          iconColor: 'text-green-600',
-          bgColor: 'bg-green-50',
-          borderColor: 'border-green-200',
-          priorityLabel: 'Low Priority',
-          priorityColor: 'text-green-700 bg-green-100'
-        };
-      default:
-        return {
-          icon: InformationCircleIcon,
-          iconColor: 'text-blue-600',
-          bgColor: 'bg-blue-50',
-          borderColor: 'border-blue-200',
-          priorityLabel: 'Standard',
-          priorityColor: 'text-blue-700 bg-blue-100'
-        };
-    }
-  };
 
   /**
    * Handle marking recommendation as completed

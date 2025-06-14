@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Users, Building, UserCheck, Loader2 } from 'lucide-react';
-import { payrollService } from '@/services/payrollService';
 import { employeeService } from '@/services/employeeService';
 
 const EmployeeSelector = ({ onEmployeeSelect, selectedEmployee, className = '' }) => {
