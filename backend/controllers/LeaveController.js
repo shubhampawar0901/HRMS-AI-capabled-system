@@ -11,6 +11,11 @@ class LeaveController {
       const employeeId = req.user.employeeId;
       const { leaveTypeId, startDate, endDate, reason } = req.body;
 
+      // Check if user has an associated employee record
+      if (!employeeId) {
+        return sendError(res, 'Employee record not found. Please contact administrator.', 400);
+      }
+
       // Calculate total days
       const start = moment(startDate);
       const end = moment(endDate);
@@ -52,13 +57,31 @@ class LeaveController {
   static async getLeaveApplications(req, res) {
     try {
       const employeeId = req.user.employeeId;
-      const { status, page = 1, limit = 20 } = req.query;
+      const {
+        status,
+        page = 1,
+        limit = 20,
+        leaveType,
+        dateRange,
+        employeeId: queryEmployeeId
+      } = req.query;
+
+      // Check if user has an associated employee record
+      if (!employeeId) {
+        return sendError(res, 'Employee record not found. Please contact administrator.', 400);
+      }
+
+      // Parse and validate pagination parameters
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 20;
 
       const options = {
         employeeId,
-        status,
-        page: parseInt(page),
-        limit: parseInt(limit)
+        status: status && status !== 'all' ? status : undefined,
+        leaveType: leaveType && leaveType !== 'all' ? leaveType : undefined,
+        dateRange: dateRange && dateRange !== 'null' ? dateRange : undefined,
+        page: pageNum,
+        limit: limitNum
       };
 
       const applications = await LeaveApplication.findByEmployee(employeeId, options);
@@ -89,7 +112,17 @@ class LeaveController {
       const employeeId = req.user.employeeId;
       const { year = moment().year() } = req.query;
 
-      const balances = await LeaveBalance.findByEmployee(employeeId, year);
+      // Check if user has an associated employee record
+      if (!employeeId) {
+        return sendError(res, 'Employee record not found. Please contact administrator.', 400);
+      }
+
+      let balances = await LeaveBalance.findByEmployee(employeeId, year);
+
+      // If no balances found, initialize them for the employee
+      if (!balances || balances.length === 0) {
+        balances = await LeaveBalance.initializeForEmployee(employeeId, year);
+      }
 
       return sendSuccess(res, balances, 'Leave balances retrieved');
     } catch (error) {
@@ -120,6 +153,11 @@ class LeaveController {
       const { id } = req.params;
       const employeeId = req.user.employeeId;
 
+      // Check if user has an associated employee record
+      if (!employeeId) {
+        return sendError(res, 'Employee record not found. Please contact administrator.', 400);
+      }
+
       const application = await LeaveApplication.findById(id);
       if (!application) {
         return sendError(res, 'Leave application not found', 404);
@@ -148,33 +186,52 @@ class LeaveController {
   static async getTeamLeaveApplications(req, res) {
     try {
       const { role, employeeId } = req.user;
-      
+
       if (role !== 'manager' && role !== 'admin') {
         return sendError(res, 'Access denied', 403);
       }
 
-      const { status, page = 1, limit = 20 } = req.query;
+      const {
+        status,
+        page = 1,
+        limit = 20,
+        leaveType,
+        dateRange,
+        employeeId: queryEmployeeId
+      } = req.query;
+
+      // Parse and validate pagination parameters
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 20;
+
+      const options = {
+        status: status && status !== 'all' ? status : undefined,
+        leaveType: leaveType && leaveType !== 'all' ? leaveType : undefined,
+        dateRange: dateRange && dateRange !== 'null' ? dateRange : undefined,
+        page: pageNum,
+        limit: limitNum
+      };
 
       let applications;
       let total;
 
       if (role === 'admin') {
         // Admin can see all applications
-        applications = await LeaveApplication.findAll({ status, page: parseInt(page), limit: parseInt(limit) });
-        total = await LeaveApplication.count({ status });
+        applications = await LeaveApplication.findAll(options);
+        total = await LeaveApplication.count(options);
       } else {
         // Manager can see their team's applications
-        applications = await LeaveApplication.findByManager(employeeId, { status, page: parseInt(page), limit: parseInt(limit) });
-        total = await LeaveApplication.countByManager(employeeId, { status });
+        applications = await LeaveApplication.findByManager(employeeId, options);
+        total = await LeaveApplication.countByManager(employeeId, options);
       }
 
       const responseData = {
         applications,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page: options.page,
+          limit: options.limit,
           total,
-          pages: Math.ceil(total / parseInt(limit))
+          pages: Math.ceil(total / options.limit)
         }
       };
 
@@ -209,6 +266,9 @@ class LeaveController {
 
       // For managers, check if they can approve this employee's leave
       if (role === 'manager') {
+        if (!req.user.employeeId) {
+          return sendError(res, 'Manager employee record not found. Please contact administrator.', 400);
+        }
         const employee = await Employee.findById(application.employeeId);
         if (employee.managerId !== req.user.employeeId) {
           return sendError(res, 'You can only process your team members\' leave applications', 403);
@@ -253,8 +313,14 @@ class LeaveController {
       if (role === 'admin') {
         leaves = await LeaveApplication.findByMonth(month, year);
       } else if (role === 'manager') {
+        if (!employeeId) {
+          return sendError(res, 'Manager employee record not found. Please contact administrator.', 400);
+        }
         leaves = await LeaveApplication.findTeamByMonth(employeeId, month, year);
       } else {
+        if (!employeeId) {
+          return sendError(res, 'Employee record not found. Please contact administrator.', 400);
+        }
         leaves = await LeaveApplication.findByEmployeeAndMonth(employeeId, month, year);
       }
 

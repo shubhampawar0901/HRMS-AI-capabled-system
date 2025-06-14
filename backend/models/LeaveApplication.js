@@ -103,7 +103,7 @@ class LeaveApplication {
     `;
     const params = [employeeId];
     
-    if (options.status) {
+    if (options.status && options.status !== 'all') {
       query += ' AND la.status = ?';
       params.push(options.status);
     }
@@ -311,7 +311,7 @@ class LeaveApplication {
     let query = 'SELECT COUNT(*) as total FROM leave_applications WHERE employee_id = ?';
     const params = [employeeId];
 
-    if (options.status) {
+    if (options.status && options.status !== 'all') {
       query += ' AND status = ?';
       params.push(options.status);
     }
@@ -336,7 +336,7 @@ class LeaveApplication {
     `;
     const params = [];
 
-    if (options.status) {
+    if (options.status && options.status !== 'all') {
       query += ' AND la.status = ?';
       params.push(options.status);
     }
@@ -360,7 +360,7 @@ class LeaveApplication {
     let query = 'SELECT COUNT(*) as total FROM leave_applications WHERE 1=1';
     const params = [];
 
-    if (options.status) {
+    if (options.status && options.status !== 'all') {
       query += ' AND status = ?';
       params.push(options.status);
     }
@@ -382,7 +382,7 @@ class LeaveApplication {
     `;
     const params = [managerId];
 
-    if (options.status) {
+    if (options.status && options.status !== 'all') {
       query += ' AND la.status = ?';
       params.push(options.status);
     }
@@ -410,7 +410,7 @@ class LeaveApplication {
     `;
     const params = [managerId];
 
-    if (options.status) {
+    if (options.status && options.status !== 'all') {
       query += ' AND la.status = ?';
       params.push(options.status);
     }
