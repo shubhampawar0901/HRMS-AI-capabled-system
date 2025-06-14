@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/authMiddleware');
+const { executeQuery } = require('../config/database');
 
 // Helper function to send success response
 const sendSuccess = (res, data, message = 'Success') => {
   res.status(200).json({
     success: true,
     message,
-    data
+    data,
+    timestamp: new Date().toISOString()
   });
 };
 
@@ -15,16 +17,309 @@ const sendSuccess = (res, data, message = 'Success') => {
 const sendError = (res, message, statusCode = 400) => {
   res.status(statusCode).json({
     success: false,
-    error: { message }
+    error: { message },
+    timestamp: new Date().toISOString()
   });
 };
 
 // ==========================================
-// DASHBOARD ROUTES
+// ROLE-BASED DASHBOARD ROUTES (AS PER DOCUMENTATION)
 // ==========================================
 
+// Admin Dashboard - GET /api/dashboard/admin
+router.get('/admin', async (req, res) => {
+  try {
+    // Verify admin role
+    if (req.user.role !== 'admin') {
+      return sendError(res, 'Access denied. Admin role required.', 403);
+    }
+
+    // Get real data from database using correct table and column names
+    const [
+      totalEmployeesResult,
+      activeTodayResult,
+      pendingLeavesResult,
+      attendanceChartResult
+    ] = await Promise.all([
+      executeQuery('SELECT COUNT(*) as count FROM employees WHERE status = "active"'),
+      executeQuery(`
+        SELECT COUNT(DISTINCT e.id) as count
+        FROM employees e
+        LEFT JOIN attendance a ON e.id = a.employeeId AND a.date = CURDATE()
+        WHERE e.status = "active" AND (a.status = "present" OR a.checkInTime IS NOT NULL)
+      `),
+      executeQuery(`
+        SELECT COUNT(*) as count
+        FROM leave_applications
+        WHERE status = "pending"
+      `),
+      executeQuery(`
+        SELECT
+          DAYNAME(date) as day,
+          COUNT(DISTINCT employeeId) as present_count
+        FROM attendance
+        WHERE date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+          AND status = 'present'
+        GROUP BY date, DAYNAME(date)
+        ORDER BY date DESC
+        LIMIT 5
+      `)
+    ]);
+
+    // Get pending approvals with correct column names
+    const pendingApprovals = await executeQuery(`
+      SELECT
+        la.id,
+        CONCAT(e.first_name, ' ', e.last_name) as employeeName,
+        'leave' as type,
+        CONCAT(COALESCE(lt.name, 'Leave'), ' - ', DATEDIFF(la.end_date, la.start_date) + 1, ' days') as details
+      FROM leave_applications la
+      JOIN employees e ON la.employee_id = e.id
+      LEFT JOIN leave_types lt ON la.leave_type_id = lt.id
+      WHERE la.status = 'pending'
+      ORDER BY la.created_at DESC
+      LIMIT 5
+    `);
+
+    // Prepare response data
+    const dashboardData = {
+      metrics: {
+        totalEmployees: totalEmployeesResult[0]?.count || 0,
+        activeToday: activeTodayResult[0]?.count || 0,
+        pendingLeaves: pendingLeavesResult[0]?.count || 0,
+        aiAlerts: 3 // Mock AI alerts for now
+      },
+      attendanceChart: {
+        labels: attendanceChartResult.map(row => row.day).reverse(),
+        data: attendanceChartResult.map(row => row.present_count).reverse()
+      },
+      pendingApprovals: pendingApprovals,
+      aiInsights: [
+        {
+          type: "attrition",
+          message: "3 employees at high attrition risk",
+          action: "/admin/ai#attrition"
+        }
+      ]
+    };
+
+    sendSuccess(res, dashboardData, 'Admin dashboard data retrieved successfully');
+
+  } catch (error) {
+    console.error('Admin dashboard error:', error);
+    sendError(res, 'Failed to get admin dashboard data', 500);
+  }
+});
+
+// Manager Dashboard - GET /api/dashboard/manager
+router.get('/manager', async (req, res) => {
+  try {
+    // Verify manager role
+    if (req.user.role !== 'manager') {
+      return sendError(res, 'Access denied. Manager role required.', 403);
+    }
+
+    const managerId = req.user.employeeId;
+    if (!managerId) {
+      return sendError(res, 'Manager employee ID not found', 400);
+    }
+
+    // Get real data from database using correct table and column names
+    const [
+      teamSizeResult,
+      presentTodayResult,
+      onLeaveResult,
+      pendingApprovalsResult
+    ] = await Promise.all([
+      executeQuery('SELECT COUNT(*) as count FROM employees WHERE manager_id = ? AND status = "active"', [managerId]),
+      executeQuery(`
+        SELECT COUNT(DISTINCT e.id) as count
+        FROM employees e
+        LEFT JOIN attendance a ON e.id = a.employeeId AND a.date = CURDATE()
+        WHERE e.manager_id = ? AND e.status = "active"
+          AND (a.status = "present" OR a.checkInTime IS NOT NULL)
+      `, [managerId]),
+      executeQuery(`
+        SELECT COUNT(DISTINCT e.id) as count
+        FROM employees e
+        JOIN leave_applications la ON e.id = la.employee_id
+        WHERE e.manager_id = ? AND e.status = "active"
+          AND la.status = "approved"
+          AND CURDATE() BETWEEN la.start_date AND la.end_date
+      `, [managerId]),
+      executeQuery(`
+        SELECT COUNT(*) as count
+        FROM leave_applications la
+        JOIN employees e ON la.employee_id = e.id
+        WHERE e.manager_id = ? AND la.status = "pending"
+      `, [managerId])
+    ]);
+
+    // Get team attendance chart using correct table and column names
+    const teamAttendanceChart = await executeQuery(`
+      SELECT
+        DAYNAME(a.date) as day,
+        COUNT(DISTINCT a.employeeId) as present_count
+      FROM attendance a
+      JOIN employees e ON a.employeeId = e.id
+      WHERE e.manager_id = ?
+        AND a.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        AND a.status = 'present'
+      GROUP BY a.date, DAYNAME(a.date)
+      ORDER BY a.date DESC
+      LIMIT 5
+    `, [managerId]);
+
+    // Get pending approvals for team with correct column names
+    const pendingApprovals = await executeQuery(`
+      SELECT
+        la.id,
+        CONCAT(e.first_name, ' ', e.last_name) as employeeName,
+        COALESCE(lt.name, 'Leave') as leaveType,
+        la.start_date as startDate,
+        la.end_date as endDate
+      FROM leave_applications la
+      JOIN employees e ON la.employee_id = e.id
+      LEFT JOIN leave_types lt ON la.leave_type_id = lt.id
+      WHERE e.manager_id = ? AND la.status = 'pending'
+      ORDER BY la.created_at DESC
+      LIMIT 5
+    `, [managerId]);
+
+    const dashboardData = {
+      teamMetrics: {
+        teamSize: teamSizeResult[0]?.count || 0,
+        presentToday: presentTodayResult[0]?.count || 0,
+        onLeave: onLeaveResult[0]?.count || 0,
+        pendingApprovals: pendingApprovalsResult[0]?.count || 0
+      },
+      teamAttendance: {
+        labels: teamAttendanceChart.map(row => row.day).reverse(),
+        data: teamAttendanceChart.map(row => row.present_count).reverse()
+      },
+      pendingApprovals: pendingApprovals,
+      teamInsights: [
+        {
+          type: "performance",
+          message: "Team performance improved 15% this quarter"
+        }
+      ]
+    };
+
+    sendSuccess(res, dashboardData, 'Manager dashboard data retrieved successfully');
+
+  } catch (error) {
+    console.error('Manager dashboard error:', error);
+    sendError(res, 'Failed to get manager dashboard data', 500);
+  }
+});
+
+// Employee Dashboard - GET /api/dashboard/employee
+router.get('/employee', async (req, res) => {
+  try {
+    // Verify employee role
+    if (req.user.role !== 'employee') {
+      return sendError(res, 'Access denied. Employee role required.', 403);
+    }
+
+    const employeeId = req.user.employeeId;
+    if (!employeeId) {
+      return sendError(res, 'Employee ID not found', 400);
+    }
+
+    // Get employee personal info
+    const employeeInfo = await executeQuery(`
+      SELECT
+        e.first_name as firstName,
+        e.last_name as lastName,
+        CONCAT('Welcome back, ', e.first_name, '!') as welcomeMessage
+      FROM employees e
+      WHERE e.id = ?
+    `, [employeeId]);
+
+    if (employeeInfo.length === 0) {
+      return sendError(res, 'Employee not found', 404);
+    }
+
+    // Get today's attendance using correct table and column names
+    const todayAttendance = await executeQuery(`
+      SELECT
+        status as todayStatus,
+        checkInTime,
+        checkOutTime,
+        totalHours as workingHours
+      FROM attendance
+      WHERE employeeId = ? AND date = CURDATE()
+      ORDER BY createdAt DESC
+      LIMIT 1
+    `, [employeeId]);
+
+    // Get monthly attendance rate using correct table and column names
+    const monthlyAttendance = await executeQuery(`
+      SELECT
+        COUNT(*) as totalDays,
+        SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as presentDays
+      FROM attendance
+      WHERE employeeId = ?
+        AND MONTH(date) = MONTH(CURDATE())
+        AND YEAR(date) = YEAR(CURDATE())
+    `, [employeeId]);
+
+    const totalDays = monthlyAttendance[0]?.totalDays || 0;
+    const presentDays = monthlyAttendance[0]?.presentDays || 0;
+    const attendanceRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
+
+    // Get leave balances (mock data for now - would need leave_balances table)
+    const leaveBalance = {
+      annual: 20,
+      sick: 10,
+      emergency: 5
+    };
+
+    // Get recent activities using correct table and column names
+    const recentActivities = await executeQuery(`
+      SELECT
+        'attendance' as type,
+        CONCAT('Checked in at ', TIME_FORMAT(checkInTime, '%h:%i %p')) as message,
+        createdAt as timestamp
+      FROM attendance
+      WHERE employeeId = ? AND checkInTime IS NOT NULL
+      ORDER BY createdAt DESC
+      LIMIT 5
+    `, [employeeId]);
+
+    const dashboardData = {
+      personalInfo: employeeInfo[0],
+      attendance: {
+        todayStatus: todayAttendance[0]?.todayStatus || 'not_checked_in',
+        checkInTime: todayAttendance[0]?.checkInTime || null,
+        workingHours: todayAttendance[0]?.workingHours || 0,
+        thisMonthRate: attendanceRate
+      },
+      leaveBalance: leaveBalance,
+      quickActions: [
+        {
+          name: "Apply Leave",
+          action: "/leave#apply"
+        },
+        {
+          name: "View Payslip",
+          action: "/payroll#payslips"
+        }
+      ],
+      recentActivities: recentActivities
+    };
+
+    sendSuccess(res, dashboardData, 'Employee dashboard data retrieved successfully');
+
+  } catch (error) {
+    console.error('Employee dashboard error:', error);
+    sendError(res, 'Failed to get employee dashboard data', 500);
+  }
+});
+
 // Get dashboard stats
-router.get('/stats', authenticateToken, async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const { role } = req.query;
     
