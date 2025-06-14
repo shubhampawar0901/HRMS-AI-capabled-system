@@ -2,23 +2,23 @@ const express = require('express');
 const ChatbotController = require('../controllers/ChatbotController');
 const { authenticateToken } = require('../../../middleware/authMiddleware');
 const { validateChatbotQuery, validateSessionId } = require('../middleware/validation');
-const rateLimit = require('express-rate-limit');
+// const rateLimit = require('express-rate-limit'); // DISABLED FOR DEVELOPMENT
 
 const router = express.Router();
 
-// Rate limiting for chatbot queries
-const chatbotRateLimit = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 30, // Limit each user to 30 requests per minute
-  message: {
-    success: false,
-    message: 'Too many chatbot requests. Please try again later.',
-    retryAfter: 60
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => req.user?.id || req.ip
-});
+// Rate limiting for chatbot queries - DISABLED FOR DEVELOPMENT
+// const chatbotRateLimit = rateLimit({
+//   windowMs: 1 * 60 * 1000, // 1 minute
+//   max: 30, // Limit each user to 30 requests per minute
+//   message: {
+//     success: false,
+//     message: 'Too many chatbot requests. Please try again later.',
+//     retryAfter: 60
+//   },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   keyGenerator: (req) => req.user?.id || req.ip
+// });
 
 // Apply authentication to all routes
 router.use(authenticateToken);
@@ -30,8 +30,8 @@ router.use(authenticateToken);
  * @body {string} message - The user's query message
  * @body {string} [sessionId] - Optional session ID for conversation continuity
  */
-router.post('/query', 
-  chatbotRateLimit,
+router.post('/query',
+  // chatbotRateLimit, // DISABLED FOR DEVELOPMENT
   validateChatbotQuery,
   ChatbotController.handleQuery
 );

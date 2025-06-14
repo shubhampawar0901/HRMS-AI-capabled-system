@@ -24,7 +24,7 @@ class AuthService {
   // Refresh token
   async refreshToken(refreshToken) {
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.AUTH.REFRESH, { refreshToken }),
+      () => axiosInstance.post(API_ENDPOINTS.AUTH.REFRESH_TOKEN, { refreshToken }),
       'auth-refresh'
     );
   }
@@ -40,7 +40,7 @@ class AuthService {
   // Update user profile
   async updateProfile(profileData) {
     return apiRequest(
-      () => axiosInstance.put(API_ENDPOINTS.AUTH.UPDATE_PROFILE, profileData),
+      () => axiosInstance.put(API_ENDPOINTS.AUTH.PROFILE, profileData),
       'auth-update-profile'
     );
   }

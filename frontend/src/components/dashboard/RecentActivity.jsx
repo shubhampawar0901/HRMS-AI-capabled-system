@@ -209,4 +209,4 @@ const RecentActivity = ({ activities = [], isLoading = false }) => {
   );
 };
 
-export default RecentActivity;
+export default React.memo(RecentActivity);

@@ -13,7 +13,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
-const rateLimit = require('express-rate-limit');
+// const rateLimit = require('express-rate-limit'); // DISABLED FOR DEVELOPMENT
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
@@ -52,13 +52,13 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs (increased for development)
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api/', limiter);
+// Rate limiting - DISABLED FOR DEVELOPMENT
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 1000, // limit each IP to 1000 requests per windowMs (increased for development)
+//   message: 'Too many requests from this IP, please try again later.'
+// });
+// app.use('/api/', limiter);
 
 // Body parsing middleware
 app.use(compression());

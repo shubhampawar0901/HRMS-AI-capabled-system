@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 
@@ -9,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Redux actions
-import { loginUser, clearError } from '@/store/slices/authSlice';
+// Auth Context
+import { useAuthContext } from '@/contexts/AuthContext';
 
 // Utils
 import { isValidEmail } from '@/utils/validationUtils';
@@ -22,15 +21,14 @@ const LoginForm = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-  
-  const dispatch = useDispatch();
+
   const navigate = useNavigate();
-  const { isLoading, error, isAuthenticated, loginAttempts } = useSelector(state => state.auth);
+  const { login, isLoading, error, isAuthenticated, clearError } = useAuthContext();
 
   // Clear error when component mounts
   useEffect(() => {
-    dispatch(clearError());
-  }, [dispatch]);
+    clearError();
+  }, [clearError]);
 
   // Redirect if authenticated
   useEffect(() => {
@@ -39,26 +37,26 @@ const LoginForm = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const errors = {};
-    
+
     if (!formData.email) {
       errors.email = 'Email is required';
     } else if (!isValidEmail(formData.email)) {
       errors.email = 'Please enter a valid email address';
     }
-    
+
     if (!formData.password) {
       errors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       errors.password = 'Password must be at least 6 characters';
     }
-    
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  };
+  }, [formData.email, formData.password]);
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
 
     // Clear validation error for this field
@@ -68,9 +66,9 @@ const LoginForm = () => {
 
     // Don't clear global error immediately when typing
     // Let it persist so user can see the login error
-  };
+  }, [validationErrors]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -79,24 +77,28 @@ const LoginForm = () => {
 
     // Clear any previous errors before attempting login
     if (error) {
-      dispatch(clearError());
+      clearError();
     }
-
-    console.log('Login attempt:', formData);
-    console.log('API Base URL:', process.env.REACT_APP_API_BASE_URL);
 
     try {
-      const result = await dispatch(loginUser(formData)).unwrap();
-      console.log('Login successful:', result);
+      await login(formData);
       // Navigation handled by useEffect
     } catch (error) {
-      // Error handled by Redux
-      console.error('Login failed:', error);
+      // Error handled by AuthContext
     }
-  };
+  }, [validateForm, error, clearError, formData, login]);
 
-  const isFormValid = formData.email && formData.password && Object.keys(validationErrors).length === 0;
-  const isBlocked = loginAttempts >= 3;
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
+
+  // Memoized computed values
+  const isFormValid = useMemo(() =>
+    formData.email && formData.password && Object.keys(validationErrors).length === 0,
+    [formData.email, formData.password, validationErrors]
+  );
+
+  const isBlocked = useMemo(() => false, []); // DISABLED: No rate limiting for development
 
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -118,38 +120,9 @@ const LoginForm = () => {
           </Alert>
         )}
 
-        {isBlocked && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Too many failed attempts. Please try again later.
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Rate limiting disabled for development */}
 
-        {/* Debug API Test */}
-        <div className="mb-4 p-3 bg-gray-100 rounded">
-          <button
-            type="button"
-            onClick={() => {
-              console.log('Testing API...');
-              fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api'}/auth/health`)
-                .then(res => res.json())
-                .then(data => {
-                  console.log('API Health Response:', data);
-                  alert(`API Health: ${JSON.stringify(data)}`);
-                })
-                .catch(err => {
-                  console.error('API Error:', err);
-                  alert(`API Error: ${err.message}`);
-                });
-            }}
-            className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
-          >
-            Test API Connection
-          </button>
-          <p className="text-xs mt-1">API URL: {process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api'}</p>
-        </div>
+
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -198,7 +171,7 @@ const LoginForm = () => {
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={togglePasswordVisibility}
                 className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
                 disabled={isLoading || isBlocked}
               >
@@ -230,7 +203,7 @@ const LoginForm = () => {
 
         <div className="text-center text-sm text-gray-600">
           <p>Demo Credentials:</p>
-          <p className="text-xs">Admin: admin@hrms.com / admin123</p>
+          <p className="text-xs">Admin: admin@hrms.com / Admin123!</p>
           <p className="text-xs">Manager: manager@hrms.com / Manager123!</p>
           <p className="text-xs">Employee: employee@hrms.com / Employee123!</p>
         </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, LogOut, User } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,7 +12,7 @@ import {
 import { formatName, getInitials } from '@/utils/formatUtils';
 
 const Header = ({ onMenuClick, sidebarOpen }) => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthContext();
 
   const handleLogout = async () => {
     await logout();

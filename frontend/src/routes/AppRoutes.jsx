@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 // Layout Components
 import Layout from '@/components/layout/Layout';
@@ -50,7 +50,7 @@ import ReportsPage from '@/pages/reports/ReportsPage';
 import CustomReportPage from '@/pages/reports/CustomReportPage';
 
 const AppRoutes = () => {
-  const { isAuthenticated } = useSelector(state => state.auth);
+  const { isAuthenticated } = useAuthContext();
 
   return (
     <Routes>

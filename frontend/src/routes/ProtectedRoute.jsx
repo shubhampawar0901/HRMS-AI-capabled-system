@@ -1,10 +1,10 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuthContext } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/layout/LoadingSpinner';
 
 const ProtectedRoute = ({ children, requiredRoles = [] }) => {
-  const { isAuthenticated, user, isLoading } = useSelector(state => state.auth);
+  const { isAuthenticated, user, isLoading } = useAuthContext();
   const location = useLocation();
 
   // Show loading spinner while checking authentication

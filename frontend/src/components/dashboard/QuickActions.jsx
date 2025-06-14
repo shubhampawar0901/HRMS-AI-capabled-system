@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
@@ -16,7 +16,8 @@ import { Button } from '@/components/ui/button';
 const QuickActions = ({ actions = [], userRole = 'employee' }) => {
   const navigate = useNavigate();
 
-  const getDefaultActions = () => {
+  // Memoize default actions based on user role
+  const getDefaultActions = useMemo(() => {
     const baseActions = [
       {
         id: 'check-in',
@@ -87,11 +88,16 @@ const QuickActions = ({ actions = [], userRole = 'employee' }) => {
     }
 
     return baseActions;
-  };
+  }, [userRole]);
 
-  const actionsList = actions.length > 0 ? actions : getDefaultActions();
+  // Memoize actions list
+  const actionsList = useMemo(() =>
+    actions.length > 0 ? actions : getDefaultActions,
+    [actions, getDefaultActions]
+  );
 
-  const getColorClasses = (color) => {
+  // Memoize color classes function
+  const getColorClasses = useCallback((color) => {
     const colors = {
       blue: 'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700',
       green: 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700',
@@ -102,15 +108,16 @@ const QuickActions = ({ actions = [], userRole = 'employee' }) => {
       gray: 'from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700'
     };
     return colors[color] || colors.blue;
-  };
+  }, []);
 
-  const handleActionClick = (action) => {
+  // Memoize action click handler
+  const handleActionClick = useCallback((action) => {
     if (action.onClick) {
       action.onClick();
     } else if (action.path) {
       navigate(action.path);
     }
-  };
+  }, [navigate]);
 
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -150,4 +157,4 @@ const QuickActions = ({ actions = [], userRole = 'employee' }) => {
   );
 };
 
-export default QuickActions;
+export default React.memo(QuickActions);

@@ -107,10 +107,10 @@ export const useAuth = () => {
 
   // Initialize auth state on mount
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       const storedToken = authService.getToken();
       const storedUser = authService.getStoredUser();
-      
+
       if (storedToken && storedUser) {
         dispatch({
           type: 'auth/setAuthenticated',
@@ -120,14 +120,22 @@ export const useAuth = () => {
             isAuthenticated: true
           }
         });
-        
-        // Refresh user data
-        refreshAuth();
+
+        // Refresh user data only once on mount
+        try {
+          if (authService.isAuthenticated()) {
+            await dispatch(refreshUserData()).unwrap();
+          }
+        } catch (error) {
+          console.error('Auth refresh error:', error);
+          // If refresh fails, logout user
+          dispatch(logoutUser());
+        }
       }
     };
-    
+
     initializeAuth();
-  }, [dispatch, refreshAuth]);
+  }, [dispatch]); // Only depend on dispatch
 
   return {
     // State

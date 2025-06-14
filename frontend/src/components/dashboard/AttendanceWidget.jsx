@@ -43,10 +43,8 @@ const AttendanceWidget = ({ employeeId }) => {
     }
   }, [attendanceWidget.data]);
 
-  // Fetch attendance data on mount
-  useEffect(() => {
-    dispatch(fetchAttendanceWidget(employeeId || user?.id));
-  }, [dispatch, employeeId, user?.id]);
+  // Note: Attendance data is now fetched by useDashboardStats hook
+  // No need to fetch here to avoid duplicate API calls
 
   const handleCheckIn = async () => {
     // This would typically call an attendance service
@@ -231,4 +229,4 @@ const AttendanceWidget = ({ employeeId }) => {
   );
 };
 
-export default AttendanceWidget;
+export default React.memo(AttendanceWidget);

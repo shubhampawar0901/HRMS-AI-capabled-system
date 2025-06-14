@@ -22,7 +22,6 @@ This AI-Enhanced HRMS platform serves three distinct user roles with specific fu
    - Email field (required)
    - Password field (required)
    - "Remember Me" checkbox
-   - "Forgot Password" link
 
 2. **Login Process**:
    - User enters credentials
@@ -31,11 +30,6 @@ This AI-Enhanced HRMS platform serves three distinct user roles with specific fu
      - **Admin** → Admin Dashboard
      - **Manager** → Manager Dashboard  
      - **Employee** → Employee Dashboard
-
-3. **Forgot Password Flow**:
-   - Email input → Reset link sent
-   - Reset password with token
-   - Redirect to login
 
 ---
 

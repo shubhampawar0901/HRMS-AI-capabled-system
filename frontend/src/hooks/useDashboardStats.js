@@ -29,7 +29,7 @@ export const useDashboardStats = (userRole = 'employee', userId = null) => {
   const fetchAllData = useCallback(async () => {
     try {
       dispatch(setRefreshing(true));
-      
+
       // Common data for all roles
       const promises = [
         dispatch(fetchDashboardStats(userRole)),
@@ -192,24 +192,29 @@ export const useDashboardStats = (userRole = 'employee', userId = null) => {
   }, [dashboardState]);
 
   /**
-   * Auto-refresh data on mount and when user role changes
+   * Auto-refresh data on mount and when user role or userId changes
    */
   useEffect(() => {
     fetchAllData();
-  }, [fetchAllData]);
+  }, [userRole, userId]); // Only depend on userRole and userId, not fetchAllData
 
   /**
    * Set up auto-refresh interval (every 5 minutes)
    */
   useEffect(() => {
     const interval = setInterval(() => {
-      if (needsRefresh()) {
+      // Check if data needs refresh directly in the interval
+      const { stats } = dashboardState;
+      const shouldRefresh = !stats.lastFetch ||
+        (new Date() - new Date(stats.lastFetch)) / (1000 * 60) > 5;
+
+      if (shouldRefresh) {
         fetchAllData();
       }
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [fetchAllData, needsRefresh]);
+  }, [userRole, userId]); // Only depend on userRole and userId
 
   return {
     // State

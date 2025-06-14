@@ -1,337 +1,108 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { 
-  Clock, 
-  Calendar, 
-  DollarSign, 
-  TrendingUp, 
-  Target,
-  Award,
-  BookOpen,
-  Bell
-} from 'lucide-react';
-
-// Components
-import StatsCard from './StatsCard';
-import QuickActions from './QuickActions';
-import RecentActivity from './RecentActivity';
-import AttendanceWidget from './AttendanceWidget';
-
-// Redux actions
-import { 
-  fetchDashboardStats, 
-  fetchRecentActivities, 
-  fetchQuickActions,
-  fetchLeaveSummary,
-  fetchPerformanceMetrics 
-} from '@/store/slices/dashboardSlice';
+import React from 'react';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { User, Mail, Phone, MapPin, Calendar, Briefcase } from 'lucide-react';
 
 const EmployeeDashboard = () => {
-  const dispatch = useDispatch();
-  const { 
-    stats, 
-    recentActivities, 
-    quickActions, 
-    leaveSummary, 
-    performanceMetrics 
-  } = useSelector(state => state.dashboard);
-  const { user } = useSelector(state => state.auth);
-
-  useEffect(() => {
-    // Fetch dashboard data for employee
-    dispatch(fetchDashboardStats('employee'));
-    dispatch(fetchRecentActivities(6));
-    dispatch(fetchQuickActions('employee'));
-    dispatch(fetchLeaveSummary(user?.id));
-    dispatch(fetchPerformanceMetrics({ employeeId: user?.id, period: 'month' }));
-  }, [dispatch, user?.id]);
-
-  const employeeActions = [
-    {
-      id: 'check-attendance',
-      title: 'Check In/Out',
-      description: 'Mark your attendance',
-      icon: Clock,
-      color: 'blue',
-      path: '/attendance'
-    },
-    {
-      id: 'apply-leave',
-      title: 'Apply Leave',
-      description: 'Request time off',
-      icon: Calendar,
-      color: 'green',
-      path: '/leave/apply'
-    },
-    {
-      id: 'view-payslip',
-      title: 'View Payslip',
-      description: 'Check salary details',
-      icon: DollarSign,
-      color: 'purple',
-      path: '/payroll'
-    },
-    {
-      id: 'my-goals',
-      title: 'My Goals',
-      description: 'Track your objectives',
-      icon: Target,
-      color: 'orange',
-      path: '/performance/goals'
-    },
-    {
-      id: 'learning',
-      title: 'Learning',
-      description: 'Access training materials',
-      icon: BookOpen,
-      color: 'indigo',
-      path: '/learning'
-    },
-    {
-      id: 'feedback',
-      title: 'Give Feedback',
-      description: 'Share your thoughts',
-      icon: Award,
-      color: 'red',
-      path: '/feedback'
-    }
-  ];
-
-  const getStatsCards = () => {
-    const defaultStats = {
-      attendanceRate: 95,
-      leaveBalance: 18,
-      hoursWorked: 168,
-      performanceScore: 87,
-      goalsCompleted: 8,
-      totalGoals: 10,
-      upcomingDeadlines: 3,
-      learningProgress: 75
-    };
-
-    const data = stats.data || defaultStats;
-
-    return [
-      {
-        title: 'Attendance Rate',
-        value: data.attendanceRate,
-        change: 2.1,
-        trend: 'up',
-        icon: Clock,
-        color: 'blue',
-        format: 'percentage'
-      },
-      {
-        title: 'Leave Balance',
-        value: data.leaveBalance,
-        change: -2,
-        trend: 'down',
-        icon: Calendar,
-        color: 'green',
-        format: 'number'
-      },
-      {
-        title: 'Hours This Month',
-        value: data.hoursWorked,
-        change: 5.3,
-        trend: 'up',
-        icon: TrendingUp,
-        color: 'purple',
-        format: 'number'
-      },
-      {
-        title: 'Performance Score',
-        value: data.performanceScore,
-        change: 3.2,
-        trend: 'up',
-        icon: Award,
-        color: 'orange',
-        format: 'percentage'
-      },
-      {
-        title: 'Goals Progress',
-        value: Math.round((data.goalsCompleted / data.totalGoals) * 100),
-        change: 12.5,
-        trend: 'up',
-        icon: Target,
-        color: 'indigo',
-        format: 'percentage'
-      },
-      {
-        title: 'Learning Progress',
-        value: data.learningProgress,
-        change: 8.7,
-        trend: 'up',
-        icon: BookOpen,
-        color: 'red',
-        format: 'percentage'
-      }
-    ];
-  };
+  const { user } = useAuthContext();
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-6 text-white shadow-lg">
+        <h1 className="text-3xl font-bold mb-2">
           Hello, {user?.name || 'Employee'}! 🌟
         </h1>
-        <p className="text-purple-100">
-          Ready to make today productive? Here's your personal dashboard.
+        <p className="text-purple-100 text-lg">
+          Welcome to your personal dashboard. Here's your profile information.
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {getStatsCards().map((stat, index) => (
-          <StatsCard
-            key={index}
-            title={stat.title}
-            value={stat.value}
-            change={stat.change}
-            trend={stat.trend}
-            icon={stat.icon}
-            color={stat.color}
-            format={stat.format}
-            isLoading={stats.isLoading}
-          />
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Quick Actions */}
-        <div className="lg:col-span-1">
-          <QuickActions actions={employeeActions} userRole="employee" />
-        </div>
-
-        {/* Middle Column - Attendance Widget */}
-        <div className="lg:col-span-1">
-          <AttendanceWidget />
-        </div>
-
-        {/* Right Column - Recent Activity */}
-        <div className="lg:col-span-1">
-          <RecentActivity 
-            activities={recentActivities.data} 
-            isLoading={recentActivities.isLoading} 
-          />
-        </div>
-      </div>
-
-      {/* Personal Insights Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Leave Summary */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Calendar className="w-5 h-5 mr-2 text-green-600" />
-            Leave Summary
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <div>
-                <div className="text-sm font-medium text-gray-900">Annual Leave</div>
-                <div className="text-xs text-gray-600">Available days</div>
-              </div>
-              <span className="text-lg font-bold text-green-600">
-                {leaveSummary.data?.annualLeave || 15}
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-              <div>
-                <div className="text-sm font-medium text-gray-900">Sick Leave</div>
-                <div className="text-xs text-gray-600">Available days</div>
-              </div>
-              <span className="text-lg font-bold text-blue-600">
-                {leaveSummary.data?.sickLeave || 10}
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-              <div>
-                <div className="text-sm font-medium text-gray-900">Casual Leave</div>
-                <div className="text-xs text-gray-600">Available days</div>
-              </div>
-              <span className="text-lg font-bold text-purple-600">
-                {leaveSummary.data?.casualLeave || 8}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Goals & Performance */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Target className="w-5 h-5 mr-2 text-orange-600" />
-            Goals & Performance
-          </h2>
-          <div className="space-y-4">
-            <div className="p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-900">Current Goals</span>
-                <span className="text-sm text-orange-600">8/10 Completed</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full transition-all duration-300" 
-                  style={{ width: '80%' }}
-                ></div>
-              </div>
-            </div>
-            <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-900">Performance Score</span>
-                <span className="text-sm text-blue-600">87%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300" 
-                  style={{ width: '87%' }}
-                ></div>
-              </div>
-            </div>
-            <div className="p-4 bg-gradient-to-r from-green-50 to-teal-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-900">Learning Progress</span>
-                <span className="text-sm text-green-600">75%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-green-500 to-teal-500 h-2 rounded-full transition-all duration-300" 
-                  style={{ width: '75%' }}
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Upcoming Events & Reminders */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <Bell className="w-5 h-5 mr-2 text-blue-600" />
-          Upcoming Events & Reminders
+      {/* User Information Card */}
+      <div className="bg-white rounded-lg shadow-lg p-8">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
+          <User className="w-6 h-6 mr-3 text-purple-600" />
+          Your Profile Information
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 border border-blue-200 rounded-lg">
-            <div className="flex items-center mb-2">
-              <Calendar className="w-4 h-4 text-blue-600 mr-2" />
-              <span className="text-sm font-medium text-gray-900">Team Meeting</span>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
+              <div className="flex items-center mb-2">
+                <User className="w-5 h-5 text-purple-600 mr-3" />
+                <span className="text-sm font-medium text-gray-600">Full Name</span>
+              </div>
+              <div className="text-lg font-semibold text-gray-900">
+                {user?.name || 'Not Available'}
+              </div>
             </div>
-            <div className="text-xs text-gray-600">Tomorrow, 10:00 AM</div>
+
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+              <div className="flex items-center mb-2">
+                <Mail className="w-5 h-5 text-blue-600 mr-3" />
+                <span className="text-sm font-medium text-gray-600">Email Address</span>
+              </div>
+              <div className="text-lg font-semibold text-gray-900">
+                {user?.email || 'Not Available'}
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
+              <div className="flex items-center mb-2">
+                <Briefcase className="w-5 h-5 text-green-600 mr-3" />
+                <span className="text-sm font-medium text-gray-600">Role</span>
+              </div>
+              <div className="text-lg font-semibold text-gray-900 capitalize">
+                {user?.role || 'Employee'}
+              </div>
+            </div>
           </div>
-          <div className="p-4 border border-orange-200 rounded-lg">
-            <div className="flex items-center mb-2">
-              <Target className="w-4 h-4 text-orange-600 mr-2" />
-              <span className="text-sm font-medium text-gray-900">Goal Review</span>
+
+          {/* Additional Information */}
+          <div className="space-y-4">
+            <div className="p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-100">
+              <div className="flex items-center mb-2">
+                <Phone className="w-5 h-5 text-orange-600 mr-3" />
+                <span className="text-sm font-medium text-gray-600">Phone Number</span>
+              </div>
+              <div className="text-lg font-semibold text-gray-900">
+                {user?.phone || 'Not Available'}
+              </div>
             </div>
-            <div className="text-xs text-gray-600">Friday, 2:00 PM</div>
+
+            <div className="p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg border border-teal-100">
+              <div className="flex items-center mb-2">
+                <MapPin className="w-5 h-5 text-teal-600 mr-3" />
+                <span className="text-sm font-medium text-gray-600">Department</span>
+              </div>
+              <div className="text-lg font-semibold text-gray-900">
+                {user?.department || 'Not Available'}
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
+              <div className="flex items-center mb-2">
+                <Calendar className="w-5 h-5 text-indigo-600 mr-3" />
+                <span className="text-sm font-medium text-gray-600">Employee ID</span>
+              </div>
+              <div className="text-lg font-semibold text-gray-900">
+                {user?.id || 'Not Available'}
+              </div>
+            </div>
           </div>
-          <div className="p-4 border border-green-200 rounded-lg">
-            <div className="flex items-center mb-2">
-              <BookOpen className="w-4 h-4 text-green-600 mr-2" />
-              <span className="text-sm font-medium text-gray-900">Training Session</span>
+        </div>
+
+        {/* Status Section */}
+        <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Status</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+              <span className="text-gray-700">Active Employee</span>
             </div>
-            <div className="text-xs text-gray-600">Next Monday, 9:00 AM</div>
+            <div className="text-sm text-gray-500">
+              Last updated: {new Date().toLocaleDateString()}
+            </div>
           </div>
         </div>
       </div>

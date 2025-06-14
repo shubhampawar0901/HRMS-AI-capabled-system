@@ -142,14 +142,14 @@ export const useApi = (apiFunction, options = {}) => {
     if (immediate) {
       execute();
     }
-    
+
     // Cleanup on unmount
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [immediate, execute]);
+  }, [immediate]); // Only depend on immediate flag
 
   return {
     data,
@@ -238,7 +238,7 @@ export const usePaginatedApi = (apiFunction, options = {}) => {
     if (immediate) {
       loadPage(1);
     }
-  }, [immediate, loadPage]);
+  }, [immediate]); // Only depend on immediate flag
 
   return {
     data: allData,

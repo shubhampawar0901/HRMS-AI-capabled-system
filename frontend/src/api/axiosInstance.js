@@ -39,11 +39,13 @@ axiosInstance.interceptors.response.use(
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
           const response = await axios.post(
-            `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api'}/auth/refresh`,
+            `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api'}/auth/refresh-token`,
             { refreshToken }
           );
 
-          const { token } = response.data;
+          // Handle nested response structure
+          const responseData = response.data.data || response.data;
+          const token = responseData.accessToken || responseData.token;
           localStorage.setItem('token', token);
 
           // Retry the original request with new token

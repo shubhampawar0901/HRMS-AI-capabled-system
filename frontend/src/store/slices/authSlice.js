@@ -63,12 +63,27 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await authService.login(credentials);
-      localStorage.setItem('token', response.data.token);
-      if (response.data.refreshToken) {
-        localStorage.setItem('refreshToken', response.data.refreshToken);
+
+      // Backend returns nested data: response.data.data.accessToken
+      const responseData = response.data.data || response.data;
+      const token = responseData.accessToken || responseData.token;
+      const user = responseData.user;
+
+      if (!token || !user) {
+        throw new Error('Invalid response structure from server');
       }
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      return response.data;
+
+      localStorage.setItem('token', token);
+      if (responseData.refreshToken) {
+        localStorage.setItem('refreshToken', responseData.refreshToken);
+      }
+      localStorage.setItem('user', JSON.stringify(user));
+
+      return {
+        token,
+        user,
+        refreshToken: responseData.refreshToken
+      };
     } catch (error) {
       return rejectWithValue(error.message || 'Login failed');
     }
@@ -101,8 +116,10 @@ export const updateUserProfile = createAsyncThunk(
   async (profileData, { rejectWithValue }) => {
     try {
       const response = await authService.updateProfile(profileData);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      return response.data.user;
+      const responseData = response.data.data || response.data;
+      const user = responseData.user || responseData;
+      localStorage.setItem('user', JSON.stringify(user));
+      return user;
     } catch (error) {
       return rejectWithValue(error.message || 'Profile update failed');
     }
@@ -114,8 +131,10 @@ export const refreshUserData = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await authService.getProfile();
-      localStorage.setItem('user', JSON.stringify(response.data));
-      return response.data;
+      const responseData = response.data.data || response.data;
+      const user = responseData.user || responseData;
+      localStorage.setItem('user', JSON.stringify(user));
+      return user;
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to refresh user data');
     }
@@ -211,7 +230,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
-        state.loginAttempts += 1;
+        // state.loginAttempts += 1; // DISABLED: No rate limiting for development
       })
       // Logout cases
       .addCase(logoutUser.pending, (state) => {

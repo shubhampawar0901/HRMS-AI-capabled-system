@@ -1,6 +1,5 @@
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { clearAuthState } from '@/store/slices/authSlice';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 // Dashboard Components
 import AdminDashboard from '@/components/dashboard/AdminDashboard';
@@ -25,15 +24,13 @@ const DashboardLoading = () => (
 );
 
 const DashboardPage = () => {
-  const { user, isLoading, isAuthenticated, token } = useSelector(state => state.auth);
-  const dispatch = useDispatch();
+  const { user, isLoading, isAuthenticated, logout } = useAuthContext();
 
   // Debug logging
   console.log('Dashboard Debug:', {
     user,
     isLoading,
     isAuthenticated,
-    token: token ? 'exists' : 'null',
     localStorage_token: localStorage.getItem('token') ? 'exists' : 'null',
     localStorage_user: localStorage.getItem('user')
   });
@@ -60,7 +57,6 @@ const DashboardPage = () => {
             <h3 className="font-bold">Debug Info:</h3>
             <p>User: {user ? 'exists' : 'null'}</p>
             <p>IsAuthenticated: {isAuthenticated ? 'true' : 'false'}</p>
-            <p>Token: {token ? 'exists' : 'null'}</p>
             <p>LocalStorage Token: {localStorage.getItem('token') ? 'exists' : 'null'}</p>
             <p>LocalStorage User: {localStorage.getItem('user') || 'null'}</p>
             <p>API Base URL: {process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api'}</p>
@@ -79,7 +75,7 @@ const DashboardPage = () => {
               </button>
               <button
                 onClick={() => {
-                  dispatch(clearAuthState());
+                  logout();
                   window.location.href = '/login';
                 }}
                 className="px-4 py-2 bg-red-500 text-white rounded"
