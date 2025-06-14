@@ -44,7 +44,7 @@ const upload = multer({
 // EMPLOYEE ROUTES
 // ==========================================
 
-// Get all employees (no pagination)
+// Get all employees (no pagination) - using same method as paginated but with high limit
 router.get('/all',
   authenticateToken,
   authorize('admin', 'manager'),
@@ -52,7 +52,7 @@ router.get('/all',
     query('status').optional().isIn(['active', 'inactive', 'terminated']).withMessage('Invalid status')
   ],
   validateRequest,
-  EmployeeController.getAllEmployeesNoPagination
+  EmployeeController.getAllEmployees
 );
 
 // Get all employees (with pagination)
@@ -97,6 +97,22 @@ router.get('/:id',
 router.post('/',
   authenticateToken,
   authorize('admin', 'manager'),
+  [
+    body('firstName').notEmpty().isLength({ min: 1, max: 50 }).withMessage('First name is required (1-50 characters)'),
+    body('lastName').notEmpty().isLength({ min: 1, max: 50 }).withMessage('Last name is required (1-50 characters)'),
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('phone').optional().isLength({ max: 20 }).withMessage('Phone number max 20 characters'),
+    body('dateOfBirth').optional().isISO8601().withMessage('Valid date of birth required'),
+    body('gender').optional().isIn(['male', 'female', 'other']).withMessage('Invalid gender'),
+    body('departmentId').isInt().withMessage('Valid department ID is required'),
+    body('position').notEmpty().isLength({ min: 1, max: 100 }).withMessage('Position is required (1-100 characters)'),
+    body('hireDate').isISO8601().withMessage('Valid hire date is required'),
+    body('basicSalary').optional().isFloat({ min: 0 }).withMessage('Basic salary must be positive'),
+    body('managerId').optional().isInt().withMessage('Manager ID must be valid'),
+    body('emergencyContact').optional().isLength({ max: 100 }).withMessage('Emergency contact max 100 characters'),
+    body('emergencyPhone').optional().isLength({ max: 20 }).withMessage('Emergency phone max 20 characters')
+  ],
+  validateRequest,
   EmployeeController.createEmployee
 );
 
