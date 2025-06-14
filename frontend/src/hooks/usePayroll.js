@@ -99,6 +99,7 @@ export const usePayroll = () => {
       
       const queryParams = {
         year: filters.year,
+        month: filters.month,
         ...params,
         page: pagination.page,
         limit: pagination.limit
@@ -129,7 +130,7 @@ export const usePayroll = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters.year, pagination.page, pagination.limit, employeeId]);
+  }, [filters.year, filters.month, pagination.page, pagination.limit, employeeId]);
 
   // Fetch specific payslip
   const fetchPayslip = useCallback(async (payrollId) => {

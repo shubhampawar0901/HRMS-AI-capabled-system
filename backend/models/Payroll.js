@@ -133,7 +133,7 @@ class Payroll {
     console.log('🔍 Base query:', query);
     console.log('🔍 Base params:', params);
 
-    if (options.month) {
+    if (options.month && options.month !== 'null' && options.month !== null) {
       query += ' AND p.month = ?';
       params.push(options.month);
     }
@@ -190,7 +190,7 @@ class Payroll {
     `;
     const params = [];
 
-    if (options.month) {
+    if (options.month && options.month !== 'null' && options.month !== null) {
       query += ' AND p.month = ?';
       params.push(options.month);
     }
@@ -231,7 +231,7 @@ class Payroll {
     let query = 'SELECT COUNT(*) as total FROM payroll_records p LEFT JOIN employees e ON p.employee_id = e.id WHERE 1=1';
     const params = [];
 
-    if (options.month) {
+    if (options.month && options.month !== 'null' && options.month !== null) {
       query += ' AND p.month = ?';
       params.push(options.month);
     }
@@ -259,7 +259,7 @@ class Payroll {
     let query = 'SELECT COUNT(*) as total FROM payroll_records WHERE employee_id = ?';
     const params = [employeeId];
 
-    if (options.month) {
+    if (options.month && options.month !== 'null' && options.month !== null) {
       query += ' AND month = ?';
       params.push(options.month);
     }

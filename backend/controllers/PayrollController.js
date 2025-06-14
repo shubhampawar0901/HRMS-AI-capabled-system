@@ -2,6 +2,19 @@ const { Payroll, Employee, Attendance } = require('../models');
 const { sendSuccess, sendError, sendCreated } = require('../utils/responseHelper');
 const moment = require('moment');
 
+// Helper functions for PDF generation
+const getMonthName = (month) => {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return months[month - 1] || 'Unknown';
+};
+
+const formatAmount = (amount) => {
+  return parseFloat(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+};
+
 class PayrollController {
   // ==========================================
   // GENERATE PAYROLL
@@ -156,6 +169,47 @@ class PayrollController {
     } catch (error) {
       console.error('Get payslip error:', error);
       return sendError(res, 'Failed to get payslip', 500);
+    }
+  }
+
+  // ==========================================
+  // DOWNLOAD PAYSLIP PDF
+  // ==========================================
+  static async downloadPayslipPDF(req, res) {
+    try {
+      const { id } = req.params;
+      const { role, employeeId } = req.user;
+
+      const payroll = await Payroll.findById(id);
+      if (!payroll) {
+        return sendError(res, 'Payslip not found', 404);
+      }
+
+      // Check access permissions
+      if (role !== 'admin' && payroll.employeeId !== employeeId) {
+        return sendError(res, 'Access denied', 403);
+      }
+
+      // Get employee details
+      const employee = await Employee.findById(payroll.employeeId);
+      if (!employee) {
+        return sendError(res, 'Employee not found', 404);
+      }
+
+      // Generate PDF
+      const pdfBuffer = await PayrollController.generatePayslipPDF(payroll, employee);
+
+      // Set response headers for PDF download
+      const filename = `payslip_${employee.firstName}_${employee.lastName}_${payroll.month}_${payroll.year}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      // Send PDF buffer
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('Download payslip PDF error:', error);
+      return sendError(res, 'Failed to generate payslip PDF', 500);
     }
   }
 
@@ -323,7 +377,7 @@ class PayrollController {
       console.log('Query params:', req.query);
 
       const { role, employeeId } = req.user;
-      const { year, page = 1, limit = 20 } = req.query;
+      const { year, month, page = 1, limit = 20 } = req.query;
 
       console.log(`Role: ${role}, EmployeeId: ${employeeId}`);
 
@@ -342,6 +396,7 @@ class PayrollController {
 
       const options = {
         year,
+        month,
         page: parseInt(page),
         limit: parseInt(limit)
       };
@@ -426,6 +481,115 @@ class PayrollController {
       console.error('Get salary structure error:', error);
       return sendError(res, 'Failed to get salary structure', 500);
     }
+  }
+
+  // ==========================================
+  // GENERATE PAYSLIP PDF
+  // ==========================================
+  static async generatePayslipPDF(payroll, employee) {
+    // For now, create a simple HTML-based PDF using a basic approach
+    // This is a temporary solution until puppeteer is fully installed
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Payslip - ${employee.firstName} ${employee.lastName}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .company-name { font-size: 24px; font-weight: bold; color: #333; }
+        .payslip-title { font-size: 18px; margin-top: 10px; }
+        .employee-info { margin: 20px 0; }
+        .info-row { display: flex; justify-content: space-between; margin: 5px 0; }
+        .section { margin: 20px 0; }
+        .section-title { font-size: 16px; font-weight: bold; background: #f0f0f0; padding: 8px; }
+        .earnings, .deductions { width: 48%; display: inline-block; vertical-align: top; }
+        .amount { text-align: right; }
+        .total-row { font-weight: bold; border-top: 1px solid #333; padding-top: 5px; }
+        .net-salary { font-size: 18px; font-weight: bold; text-align: center; background: #e8f5e8; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">HRMS Company</div>
+        <div class="payslip-title">Payslip for ${getMonthName(payroll.month)} ${payroll.year}</div>
+    </div>
+
+    <div class="employee-info">
+        <div class="info-row">
+            <span><strong>Employee Name:</strong> ${employee.firstName} ${employee.lastName}</span>
+            <span><strong>Employee ID:</strong> ${employee.employeeCode || employee.id}</span>
+        </div>
+        <div class="info-row">
+            <span><strong>Department:</strong> ${employee.department || 'N/A'}</span>
+            <span><strong>Position:</strong> ${employee.position || 'N/A'}</span>
+        </div>
+        <div class="info-row">
+            <span><strong>Pay Period:</strong> ${getMonthName(payroll.month)} ${payroll.year}</span>
+            <span><strong>Working Days:</strong> ${payroll.workingDays || 22}</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <div style="display: flex; justify-content: space-between;">
+            <div class="earnings">
+                <div class="section-title">Earnings</div>
+                <div class="info-row">
+                    <span>Basic Salary</span>
+                    <span class="amount">₹${formatAmount(payroll.basicSalary)}</span>
+                </div>
+                <div class="info-row">
+                    <span>HRA</span>
+                    <span class="amount">₹${formatAmount(payroll.hra)}</span>
+                </div>
+                <div class="info-row">
+                    <span>Transport Allowance</span>
+                    <span class="amount">₹${formatAmount(payroll.transportAllowance)}</span>
+                </div>
+                <div class="info-row">
+                    <span>Overtime Pay</span>
+                    <span class="amount">₹${formatAmount(payroll.overtimePay || 0)}</span>
+                </div>
+                <div class="info-row total-row">
+                    <span>Gross Salary</span>
+                    <span class="amount">₹${formatAmount(payroll.grossSalary)}</span>
+                </div>
+            </div>
+
+            <div class="deductions">
+                <div class="section-title">Deductions</div>
+                <div class="info-row">
+                    <span>PF Deduction</span>
+                    <span class="amount">₹${formatAmount(payroll.pfDeduction)}</span>
+                </div>
+                <div class="info-row">
+                    <span>Tax Deduction</span>
+                    <span class="amount">₹${formatAmount(payroll.taxDeduction)}</span>
+                </div>
+                <div class="info-row total-row">
+                    <span>Total Deductions</span>
+                    <span class="amount">₹${formatAmount(payroll.totalDeductions)}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="net-salary">
+        Net Salary: ₹${formatAmount(payroll.netSalary)}
+    </div>
+
+    <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
+        This is a computer-generated payslip and does not require a signature.
+        <br>Generated on ${new Date().toLocaleDateString()}
+    </div>
+</body>
+</html>`;
+
+    // For now, return the HTML as a simple text buffer
+    // This will be replaced with actual PDF generation once puppeteer is installed
+    return Buffer.from(html, 'utf8');
   }
 }
 

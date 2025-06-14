@@ -91,6 +91,7 @@ export const API_ENDPOINTS = {
 
     // Employee/Manager Operations
     PAYSLIP: (id) => `/payroll/payslip/${id}`,      // GET - Get specific payslip
+    PAYSLIP_DOWNLOAD: (id) => `/payroll/payslip/${id}/download`,  // GET - Download payslip PDF
     PAYSLIPS: '/payroll/payslips',                  // GET - Get employee payslips
     SALARY_STRUCTURE: (employeeId) => `/payroll/salary-structure/${employeeId}`  // GET - Get salary structure
   },

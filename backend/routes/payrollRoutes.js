@@ -85,6 +85,13 @@ router.get('/payslip/:id',
   PayrollController.getPayslip
 );
 
+// GET /api/payroll/payslip/:id/download (PDF download)
+router.get('/payslip/:id/download',
+  param('id').isInt().withMessage('Valid payroll ID is required'),
+  validateRequest,
+  PayrollController.downloadPayslipPDF
+);
+
 // GET /api/payroll/payslips (Employee route for their own payslips)
 router.get('/payslips',
   paginationValidation,

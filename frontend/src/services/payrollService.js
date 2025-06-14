@@ -64,7 +64,7 @@ class PayrollService {
   // Download payslip PDF
   async downloadPayslip(payrollId) {
     return apiRequest(
-      () => axiosInstance.get(API_ENDPOINTS.PAYROLL.PAYSLIP(payrollId), {
+      () => axiosInstance.get(API_ENDPOINTS.PAYROLL.PAYSLIP_DOWNLOAD(payrollId), {
         responseType: 'blob',
         headers: { 'Accept': 'application/pdf' }
       }),
