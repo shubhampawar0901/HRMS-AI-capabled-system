@@ -6,16 +6,26 @@ const { body, validationResult } = require('express-validator');
 const { executeQuery } = require('../config/database');
 const { authenticateToken } = require('../middleware/authMiddleware');
 
-// Helper function to generate JWT token
-const generateToken = (user) => {
+// Helper function to generate access token
+const generateAccessToken = (user, employee = null) => {
   return jwt.sign(
     {
-      id: user.id,
+      userId: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+      employeeId: employee?.id || null
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+  );
+};
+
+// Helper function to generate refresh token
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    { userId: user.id },
+    process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
   );
 };
 
@@ -72,21 +82,30 @@ router.post('/register',
         [email, hashedPassword, role]
       );
 
-      // Generate token
-      const user = {
+      // Generate tokens
+      const newUser = {
         id: result.insertId,
         email,
         role
       };
-      const token = generateToken(user);
+      const accessToken = generateAccessToken(newUser);
+      const refreshToken = generateRefreshToken(newUser);
+
+      // Update user with refresh token
+      await executeQuery(
+        'UPDATE users SET refresh_token = ? WHERE id = ?',
+        [refreshToken, newUser.id]
+      );
 
       sendSuccess(res, {
         user: {
-          id: user.id,
-          email: user.email,
-          role: user.role
+          id: newUser.id,
+          email: newUser.email,
+          role: newUser.role
         },
-        token
+        accessToken,
+        refreshToken,
+        expiresIn: process.env.JWT_EXPIRES_IN || '24h'
       }, 'User registered successfully');
 
     } catch (error) {
@@ -115,7 +134,7 @@ router.post('/login',
       // Find user
       const users = await executeQuery('SELECT * FROM users WHERE email = ? AND is_active = TRUE', [email]);
       if (users.length === 0) {
-        return sendError(res, 'Invalid credentials', 401);
+        return sendError(res, 'Invalid email or password', 401);
       }
 
       const user = users[0];
@@ -123,20 +142,70 @@ router.post('/login',
       // Check password
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        return sendError(res, 'Invalid credentials', 401);
+        return sendError(res, 'Invalid email or password', 401);
       }
 
-      // Generate token
-      const token = generateToken(user);
+      // Get employee details ONLY for manager and employee roles
+      // Admin users should NEVER have employee records
+      let employee = null;
+      if (user.role === 'manager' || user.role === 'employee') {
+        const employeeQuery = `
+          SELECT e.id, e.employee_code, e.first_name, e.last_name,
+                 e.department_id, e.position, e.manager_id,
+                 d.name as department_name
+          FROM employees e
+          LEFT JOIN departments d ON e.department_id = d.id
+          WHERE e.user_id = ? AND e.status = 'active'
+        `;
+        const employees = await executeQuery(employeeQuery, [user.id]);
+        if (employees.length > 0) {
+          employee = {
+            id: employees[0].id,
+            employeeCode: employees[0].employee_code,
+            firstName: employees[0].first_name,
+            lastName: employees[0].last_name,
+            departmentId: employees[0].department_id,
+            position: employees[0].position,
+            department_name: employees[0].department_name,
+            managerId: employees[0].manager_id
+          };
+        }
+      }
 
-      sendSuccess(res, {
+      // Generate tokens
+      const accessToken = generateAccessToken(user, employee);
+      const refreshToken = generateRefreshToken(user);
+
+      // Update user's refresh token and last login
+      await executeQuery(
+        'UPDATE users SET refresh_token = ?, last_login = NOW(), updated_at = NOW() WHERE id = ?',
+        [refreshToken, user.id]
+      );
+
+      // Prepare response data according to documentation
+      const responseData = {
         user: {
           id: user.id,
           email: user.email,
-          role: user.role
+          role: user.role,
+          isActive: user.is_active,
+          lastLogin: new Date().toISOString(),
+          createdAt: user.created_at,
+          updatedAt: new Date().toISOString()
         },
-        token
-      }, 'Login successful');
+        employee: employee, // null for admin, populated for manager/employee
+        accessToken,
+        refreshToken,
+        expiresIn: process.env.JWT_EXPIRES_IN || '24h'
+      };
+
+      // Send success response with timestamp
+      res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        data: responseData,
+        timestamp: new Date().toISOString()
+      });
 
     } catch (error) {
       console.error('Login error:', error);
@@ -145,17 +214,130 @@ router.post('/login',
   }
 );
 
+// Refresh token
+router.post('/refresh-token', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return sendError(res, 'Refresh token is required', 400);
+    }
+
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+
+    // Find user and verify refresh token
+    const users = await executeQuery('SELECT * FROM users WHERE id = ? AND refresh_token = ? AND is_active = TRUE', [decoded.userId, refreshToken]);
+    if (users.length === 0) {
+      return sendError(res, 'Invalid refresh token', 401);
+    }
+
+    const user = users[0];
+
+    // Get employee details if needed (same logic as login)
+    let employee = null;
+    if (user.role === 'manager' || user.role === 'employee') {
+      const employeeQuery = `
+        SELECT e.id, e.employee_code, e.first_name, e.last_name,
+               e.department_id, e.position, e.manager_id,
+               d.name as department_name
+        FROM employees e
+        LEFT JOIN departments d ON e.department_id = d.id
+        WHERE e.user_id = ? AND e.status = 'active'
+      `;
+      const employees = await executeQuery(employeeQuery, [user.id]);
+      if (employees.length > 0) {
+        employee = {
+          id: employees[0].id,
+          employeeCode: employees[0].employee_code,
+          firstName: employees[0].first_name,
+          lastName: employees[0].last_name,
+          departmentId: employees[0].department_id,
+          position: employees[0].position,
+          department_name: employees[0].department_name,
+          managerId: employees[0].manager_id
+        };
+      }
+    }
+
+    // Generate new access token
+    const newAccessToken = generateAccessToken(user, employee);
+
+    sendSuccess(res, {
+      accessToken: newAccessToken,
+      expiresIn: process.env.JWT_EXPIRES_IN || '24h'
+    }, 'Token refreshed successfully');
+
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    return sendError(res, 'Token refresh failed', 401);
+  }
+});
+
+// Logout user
+router.post('/logout', authenticateToken, async (req, res) => {
+  try {
+    // Clear refresh token from database
+    await executeQuery('UPDATE users SET refresh_token = NULL WHERE id = ?', [req.user.id]);
+    sendSuccess(res, null, 'Logout successful');
+  } catch (error) {
+    console.error('Logout error:', error);
+    sendError(res, 'Logout failed', 500);
+  }
+});
+
 // Get current user profile
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId || req.user.id; // Support both token formats
 
-    const users = await executeQuery('SELECT id, email, role, created_at FROM users WHERE id = ?', [userId]);
+    const users = await executeQuery('SELECT * FROM users WHERE id = ? AND is_active = TRUE', [userId]);
     if (users.length === 0) {
       return sendError(res, 'User not found', 404);
     }
 
-    sendSuccess(res, users[0], 'Profile retrieved successfully');
+    const user = users[0];
+
+    // Get employee details if needed (same logic as login)
+    let employee = null;
+    if (user.role === 'manager' || user.role === 'employee') {
+      const employeeQuery = `
+        SELECT e.id, e.employee_code, e.first_name, e.last_name,
+               e.department_id, e.position, e.manager_id,
+               d.name as department_name
+        FROM employees e
+        LEFT JOIN departments d ON e.department_id = d.id
+        WHERE e.user_id = ? AND e.status = 'active'
+      `;
+      const employees = await executeQuery(employeeQuery, [user.id]);
+      if (employees.length > 0) {
+        employee = {
+          id: employees[0].id,
+          employeeCode: employees[0].employee_code,
+          firstName: employees[0].first_name,
+          lastName: employees[0].last_name,
+          departmentId: employees[0].department_id,
+          position: employees[0].position,
+          department_name: employees[0].department_name,
+          managerId: employees[0].manager_id
+        };
+      }
+    }
+
+    const responseData = {
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        isActive: user.is_active,
+        lastLogin: user.last_login,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at
+      },
+      employee: employee // null for admin, populated for manager/employee
+    };
+
+    sendSuccess(res, responseData, 'Profile retrieved successfully');
 
   } catch (error) {
     console.error('Profile error:', error);

@@ -160,22 +160,13 @@ class TestDataCreator {
       const itDept = departments.find(d => d.name === 'Information Technology');
       const financeDept = departments.find(d => d.name === 'Finance');
       
+      // Admin users should NOT have employee records
       const employees = [
-        {
-          userEmail: 'admin@hrms.com',
-          firstName: 'Admin',
-          lastName: 'User',
-          employeeCode: 'EMP001',
-          departmentId: hrDept?.id || 1,
-          position: 'HR Administrator',
-          hireDate: '2023-01-15',
-          basicSalary: 75000.00
-        },
         {
           userEmail: 'manager@hrms.com',
           firstName: 'Manager',
           lastName: 'Smith',
-          employeeCode: 'EMP002',
+          employeeCode: 'EMP001',
           departmentId: itDept?.id || 2,
           position: 'IT Manager',
           hireDate: '2023-02-01',
@@ -185,7 +176,7 @@ class TestDataCreator {
           userEmail: 'employee@hrms.com',
           firstName: 'John',
           lastName: 'Doe',
-          employeeCode: 'EMP003',
+          employeeCode: 'EMP002',
           departmentId: financeDept?.id || 3,
           position: 'Financial Analyst',
           hireDate: '2023-03-10',
@@ -258,14 +249,14 @@ class TestDataCreator {
         this.log(`📊 ${row.role}: ${row.count} user(s)`);
       });
       
-      // Count employees
+      // Count employees (admin should NOT have employee record)
       const employeeCount = await this.executeQuery(`
-        SELECT COUNT(*) as count 
-        FROM employees 
-        WHERE employee_code IN ('EMP001', 'EMP002', 'EMP003')
+        SELECT COUNT(*) as count
+        FROM employees
+        WHERE employee_code IN ('EMP001', 'EMP002')
       `);
-      
-      this.log(`📊 Test employees: ${employeeCount[0].count}`);
+
+      this.log(`📊 Test employees: ${employeeCount[0].count} (admin excluded by design)`);
       
       // Show departments
       const deptCount = await this.executeQuery('SELECT COUNT(*) as count FROM departments');

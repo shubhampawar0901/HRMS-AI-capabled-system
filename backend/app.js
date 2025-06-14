@@ -25,6 +25,7 @@ const { connectDB, closeDB } = require('./config/database');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const leaveRoutes = require('./routes/leaveRoutes');
@@ -39,14 +40,22 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:3003',
+    'http://localhost:3004',
+    'http://localhost:3005',
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true
 }));
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // limit each IP to 1000 requests per windowMs (increased for development)
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
@@ -76,6 +85,7 @@ app.get('/health', (req, res) => {
 
 // API Routes - Modular service routing
 app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', authenticateToken, dashboardRoutes);
 app.use('/api/employees', authenticateToken, employeeRoutes);
 app.use('/api/attendance', authenticateToken, attendanceRoutes);
 app.use('/api/leave', authenticateToken, leaveRoutes);

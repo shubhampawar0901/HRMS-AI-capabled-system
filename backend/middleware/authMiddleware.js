@@ -12,16 +12,18 @@ const authenticateToken = asyncHandler(async (req, res, next) => {
 
   // Check if token exists
   if (!token) {
+    console.log('❌ No token provided. Headers:', req.headers.authorization);
     return next(new AppError('Access denied. No token provided.', 401));
   }
 
   try {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Add user info to request
+
+    // Add user info to request (support both old and new token formats)
     req.user = {
-      id: decoded.id,
+      id: decoded.id || decoded.userId, // Support both formats
+      userId: decoded.userId || decoded.id, // New format
       email: decoded.email,
       role: decoded.role,
       employeeId: decoded.employeeId
@@ -29,6 +31,8 @@ const authenticateToken = asyncHandler(async (req, res, next) => {
 
     next();
   } catch (error) {
+    console.log('❌ Token verification failed:', error.message);
+    console.log('Token:', token?.substring(0, 20) + '...');
     return next(new AppError('Invalid token', 401));
   }
 });
