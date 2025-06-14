@@ -90,6 +90,41 @@ class EmployeeService {
     return this.getEmployees(params);
   }
 
+  // Get managers (employees who have team members)
+  async getManagers(params = {}) {
+    // For now, we'll get all employees and filter on frontend
+    // In a real implementation, this would be a backend endpoint
+    const response = await this.getEmployees({
+      limit: 100,
+      status: 'active',
+      ...params
+    });
+
+    if (response.success) {
+      // Filter employees who are managers (have managerId null or are referenced as managers)
+      // This is a simplified approach - ideally the backend would handle this
+      const managers = response.data.employees.filter(emp =>
+        emp.position && (
+          emp.position.toLowerCase().includes('manager') ||
+          emp.position.toLowerCase().includes('lead') ||
+          emp.position.toLowerCase().includes('supervisor') ||
+          emp.position.toLowerCase().includes('director')
+        )
+      );
+
+      return {
+        ...response,
+        data: {
+          ...response.data,
+          managers: managers,
+          employees: managers // For compatibility
+        }
+      };
+    }
+
+    return response;
+  }
+
   // Get departments
   async getDepartments() {
     return apiRequest(
