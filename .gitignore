@@ -117,7 +117,7 @@ dist
 # GATSBY FILES
 # =============================================
 .cache/
-public
+# public - Removed to allow frontend/public folder to be committed
 
 # =============================================
 # VUEPRESS BUILD OUTPUT
