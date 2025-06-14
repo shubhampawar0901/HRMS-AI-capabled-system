@@ -263,3 +263,14 @@ test-auth.html
 # Database reference files (auto-generated)
 DATABASE_REFERENCE_ACTUAL.md
 **/DATABASE_REFERENCE_ACTUAL.md
+
+# Analysis and documentation files
+FINAL_UI_API_ANALYSIS_REPORT.md
+**/FINAL_UI_API_ANALYSIS_REPORT.md
+
+# Data creation and verification scripts
+backend/scripts/comprehensive-data-creator.js
+backend/scripts/verify-data-status.js
+**/scripts/comprehensive-data-creator.js
+**/scripts/verify-data-status.js
+.gitignore
