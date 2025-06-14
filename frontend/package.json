@@ -4,6 +4,7 @@
   "description": "HRMS Frontend - React application with Tailwind CSS v4 and ShadCN UI",
   "private": true,
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.0.4",

@@ -27,8 +27,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         return '/admin/smart-reports';
       case 'manager':
         return '/manager/smart-reports';
-      case 'employee':
-        return '/employee/smart-reports';
       default:
         return '/smart-reports';
     }
@@ -75,13 +73,11 @@ const Sidebar = ({ isOpen, onClose }) => {
       name: 'Smart Reports',
       href: getSmartReportsHref(user?.role),
       icon: Sparkles,
-      roles: ['admin', 'manager', 'employee'],
+      roles: ['admin', 'manager'],
       badge: 'AI',
       description: user?.role === 'admin'
         ? 'AI-powered performance analytics'
-        : user?.role === 'manager'
-        ? 'Team performance insights'
-        : 'My performance reports'
+        : 'Team performance insights'
     },
     {
       name: 'AI Features',

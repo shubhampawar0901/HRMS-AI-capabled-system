@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import ReportGenerationForm from '@/components/smart-reports/ReportGenerationForm';
 import ReportsList from '@/components/smart-reports/ReportsList';
 import ReportViewer from '@/components/smart-reports/ReportViewer';
-import { useReportStatusPolling } from '@/hooks/usePolling';
+import { useMultipleReportsPolling } from '@/hooks/usePolling';
 import { smartReportsService } from '@/services/smartReportsService';
 
 /**
@@ -26,7 +26,7 @@ const ManagerSmartReports = () => {
   const [generatingReports, setGeneratingReports] = useState([]);
 
   // Poll status for generating reports
-  const { reportsStatus, getGeneratingReports } = useReportStatusPolling(
+  const { reportsStatus, getGeneratingReports } = useMultipleReportsPolling(
     generatingReports,
     smartReportsService
   );
@@ -304,8 +304,8 @@ const ManagerSmartReports = () => {
     );
   };
 
-  // Check if user has manager access
-  if (user?.role !== 'manager') {
+  // Check if user has manager or admin access
+  if (!['manager', 'admin'].includes(user?.role)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

@@ -48,7 +48,6 @@ import AttritionPage from '@/pages/ai-features/AttritionPage';
 // Smart Reports Pages
 import AdminSmartReports from '@/pages/admin/SmartReports';
 import ManagerSmartReports from '@/pages/manager/SmartReports';
-import EmployeeSmartReports from '@/pages/employee/SmartReports';
 
 // Reports Pages
 import ReportsPage from '@/pages/reports/ReportsPage';
@@ -159,14 +158,7 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="employee/smart-reports"
-          element={
-            <ProtectedRoute requiredRoles={['employee']}>
-              <EmployeeSmartReports />
-            </ProtectedRoute>
-          }
-        />
+
 
         {/* Reports */}
         <Route path="reports" element={<ReportsPage />} />

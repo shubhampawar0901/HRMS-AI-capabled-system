@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import ReportGenerationForm from '@/components/smart-reports/ReportGenerationForm';
 import ReportsList from '@/components/smart-reports/ReportsList';
 import ReportViewer from '@/components/smart-reports/ReportViewer';
-import { useReportStatusPolling } from '@/hooks/usePolling';
+import { useMultipleReportsPolling } from '@/hooks/usePolling';
 import { smartReportsService } from '@/services/smartReportsService';
 
 /**
@@ -24,7 +24,7 @@ const AdminSmartReports = () => {
   const [generatingReports, setGeneratingReports] = useState([]);
 
   // Poll status for generating reports
-  const { reportsStatus, getGeneratingReports } = useReportStatusPolling(
+  const { reportsStatus, getGeneratingReports } = useMultipleReportsPolling(
     generatingReports,
     smartReportsService
   );
