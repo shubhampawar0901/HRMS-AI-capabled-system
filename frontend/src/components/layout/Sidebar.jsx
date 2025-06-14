@@ -1,13 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Clock, 
-  Calendar, 
-  DollarSign, 
-  Target, 
+import {
+  LayoutDashboard,
+  Users,
+  Clock,
+  Calendar,
+  DollarSign,
+  Target,
   Brain,
+  Sparkles,
   X
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -16,6 +17,22 @@ import { cn } from '@/lib/utils';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user } = useAuthContext();
+
+  /**
+   * Get Smart Reports href based on user role
+   */
+  const getSmartReportsHref = (role) => {
+    switch (role) {
+      case 'admin':
+        return '/admin/smart-reports';
+      case 'manager':
+        return '/manager/smart-reports';
+      case 'employee':
+        return '/employee/smart-reports';
+      default:
+        return '/smart-reports';
+    }
+  };
 
   const navigationItems = [
     {
@@ -53,6 +70,18 @@ const Sidebar = ({ isOpen, onClose }) => {
       href: '/performance',
       icon: Target,
       roles: ['admin', 'manager', 'employee']
+    },
+    {
+      name: 'Smart Reports',
+      href: getSmartReportsHref(user?.role),
+      icon: Sparkles,
+      roles: ['admin', 'manager', 'employee'],
+      badge: 'AI',
+      description: user?.role === 'admin'
+        ? 'AI-powered performance analytics'
+        : user?.role === 'manager'
+        ? 'Team performance insights'
+        : 'My performance reports'
     },
     {
       name: 'AI Features',
@@ -125,7 +154,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                     isOpen ? "mr-3" : "lg:mr-0"
                   )} />
                   {isOpen && (
-                    <span className="truncate">{item.name}</span>
+                    <div className="flex items-center justify-between flex-1 min-w-0">
+                      <span className="truncate">{item.name}</span>
+                      {item.badge && (
+                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
                   )}
                   
                   {/* Tooltip for collapsed sidebar */}
