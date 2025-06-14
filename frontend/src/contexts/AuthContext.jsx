@@ -71,21 +71,29 @@ export const AuthProvider = ({ children }) => {
       const responseData = response.data.data || response.data;
       const authToken = responseData.accessToken || responseData.token;
       const userData = responseData.user;
+      const employeeData = responseData.employee;
 
       if (!authToken || !userData) {
         throw new Error('Invalid response structure from server');
       }
 
+      // Merge employee data into user object for easier access
+      const enrichedUserData = {
+        ...userData,
+        employeeId: employeeData?.id || null,
+        employee: employeeData || null
+      };
+
       // Store in localStorage
       localStorage.setItem('token', authToken);
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(enrichedUserData));
       if (responseData.refreshToken) {
         localStorage.setItem('refreshToken', responseData.refreshToken);
       }
 
       // Update state
       setToken(authToken);
-      setUser(userData);
+      setUser(enrichedUserData);
       setIsAuthenticated(true);
 
       return {

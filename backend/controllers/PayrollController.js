@@ -318,11 +318,26 @@ class PayrollController {
   // ==========================================
   static async getEmployeePayslips(req, res) {
     try {
+      console.log('🔍 getEmployeePayslips called');
+      console.log('User:', req.user);
+      console.log('Query params:', req.query);
+
       const { role, employeeId } = req.user;
       const { year, page = 1, limit = 20 } = req.query;
 
+      console.log(`Role: ${role}, EmployeeId: ${employeeId}`);
+
+      // Only employees can access their own payslips through this endpoint
+      // Managers and admins should use the general payroll records endpoint
       if (role !== 'employee') {
-        return sendError(res, 'Access denied', 403);
+        console.log('❌ Access denied - not an employee');
+        return sendError(res, 'Access denied. This endpoint is for employees only.', 403);
+      }
+
+      // Validate that employeeId exists in token
+      if (!employeeId) {
+        console.log('❌ Employee ID not found in token');
+        return sendError(res, 'Employee ID not found in token', 400);
       }
 
       const options = {
@@ -331,8 +346,13 @@ class PayrollController {
         limit: parseInt(limit)
       };
 
+      console.log('🔍 Calling Payroll.findByEmployee with:', employeeId, options);
       const records = await Payroll.findByEmployee(employeeId, options);
+      console.log('📄 Found records:', records.length);
+
+      console.log('🔍 Calling Payroll.countByEmployee with:', employeeId, options);
       const total = await Payroll.countByEmployee(employeeId, options);
+      console.log('📊 Total count:', total);
 
       const responseData = {
         payslips: records,
