@@ -156,3 +156,25 @@ Final plan/
 test-auth.html
 ../test-auth.html
 **/test-auth.html
+
+# =============================================
+# API TESTING TOKENS AND CREDENTIALS (DO NOT COMMIT)
+# =============================================
+# Authentication tokens for API testing
+test-tokens.json
+test-credentials.json
+auth-tokens.json
+api-tokens.json
+*-tokens.json
+*-credentials.json
+
+# Login test files
+admin_login.json
+manager_login.json
+employee_login.json
+*_login.json
+
+# API testing scripts
+test-dashboard-apis.ps1
+test-*-apis.ps1
+api-test-*.ps1

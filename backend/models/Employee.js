@@ -63,31 +63,77 @@ class Employee {
         user_id, employee_code, first_name, last_name, email, phone,
         date_of_birth, gender, address, department_id, position,
         hire_date, basic_salary, status, manager_id, emergency_contact,
-        emergency_phone, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        emergency_phone
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    
-    const result = await executeQuery(query, [
-      employeeData.userId,
-      employeeData.employeeCode,
-      employeeData.firstName,
-      employeeData.lastName,
-      employeeData.email,
-      employeeData.phone,
-      employeeData.dateOfBirth,
-      employeeData.gender,
-      employeeData.address,
-      employeeData.departmentId,
-      employeeData.position,
-      employeeData.hireDate,
-      employeeData.basicSalary,
+
+    const params = [
+      employeeData.userId || null,
+      employeeData.employeeCode || null,
+      employeeData.firstName || null,
+      employeeData.lastName || null,
+      employeeData.email || null,
+      employeeData.phone || null,
+      employeeData.dateOfBirth || null,
+      employeeData.gender || null,
+      employeeData.address || null,
+      employeeData.departmentId || null,
+      employeeData.position || null,
+      employeeData.hireDate || null,
+      employeeData.basicSalary || null,
       employeeData.status || 'active',
-      employeeData.managerId,
-      employeeData.emergencyContact,
-      employeeData.emergencyPhone
-    ]);
-    
-    return await Employee.findById(result.insertId);
+      employeeData.managerId || null,
+      employeeData.emergencyContact || null,
+      employeeData.emergencyPhone || null
+    ];
+
+    console.log('Employee.create params:', params);
+    console.log('Params with undefined:', params.map((p, i) => p === undefined ? `Index ${i}: undefined` : null).filter(Boolean));
+
+    // Check each parameter individually
+    const paramNames = [
+      'userId', 'employeeCode', 'firstName', 'lastName', 'email', 'phone',
+      'dateOfBirth', 'gender', 'address', 'departmentId', 'position',
+      'hireDate', 'basicSalary', 'status', 'managerId', 'emergencyContact', 'emergencyPhone'
+    ];
+
+    params.forEach((param, index) => {
+      console.log(`Param ${index} (${paramNames[index]}):`, param, typeof param);
+      if (param === undefined) {
+        console.error(`❌ UNDEFINED PARAMETER at index ${index}: ${paramNames[index]}`);
+        throw new Error(`Parameter ${paramNames[index]} is undefined. All parameters must be null or have a value.`);
+      }
+    });
+
+    try {
+      console.log('🔍 Executing SQL Query:');
+      console.log('Query:', query);
+      console.log('Params:', params);
+      console.log('Params count:', params.length);
+
+      const result = await executeQuery(query, params);
+      console.log('✅ SQL execution successful, insertId:', result.insertId);
+
+      return await Employee.findById(result.insertId);
+    } catch (error) {
+      console.error('❌ Employee.create SQL Error:');
+      console.error('Error Message:', error.message);
+      console.error('Error Code:', error.code);
+      console.error('Error SQL State:', error.sqlState);
+      console.error('Error SQL Message:', error.sqlMessage);
+      console.error('Query:', query);
+      console.error('Params:', params);
+      console.error('Params Types:', params.map(p => typeof p));
+      console.error('Full Error Object:', JSON.stringify(error, null, 2));
+      console.error('Node.js Stack Trace:', error.stack);
+
+      // Re-throw with more context
+      const enhancedError = new Error(`Employee creation failed: ${error.message}`);
+      enhancedError.originalError = error;
+      enhancedError.query = query;
+      enhancedError.params = params;
+      throw enhancedError;
+    }
   }
 
   static async update(id, employeeData) {

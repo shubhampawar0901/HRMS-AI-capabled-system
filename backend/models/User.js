@@ -31,15 +31,14 @@ class User {
     const hashedPassword = await bcrypt.hash(userData.password, parseInt(process.env.BCRYPT_ROUNDS) || 12);
 
     const query = `
-      INSERT INTO users (email, password, role, is_active, created_at, updated_at)
-      VALUES (?, ?, ?, ?, NOW(), NOW())
+      INSERT INTO users (email, password, role, created_at, updated_at)
+      VALUES (?, ?, ?, NOW(), NOW())
     `;
 
     const result = await executeQuery(query, [
       userData.email,
       hashedPassword,
       userData.role || 'employee',
-      userData.isActive !== undefined ? userData.isActive : true
     ]);
 
     return await User.findById(result.insertId);

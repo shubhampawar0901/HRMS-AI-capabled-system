@@ -86,6 +86,70 @@ class PerformanceController {
   }
 
   // ==========================================
+  // GET REVIEW BY ID
+  // ==========================================
+  static async getReviewById(req, res) {
+    try {
+      const { id } = req.params;
+      const { role, userId, employeeId } = req.user;
+
+      const review = await PerformanceReview.findById(id);
+      if (!review) {
+        return sendError(res, 'Performance review not found', 404);
+      }
+
+      // Check permissions
+      if (role === 'employee' && review.employeeId !== employeeId) {
+        return sendError(res, 'Access denied', 403);
+      } else if (role === 'manager') {
+        const employee = await Employee.findById(review.employeeId);
+        if (employee.managerId !== employeeId && review.reviewerId !== userId) {
+          return sendError(res, 'Access denied', 403);
+        }
+      }
+
+      return sendSuccess(res, review, 'Performance review retrieved successfully');
+    } catch (error) {
+      console.error('Get review by ID error:', error);
+      return sendError(res, 'Failed to get performance review', 500);
+    }
+  }
+
+  // ==========================================
+  // UPDATE REVIEW
+  // ==========================================
+  static async updateReview(req, res) {
+    try {
+      const { id } = req.params;
+      const { userId } = req.user;
+      const { overallRating, comments } = req.body;
+
+      const review = await PerformanceReview.findById(id);
+      if (!review) {
+        return sendError(res, 'Performance review not found', 404);
+      }
+
+      if (review.reviewerId !== userId) {
+        return sendError(res, 'Access denied', 403);
+      }
+
+      if (review.status !== 'draft') {
+        return sendError(res, 'Only draft reviews can be updated', 400);
+      }
+
+      const updatedReview = await PerformanceReview.update(id, {
+        overallRating,
+        comments
+      });
+
+      return sendSuccess(res, updatedReview, 'Performance review updated successfully');
+    } catch (error) {
+      console.error('Update review error:', error);
+      return sendError(res, 'Failed to update performance review', 500);
+    }
+  }
+
+  // ==========================================
   // SUBMIT REVIEW
   // ==========================================
   static async submitReview(req, res) {
@@ -188,6 +252,73 @@ class PerformanceController {
     } catch (error) {
       console.error('Get goals error:', error);
       return sendError(res, 'Failed to get performance goals', 500);
+    }
+  }
+
+  // ==========================================
+  // GET GOAL BY ID
+  // ==========================================
+  static async getGoalById(req, res) {
+    try {
+      const { id } = req.params;
+      const { role, employeeId } = req.user;
+
+      const goal = await PerformanceGoal.findById(id);
+      if (!goal) {
+        return sendError(res, 'Performance goal not found', 404);
+      }
+
+      // Check permissions
+      if (role === 'employee' && goal.employeeId !== employeeId) {
+        return sendError(res, 'Access denied', 403);
+      } else if (role === 'manager') {
+        const employee = await Employee.findById(goal.employeeId);
+        if (employee.managerId !== employeeId) {
+          return sendError(res, 'Access denied', 403);
+        }
+      }
+
+      return sendSuccess(res, goal, 'Performance goal retrieved successfully');
+    } catch (error) {
+      console.error('Get goal by ID error:', error);
+      return sendError(res, 'Failed to get performance goal', 500);
+    }
+  }
+
+  // ==========================================
+  // UPDATE GOAL
+  // ==========================================
+  static async updateGoal(req, res) {
+    try {
+      const { id } = req.params;
+      const { title, description, targetDate } = req.body;
+      const { role, employeeId } = req.user;
+
+      const goal = await PerformanceGoal.findById(id);
+      if (!goal) {
+        return sendError(res, 'Performance goal not found', 404);
+      }
+
+      // Check permissions - only admin, manager, or goal owner can update
+      if (role === 'employee' && goal.employeeId !== employeeId) {
+        return sendError(res, 'Access denied', 403);
+      } else if (role === 'manager') {
+        const employee = await Employee.findById(goal.employeeId);
+        if (employee.managerId !== employeeId) {
+          return sendError(res, 'Access denied', 403);
+        }
+      }
+
+      const updatedGoal = await PerformanceGoal.update(id, {
+        title,
+        description,
+        targetDate
+      });
+
+      return sendSuccess(res, updatedGoal, 'Performance goal updated successfully');
+    } catch (error) {
+      console.error('Update goal error:', error);
+      return sendError(res, 'Failed to update performance goal', 500);
     }
   }
 
@@ -301,6 +432,34 @@ class PerformanceController {
   }
 
   // ==========================================
+  // GET TEAM PERFORMANCE (MANAGER)
+  // ==========================================
+  static async getTeamPerformance(req, res) {
+    try {
+      const { role, employeeId } = req.user;
+
+      if (role !== 'admin' && role !== 'manager') {
+        return sendError(res, 'Access denied', 403);
+      }
+
+      let teamPerformance;
+
+      if (role === 'admin') {
+        // Admin can see all employees
+        teamPerformance = await PerformanceController.getAllEmployeesPerformance();
+      } else {
+        // Manager can see their team
+        teamPerformance = await PerformanceController.getManagerTeamPerformance(employeeId);
+      }
+
+      return sendSuccess(res, { teamPerformance }, 'Team performance retrieved successfully');
+    } catch (error) {
+      console.error('Get team performance error:', error);
+      return sendError(res, 'Failed to get team performance', 500);
+    }
+  }
+
+  // ==========================================
   // PERFORMANCE DASHBOARD
   // ==========================================
   static async getPerformanceDashboard(req, res) {
@@ -360,6 +519,53 @@ class PerformanceController {
       reviews: { total: myReviews },
       goals: { total: myGoals, active: activeGoals, completed: completedGoals }
     };
+  }
+
+  // Helper methods for team performance
+  static async getAllEmployeesPerformance() {
+    const { executeQuery } = require('../config/database');
+
+    const query = `
+      SELECT
+        e.id as employeeId,
+        CONCAT(e.first_name, ' ', e.last_name) as employeeName,
+        AVG(pr.overall_rating) as overallRating,
+        COUNT(DISTINCT pg.id) as goalsCompleted,
+        COUNT(DISTINCT pg2.id) as totalGoals,
+        MAX(pr.created_at) as lastReviewDate
+      FROM employees e
+      LEFT JOIN performance_reviews pr ON e.id = pr.employee_id
+      LEFT JOIN performance_goals pg ON e.id = pg.employee_id AND pg.status = 'completed'
+      LEFT JOIN performance_goals pg2 ON e.id = pg2.employee_id
+      WHERE e.status = 'active'
+      GROUP BY e.id
+      ORDER BY e.first_name, e.last_name
+    `;
+
+    return await executeQuery(query);
+  }
+
+  static async getManagerTeamPerformance(managerId) {
+    const { executeQuery } = require('../config/database');
+
+    const query = `
+      SELECT
+        e.id as employeeId,
+        CONCAT(e.first_name, ' ', e.last_name) as employeeName,
+        AVG(pr.overall_rating) as overallRating,
+        COUNT(DISTINCT pg.id) as goalsCompleted,
+        COUNT(DISTINCT pg2.id) as totalGoals,
+        MAX(pr.created_at) as lastReviewDate
+      FROM employees e
+      LEFT JOIN performance_reviews pr ON e.id = pr.employee_id
+      LEFT JOIN performance_goals pg ON e.id = pg.employee_id AND pg.status = 'completed'
+      LEFT JOIN performance_goals pg2 ON e.id = pg2.employee_id
+      WHERE e.manager_id = ? AND e.status = 'active'
+      GROUP BY e.id
+      ORDER BY e.first_name, e.last_name
+    `;
+
+    return await executeQuery(query, [managerId]);
   }
 }
 

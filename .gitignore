@@ -259,3 +259,7 @@ Final plan/
 # Test authentication files
 test-auth.html
 **/test-auth.html
+
+# Database reference files (auto-generated)
+DATABASE_REFERENCE_ACTUAL.md
+**/DATABASE_REFERENCE_ACTUAL.md

@@ -56,6 +56,22 @@ router.get('/reviews',
   PerformanceController.getReviews
 );
 
+// GET /api/performance/reviews/:id
+router.get('/reviews/:id',
+  param('id').isInt().withMessage('Valid review ID is required'),
+  validateRequest,
+  PerformanceController.getReviewById
+);
+
+// PUT /api/performance/reviews/:id
+router.put('/reviews/:id',
+  param('id').isInt().withMessage('Valid review ID is required'),
+  body('overallRating').optional().isFloat({ min: 1, max: 5 }).withMessage('Overall rating must be between 1 and 5'),
+  body('comments').optional().isLength({ min: 10 }).withMessage('Comments must be at least 10 characters long'),
+  validateRequest,
+  PerformanceController.updateReview
+);
+
 // PUT /api/performance/reviews/:id/submit
 router.put('/reviews/:id/submit',
   param('id').isInt().withMessage('Valid review ID is required'),
@@ -80,6 +96,23 @@ router.get('/goals',
   query('status').optional().isIn(['active', 'completed', 'cancelled']).withMessage('Invalid status'),
   validateRequest,
   PerformanceController.getGoals
+);
+
+// GET /api/performance/goals/:id
+router.get('/goals/:id',
+  param('id').isInt().withMessage('Valid goal ID is required'),
+  validateRequest,
+  PerformanceController.getGoalById
+);
+
+// PUT /api/performance/goals/:id
+router.put('/goals/:id',
+  param('id').isInt().withMessage('Valid goal ID is required'),
+  body('title').optional().isLength({ min: 5 }).withMessage('Title must be at least 5 characters long'),
+  body('description').optional().isLength({ min: 10 }).withMessage('Description must be at least 10 characters long'),
+  body('targetDate').optional().isDate().withMessage('Valid target date is required'),
+  validateRequest,
+  PerformanceController.updateGoal
 );
 
 // PUT /api/performance/goals/:id/progress
@@ -108,6 +141,15 @@ router.get('/feedback',
 );
 
 // ==========================================
+// TEAM PERFORMANCE (MANAGER)
+// ==========================================
+
+// GET /api/performance/team
+router.get('/team',
+  PerformanceController.getTeamPerformance
+);
+
+// ==========================================
 // DASHBOARD
 // ==========================================
 
@@ -127,12 +169,17 @@ router.get('/health', (req, res) => {
     endpoints: {
       'POST /reviews': 'Create performance review',
       'GET /reviews': 'Get performance reviews',
+      'GET /reviews/:id': 'Get review by ID',
+      'PUT /reviews/:id': 'Update review',
       'PUT /reviews/:id/submit': 'Submit review',
       'POST /goals': 'Create performance goal',
       'GET /goals': 'Get performance goals',
+      'GET /goals/:id': 'Get goal by ID',
+      'PUT /goals/:id': 'Update goal',
       'PUT /goals/:id/progress': 'Update goal progress',
       'POST /feedback/generate': 'Generate AI feedback',
       'GET /feedback': 'Get AI feedback',
+      'GET /team': 'Get team performance (manager)',
       'GET /dashboard': 'Get performance dashboard'
     }
   });

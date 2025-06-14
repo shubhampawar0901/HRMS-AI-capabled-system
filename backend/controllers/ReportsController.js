@@ -306,19 +306,232 @@ class ReportsController {
 
   static async getEmployeeAnalytics(employeeId) {
     const { executeQuery } = require('../config/database');
-    
+
     const thisMonthAttendance = await executeQuery(`
-      SELECT COUNT(*) as count FROM attendance_records 
+      SELECT COUNT(*) as count FROM attendance_records
       WHERE employee_id = ? AND MONTH(date) = MONTH(CURDATE()) AND YEAR(date) = YEAR(CURDATE())
     `, [employeeId]);
     const leaveBalance = await executeQuery(`
-      SELECT SUM(allocated_days - used_days) as balance FROM leave_balances 
+      SELECT SUM(total_days - used_days) as balance FROM leave_balances
       WHERE employee_id = ? AND year = YEAR(CURDATE())
     `, [employeeId]);
 
     return {
       thisMonthAttendance: thisMonthAttendance[0].count,
       leaveBalance: leaveBalance[0].balance || 0
+    };
+  }
+
+  // ==========================================
+  // MISSING HELPER METHODS
+  // ==========================================
+  static async getAdminLeaveReport(year, departmentId, employeeId) {
+    const { executeQuery } = require('../config/database');
+
+    const query = `
+      SELECT
+        e.id,
+        e.employee_code,
+        CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+        d.name as department_name,
+        lt.name as leave_type,
+        COUNT(la.id) as total_applications,
+        SUM(CASE WHEN la.status = 'approved' THEN la.total_days ELSE 0 END) as approved_days,
+        SUM(CASE WHEN la.status = 'pending' THEN la.total_days ELSE 0 END) as pending_days,
+        SUM(CASE WHEN la.status = 'rejected' THEN la.total_days ELSE 0 END) as rejected_days
+      FROM employees e
+      LEFT JOIN leave_applications la ON e.id = la.employee_id AND YEAR(la.start_date) = ?
+      LEFT JOIN leave_types lt ON la.leave_type_id = lt.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE e.status = 'active'
+        ${departmentId ? 'AND e.department_id = ?' : ''}
+        ${employeeId ? 'AND e.id = ?' : ''}
+      GROUP BY e.id, lt.id
+      ORDER BY e.first_name, e.last_name, lt.name
+    `;
+
+    const params = [year];
+    if (departmentId) params.push(departmentId);
+    if (employeeId) params.push(employeeId);
+
+    return await executeQuery(query, params);
+  }
+
+  static async getManagerLeaveReport(managerId, year, employeeId) {
+    const { executeQuery } = require('../config/database');
+
+    const query = `
+      SELECT
+        e.id,
+        e.employee_code,
+        CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+        lt.name as leave_type,
+        COUNT(la.id) as total_applications,
+        SUM(CASE WHEN la.status = 'approved' THEN la.total_days ELSE 0 END) as approved_days,
+        SUM(CASE WHEN la.status = 'pending' THEN la.total_days ELSE 0 END) as pending_days,
+        SUM(CASE WHEN la.status = 'rejected' THEN la.total_days ELSE 0 END) as rejected_days
+      FROM employees e
+      LEFT JOIN leave_applications la ON e.id = la.employee_id AND YEAR(la.start_date) = ?
+      LEFT JOIN leave_types lt ON la.leave_type_id = lt.id
+      WHERE e.manager_id = ? AND e.status = 'active'
+        ${employeeId ? 'AND e.id = ?' : ''}
+      GROUP BY e.id, lt.id
+      ORDER BY e.first_name, e.last_name, lt.name
+    `;
+
+    const params = [year, managerId];
+    if (employeeId) params.push(employeeId);
+
+    return await executeQuery(query, params);
+  }
+
+  static async getEmployeeLeaveReport(employeeId, year) {
+    const { executeQuery } = require('../config/database');
+
+    const query = `
+      SELECT
+        la.id,
+        lt.name as leave_type,
+        la.start_date,
+        la.end_date,
+        la.total_days,
+        la.reason,
+        la.status,
+        la.applied_date,
+        la.approved_date
+      FROM leave_applications la
+      JOIN leave_types lt ON la.leave_type_id = lt.id
+      WHERE la.employee_id = ? AND YEAR(la.start_date) = ?
+      ORDER BY la.start_date DESC
+    `;
+
+    return await executeQuery(query, [employeeId, year]);
+  }
+
+  static async getPayrollReportData(month, year, departmentId) {
+    const { executeQuery } = require('../config/database');
+
+    const query = `
+      SELECT
+        p.*,
+        CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+        e.employee_code,
+        d.name as department_name
+      FROM payroll_records p
+      JOIN employees e ON p.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE p.month = ? AND p.year = ?
+        ${departmentId ? 'AND e.department_id = ?' : ''}
+      ORDER BY d.name, e.first_name, e.last_name
+    `;
+
+    const params = [month, year];
+    if (departmentId) params.push(departmentId);
+
+    return await executeQuery(query, params);
+  }
+
+  static async getAdminPerformanceReport(year, departmentId, employeeId) {
+    const { executeQuery } = require('../config/database');
+
+    const query = `
+      SELECT
+        e.id,
+        e.employee_code,
+        CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+        d.name as department_name,
+        COUNT(pr.id) as total_reviews,
+        AVG(pr.overall_rating) as avg_rating,
+        COUNT(pg.id) as total_goals,
+        AVG(pg.achievement_percentage) as avg_goal_completion
+      FROM employees e
+      LEFT JOIN performance_reviews pr ON e.id = pr.employee_id
+        AND YEAR(pr.created_at) = ?
+      LEFT JOIN performance_goals pg ON e.id = pg.employee_id
+        AND YEAR(pg.created_at) = ?
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE e.status = 'active'
+        ${departmentId ? 'AND e.department_id = ?' : ''}
+        ${employeeId ? 'AND e.id = ?' : ''}
+      GROUP BY e.id
+      ORDER BY e.first_name, e.last_name
+    `;
+
+    const params = [year, year];
+    if (departmentId) params.push(departmentId);
+    if (employeeId) params.push(employeeId);
+
+    return await executeQuery(query, params);
+  }
+
+  static async getManagerPerformanceReport(managerId, year, employeeId) {
+    const { executeQuery } = require('../config/database');
+
+    const query = `
+      SELECT
+        e.id,
+        e.employee_code,
+        CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+        COUNT(pr.id) as total_reviews,
+        AVG(pr.overall_rating) as avg_rating,
+        COUNT(pg.id) as total_goals,
+        AVG(pg.achievement_percentage) as avg_goal_completion
+      FROM employees e
+      LEFT JOIN performance_reviews pr ON e.id = pr.employee_id
+        AND YEAR(pr.created_at) = ?
+      LEFT JOIN performance_goals pg ON e.id = pg.employee_id
+        AND YEAR(pg.created_at) = ?
+      WHERE e.manager_id = ? AND e.status = 'active'
+        ${employeeId ? 'AND e.id = ?' : ''}
+      GROUP BY e.id
+      ORDER BY e.first_name, e.last_name
+    `;
+
+    const params = [year, year, managerId];
+    if (employeeId) params.push(employeeId);
+
+    return await executeQuery(query, params);
+  }
+
+  static async getEmployeePerformanceReport(employeeId, year) {
+    const { executeQuery } = require('../config/database');
+
+    const reviewsQuery = `
+      SELECT
+        pr.id,
+        pr.review_period,
+        pr.overall_rating,
+        pr.comments,
+        pr.status,
+        pr.created_at,
+        CONCAT(r.first_name, ' ', r.last_name) as reviewer_name
+      FROM performance_reviews pr
+      LEFT JOIN users u ON pr.reviewer_id = u.id
+      LEFT JOIN employees r ON u.id = r.user_id
+      WHERE pr.employee_id = ? AND YEAR(pr.created_at) = ?
+      ORDER BY pr.created_at DESC
+    `;
+
+    const goalsQuery = `
+      SELECT
+        pg.id,
+        pg.title,
+        pg.description,
+        pg.target_date,
+        pg.achievement_percentage,
+        pg.status,
+        pg.created_at
+      FROM performance_goals pg
+      WHERE pg.employee_id = ? AND YEAR(pg.created_at) = ?
+      ORDER BY pg.target_date ASC
+    `;
+
+    const reviews = await executeQuery(reviewsQuery, [employeeId, year]);
+    const goals = await executeQuery(goalsQuery, [employeeId, year]);
+
+    return {
+      reviews,
+      goals
     };
   }
 }

@@ -85,6 +85,21 @@ router.get('/payslip/:id',
   PayrollController.getPayslip
 );
 
+// GET /api/payroll/payslips (Employee route for their own payslips)
+router.get('/payslips',
+  paginationValidation,
+  query('year').optional().isInt({ min: 2020 }).withMessage('Year must be valid'),
+  validateRequest,
+  PayrollController.getEmployeePayslips
+);
+
+// GET /api/payroll/salary-structure/:employeeId
+router.get('/salary-structure/:employeeId',
+  param('employeeId').isInt().withMessage('Valid employee ID is required'),
+  validateRequest,
+  PayrollController.getSalaryStructure
+);
+
 // ==========================================
 // HEALTH CHECK
 // ==========================================
@@ -98,6 +113,8 @@ router.get('/health', (req, res) => {
       'POST /bulk-generate': 'Bulk generate payroll (admin)',
       'GET /records': 'Get payroll records',
       'GET /payslip/:id': 'Get payslip',
+      'GET /payslips': 'Get employee payslips',
+      'GET /salary-structure/:employeeId': 'Get salary structure',
       'PUT /:id/process': 'Process payroll (admin)',
       'PUT /:id/pay': 'Mark as paid (admin)',
       'GET /summary': 'Get payroll summary (admin)'

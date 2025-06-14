@@ -1,4 +1,5 @@
 const { Employee, Department, User } = require('../models');
+const EmployeeService = require('../services/EmployeeService');
 const { sendSuccess, sendError, sendCreated } = require('../utils/responseHelper');
 
 class EmployeeController {
@@ -61,7 +62,7 @@ class EmployeeController {
   static async createEmployee(req, res) {
     try {
       const employeeData = req.body;
-      
+
       // Validate required fields
       const requiredFields = ['firstName', 'lastName', 'email', 'departmentId', 'position', 'hireDate'];
       for (const field of requiredFields) {
@@ -70,15 +71,63 @@ class EmployeeController {
         }
       }
 
+      // Check if user already exists with this email
+      const existingUser = await User.findByEmail(employeeData.email);
+      if (existingUser) {
+        return sendError(res, 'User already exists with this email', 409);
+      }
+
       // Generate employee code
       employeeData.employeeCode = await Employee.generateEmployeeCode();
+      console.log('Generated employee code:', employeeData.employeeCode);
 
-      // Create employee
-      const employee = await Employee.create(employeeData);
+      // Create user account first
+      const userData = {
+        email: employeeData.email,
+        password: employeeData.password || EmployeeService.generateTemporaryPassword(),
+        role: employeeData.role || 'employee'
+      };
 
-      return sendCreated(res, employee, 'Employee created successfully');
+      console.log('Creating user with data:', userData);
+      let user;
+      try {
+        user = await User.create(userData);
+        console.log('User created:', user.id);
+      } catch (userError) {
+        console.error('User creation failed:', userError);
+        throw userError;
+      }
+
+      // Create employee record
+      const employeeCreateData = {
+        ...employeeData,
+        userId: user.id
+      };
+      console.log('🔍 Creating employee with complete data:');
+      console.log('Employee Data Keys:', Object.keys(employeeCreateData));
+      console.log('Employee Data Values:', JSON.stringify(employeeCreateData, null, 2));
+
+      try {
+        await Employee.create(employeeCreateData);
+        return sendSuccess(res, null, 'Employee created successfully');
+      } catch (employeeError) {
+        console.error('Employee creation failed, cleaning up user:', employeeError);
+        // Clean up the created user if employee creation fails
+        try {
+          await User.delete(user.id);
+          console.log('User cleanup completed');
+        } catch (cleanupError) {
+          console.error('User cleanup failed:', cleanupError);
+        }
+        throw employeeError;
+      }
     } catch (error) {
       console.error('Create employee error:', error);
+      console.error('Full error details:', error.message);
+      console.error('Stack trace:', error.stack);
+      if (error.message.includes('Duplicate entry')) {
+        return sendError(res, 'User already exists with this email', 409);
+      }
       return sendError(res, error.message, 500);
     }
   }

@@ -297,7 +297,7 @@ class PayrollController {
   static async getPayrollSummary(req, res) {
     try {
       const { role } = req.user;
-      
+
       if (role !== 'admin') {
         return sendError(res, 'Access denied', 403);
       }
@@ -310,6 +310,101 @@ class PayrollController {
     } catch (error) {
       console.error('Get payroll summary error:', error);
       return sendError(res, 'Failed to get payroll summary', 500);
+    }
+  }
+
+  // ==========================================
+  // GET EMPLOYEE PAYSLIPS
+  // ==========================================
+  static async getEmployeePayslips(req, res) {
+    try {
+      const { role, employeeId } = req.user;
+      const { year, page = 1, limit = 20 } = req.query;
+
+      if (role !== 'employee') {
+        return sendError(res, 'Access denied', 403);
+      }
+
+      const options = {
+        year,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      };
+
+      const records = await Payroll.findByEmployee(employeeId, options);
+      const total = await Payroll.countByEmployee(employeeId, options);
+
+      const responseData = {
+        payslips: records,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      };
+
+      return sendSuccess(res, responseData, 'Employee payslips retrieved');
+    } catch (error) {
+      console.error('Get employee payslips error:', error);
+      return sendError(res, 'Failed to get employee payslips', 500);
+    }
+  }
+
+  // ==========================================
+  // GET SALARY STRUCTURE
+  // ==========================================
+  static async getSalaryStructure(req, res) {
+    try {
+      const { role, employeeId: currentEmployeeId } = req.user;
+      const { employeeId } = req.params;
+
+      // Check permissions
+      if (role === 'employee' && parseInt(employeeId) !== currentEmployeeId) {
+        return sendError(res, 'Access denied', 403);
+      }
+
+      if (role === 'manager') {
+        const employee = await Employee.findById(employeeId);
+        if (employee.managerId !== currentEmployeeId) {
+          return sendError(res, 'Access denied', 403);
+        }
+      }
+
+      const employee = await Employee.findById(employeeId);
+      if (!employee) {
+        return sendError(res, 'Employee not found', 404);
+      }
+
+      const salaryStructure = {
+        employeeId: employee.id,
+        employeeName: `${employee.firstName} ${employee.lastName}`,
+        employeeCode: employee.employeeCode,
+        basicSalary: employee.basicSalary,
+        allowances: {
+          hra: employee.basicSalary * 0.4, // 40% of basic
+          transportAllowance: 2000, // Fixed amount
+          medicalAllowance: 1500 // Fixed amount
+        },
+        deductions: {
+          pfDeduction: employee.basicSalary * 0.12, // 12% of basic
+          esiDeduction: employee.basicSalary * 0.0175, // 1.75% of basic
+          professionalTax: 200 // Fixed amount
+        }
+      };
+
+      // Calculate totals
+      const totalAllowances = Object.values(salaryStructure.allowances).reduce((sum, val) => sum + val, 0);
+      const totalDeductions = Object.values(salaryStructure.deductions).reduce((sum, val) => sum + val, 0);
+
+      salaryStructure.grossSalary = employee.basicSalary + totalAllowances;
+      salaryStructure.totalDeductions = totalDeductions;
+      salaryStructure.netSalary = salaryStructure.grossSalary - totalDeductions;
+
+      return sendSuccess(res, salaryStructure, 'Salary structure retrieved');
+    } catch (error) {
+      console.error('Get salary structure error:', error);
+      return sendError(res, 'Failed to get salary structure', 500);
     }
   }
 }
