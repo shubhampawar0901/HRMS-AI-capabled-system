@@ -17,7 +17,7 @@ class PerformanceService {
   // Get performance review by ID
   async getPerformanceReviewById(id) {
     return apiRequest(
-      () => axiosInstance.get(API_ENDPOINTS.PERFORMANCE.BY_ID(id)),
+      () => axiosInstance.get(API_ENDPOINTS.PERFORMANCE.REVIEW_BY_ID(id)),
       `performance-review-${id}`
     );
   }
@@ -25,7 +25,7 @@ class PerformanceService {
   // Create performance review
   async createPerformanceReview(reviewData) {
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.PERFORMANCE.CREATE_REVIEW, reviewData),
+      () => axiosInstance.post(API_ENDPOINTS.PERFORMANCE.REVIEWS, reviewData),
       'performance-review-create'
     );
   }
@@ -33,7 +33,7 @@ class PerformanceService {
   // Update performance review
   async updatePerformanceReview(id, reviewData) {
     return apiRequest(
-      () => axiosInstance.put(API_ENDPOINTS.PERFORMANCE.UPDATE_REVIEW(id), reviewData),
+      () => axiosInstance.put(API_ENDPOINTS.PERFORMANCE.REVIEW_BY_ID(id), reviewData),
       `performance-review-update-${id}`
     );
   }
@@ -52,7 +52,7 @@ class PerformanceService {
   // Create goal
   async createGoal(goalData) {
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.PERFORMANCE.CREATE_GOAL, goalData),
+      () => axiosInstance.post(API_ENDPOINTS.PERFORMANCE.GOALS, goalData),
       'performance-goal-create'
     );
   }
@@ -60,7 +60,7 @@ class PerformanceService {
   // Update goal
   async updateGoal(id, goalData) {
     return apiRequest(
-      () => axiosInstance.put(API_ENDPOINTS.PERFORMANCE.UPDATE_GOAL(id), goalData),
+      () => axiosInstance.put(API_ENDPOINTS.PERFORMANCE.GOAL_BY_ID(id), goalData),
       `performance-goal-update-${id}`
     );
   }
@@ -76,8 +76,8 @@ class PerformanceService {
   // Get performance analytics
   async getPerformanceAnalytics(params = {}) {
     const queryParams = new URLSearchParams(params).toString();
-    const url = queryParams ? `${API_ENDPOINTS.PERFORMANCE.ANALYTICS}?${queryParams}` : API_ENDPOINTS.PERFORMANCE.ANALYTICS;
-    
+    const url = queryParams ? `${API_ENDPOINTS.PERFORMANCE.DASHBOARD}?${queryParams}` : API_ENDPOINTS.PERFORMANCE.DASHBOARD;
+
     return apiRequest(
       () => axiosInstance.get(url),
       'performance-analytics'
@@ -110,9 +110,9 @@ class PerformanceService {
   // Get team performance (for managers)
   async getTeamPerformance(params = {}) {
     const queryParams = new URLSearchParams(params).toString();
-    
+
     return apiRequest(
-      () => axiosInstance.get(`${API_ENDPOINTS.PERFORMANCE.BASE}/team${queryParams ? `?${queryParams}` : ''}`),
+      () => axiosInstance.get(`${API_ENDPOINTS.PERFORMANCE.TEAM}${queryParams ? `?${queryParams}` : ''}`),
       'team-performance'
     );
   }
@@ -120,7 +120,7 @@ class PerformanceService {
   // Generate performance report
   async generatePerformanceReport(employeeId, period) {
     return apiRequest(
-      () => axiosInstance.post(`${API_ENDPOINTS.PERFORMANCE.BASE}/report`, {
+      () => axiosInstance.post(`${API_ENDPOINTS.REPORTS.PERFORMANCE}`, {
         employeeId,
         period
       }),
@@ -133,9 +133,9 @@ class PerformanceService {
     const params = { period };
     if (employeeId) params.employeeId = employeeId;
     const queryParams = new URLSearchParams(params).toString();
-    
+
     return apiRequest(
-      () => axiosInstance.get(`${API_ENDPOINTS.PERFORMANCE.BASE}/metrics?${queryParams}`),
+      () => axiosInstance.get(`${API_ENDPOINTS.DATA.PERFORMANCE_METRICS}?${queryParams}`),
       'performance-metrics'
     );
   }

@@ -1,13 +1,8 @@
 import React from 'react';
-import PlaceholderPage from '@/components/common/PlaceholderPage';
+import GoalsList from '@/components/performance/GoalsList';
 
 const GoalsPage = () => {
-  return (
-    <PlaceholderPage 
-      title="Goals Management"
-      description="Set, track, and manage performance goals."
-    />
-  );
+  return <GoalsList />;
 };
 
 export default GoalsPage;

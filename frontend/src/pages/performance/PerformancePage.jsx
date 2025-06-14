@@ -1,13 +1,8 @@
 import React from 'react';
-import PlaceholderPage from '@/components/common/PlaceholderPage';
+import PerformanceDashboard from '@/components/performance/PerformanceDashboard';
 
 const PerformancePage = () => {
-  return (
-    <PlaceholderPage 
-      title="Performance Management"
-      description="Track performance reviews, goals, and feedback."
-    />
-  );
+  return <PerformanceDashboard />;
 };
 
 export default PerformancePage;
