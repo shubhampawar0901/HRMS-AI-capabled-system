@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
+import { useAuthContext } from '@/contexts/AuthContext';
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
   Building2,
   Edit,
   Trash2,
@@ -18,6 +18,7 @@ import {
 
 const EmployeeCard = ({ employee, onEdit, onDelete, onView, showActions = true }) => {
   const navigate = useNavigate();
+  const { isAdmin } = useAuthContext();
 
   const handleCardClick = () => {
     if (onView) {
@@ -158,15 +159,18 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onView, showActions = true }
                 <Edit className="h-4 w-4 mr-1" />
                 Edit
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDelete}
-                className="hover:bg-red-50 hover:border-red-300 text-red-600 hover:text-red-700 transition-colors"
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
-              </Button>
+              {/* Only show delete button for admins */}
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="hover:bg-red-50 hover:border-red-300 text-red-600 hover:text-red-700 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              )}
             </div>
           </div>
         )}

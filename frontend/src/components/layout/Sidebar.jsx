@@ -10,12 +10,12 @@ import {
   Brain,
   X
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   const navigationItems = [
     {

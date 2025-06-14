@@ -171,20 +171,46 @@ class Employee {
   }
 
   static async findAll(options = {}) {
-    // Start with the simplest possible query for testing
     let query = 'SELECT * FROM employees WHERE status != "deleted"';
     const params = [];
 
-    // Only add status filter for now
+    // Add filters
     if (options.status) {
       query += ' AND status = ?';
       params.push(options.status);
     }
 
-    // Add simple ordering
+    if (options.departmentId) {
+      query += ' AND department_id = ?';
+      params.push(options.departmentId);
+    }
+
+    if (options.search) {
+      query += ' AND (first_name LIKE ? OR last_name LIKE ? OR employee_code LIKE ? OR email LIKE ?)';
+      const searchTerm = `%${options.search}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    // Add ordering
     query += ' ORDER BY first_name, last_name';
 
+    // Add pagination
+    if (options.limit) {
+      query += ' LIMIT ?';
+      params.push(options.limit);
+    }
+
+    if (options.offset) {
+      query += ' OFFSET ?';
+      params.push(options.offset);
+    }
+
+    console.log('🔍 Employee.findAll SQL:', query);
+    console.log('🔍 Employee.findAll params:', params);
+
     const rows = await executeQuery(query, params);
+    console.log('🔍 Employee.findAll results:', rows.length, 'rows');
+
     return rows.map(row => new Employee(row));
   }
 
@@ -212,18 +238,29 @@ class Employee {
   static async count(options = {}) {
     let query = 'SELECT COUNT(*) as total FROM employees WHERE status != "deleted"';
     const params = [];
-    
+
     if (options.departmentId) {
       query += ' AND department_id = ?';
       params.push(options.departmentId);
     }
-    
+
     if (options.status) {
       query += ' AND status = ?';
       params.push(options.status);
     }
-    
+
+    if (options.search) {
+      query += ' AND (first_name LIKE ? OR last_name LIKE ? OR employee_code LIKE ? OR email LIKE ?)';
+      const searchTerm = `%${options.search}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    console.log('🔍 Employee.count SQL:', query);
+    console.log('🔍 Employee.count params:', params);
+
     const rows = await executeQuery(query, params);
+    console.log('🔍 Employee.count result:', rows[0].total);
+
     return rows[0].total;
   }
 

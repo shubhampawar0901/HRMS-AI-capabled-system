@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { User, Mail, Phone, MapPin, Calendar, Save, Camera } from 'lucide-react';
 
 // UI Components
@@ -10,17 +9,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-// Redux actions
-import { updateUserProfile, clearError } from '@/store/slices/authSlice';
+// Auth Context
+import { useAuthContext } from '@/contexts/AuthContext';
 
 // Utils
 import { isValidEmail, isValidPhone } from '@/utils/validationUtils';
 import { formatName, getInitials } from '@/utils/formatUtils';
 
 const ProfileForm = () => {
-  const dispatch = useDispatch();
-  const { user, isLoading, error } = useSelector(state => state.auth);
-  
+  const { user, updateUserProfile, clearError } = useAuthContext();
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -32,6 +30,8 @@ const ProfileForm = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Initialize form data with user data
   useEffect(() => {
@@ -49,8 +49,8 @@ const ProfileForm = () => {
 
   // Clear error when component mounts
   useEffect(() => {
-    dispatch(clearError());
-  }, [dispatch]);
+    setError(null);
+  }, []);
 
   const validateForm = () => {
     const errors = {};
@@ -85,7 +85,7 @@ const ProfileForm = () => {
     
     // Clear global error and success message
     if (error) {
-      dispatch(clearError());
+      setError(null);
     }
     if (successMessage) {
       setSuccessMessage('');
@@ -94,22 +94,29 @@ const ProfileForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     try {
-      await dispatch(updateUserProfile(formData)).unwrap();
+      setIsLoading(true);
+      setError(null);
+
+      // Update user profile in context (local state only)
+      updateUserProfile(formData);
       setSuccessMessage('Profile updated successfully!');
       setIsEditing(false);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
     } catch (error) {
       console.error('Profile update failed:', error);
+      setError(error.message || 'Failed to update profile');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -127,7 +134,7 @@ const ProfileForm = () => {
     }
     setValidationErrors({});
     setIsEditing(false);
-    dispatch(clearError());
+    setError(null);
     setSuccessMessage('');
   };
 

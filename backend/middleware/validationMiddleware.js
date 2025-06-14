@@ -64,24 +64,24 @@ const commonValidations = {
 // Pagination validation
 const validatePagination = (req, res, next) => {
   const { page = 1, limit = 10 } = req.query;
-  
+
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
-  
+
   if (isNaN(pageNum) || pageNum < 1) {
     return next(new AppError('Page must be a positive integer', 400));
   }
-  
-  if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
-    return next(new AppError('Limit must be between 1 and 100', 400));
+
+  if (isNaN(limitNum) || limitNum < 1 || limitNum > 10000) {
+    return next(new AppError('Limit must be between 1 and 10000', 400));
   }
-  
+
   req.pagination = {
     page: pageNum,
     limit: limitNum,
     offset: (pageNum - 1) * limitNum
   };
-  
+
   next();
 };
 

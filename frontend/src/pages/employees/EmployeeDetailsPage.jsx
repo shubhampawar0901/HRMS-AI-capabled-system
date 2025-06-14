@@ -1,18 +1,12 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import EmployeeProfile from '@/components/employees/EmployeeProfile';
-import { useEmployees } from '@/hooks/useEmployees';
+import { useEmployee } from '@/hooks/useEmployees';
 
 const EmployeeDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentEmployee, isLoading, error, loadEmployee } = useEmployees();
-
-  useEffect(() => {
-    if (id) {
-      loadEmployee(id);
-    }
-  }, [id, loadEmployee]);
+  const { employee, isLoading, error } = useEmployee(id);
 
   const handleEdit = () => {
     navigate(`/employees/${id}/edit`);
@@ -20,8 +14,8 @@ const EmployeeDetailsPage = () => {
 
   return (
     <div className="p-6">
-      <EmployeeProfile 
-        employee={currentEmployee}
+      <EmployeeProfile
+        employee={employee}
         isLoading={isLoading}
         error={error}
         onEdit={handleEdit}

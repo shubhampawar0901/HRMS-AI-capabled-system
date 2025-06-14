@@ -3,11 +3,49 @@ import { API_ENDPOINTS } from '@/api/endpoints';
 import { apiRequest } from '@/api/interceptors';
 
 class EmployeeService {
+  // Get all employees without pagination (using maximum allowed limit)
+  async getAllEmployees() {
+    // Use the working /employees endpoint with maximum allowed limit
+    const params = {
+      page: 1,
+      limit: 100, // Maximum allowed by backend validation
+      status: 'active'
+    };
+
+    const queryParams = new URLSearchParams(params).toString();
+    const url = `${API_ENDPOINTS.EMPLOYEES.BASE}?${queryParams}`;
+
+    return apiRequest(
+      () => axiosInstance.get(url),
+      'employees-all'
+    );
+  }
+
   // Get all employees with pagination and filters
   async getEmployees(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
+    // Clean and sanitize parameters
+    const cleanParams = {};
+
+    // Only include non-empty parameters
+    if (params.page && params.page > 0) {
+      cleanParams.page = params.page;
+    }
+    if (params.limit && params.limit > 0) {
+      cleanParams.limit = params.limit;
+    }
+    if (params.search && params.search.trim().length > 0) {
+      cleanParams.search = params.search.trim();
+    }
+    if (params.departmentId && params.departmentId !== '' && !isNaN(params.departmentId)) {
+      cleanParams.departmentId = parseInt(params.departmentId);
+    }
+    if (params.status && params.status.trim().length > 0) {
+      cleanParams.status = params.status.trim();
+    }
+
+    const queryParams = new URLSearchParams(cleanParams).toString();
     const url = queryParams ? `${API_ENDPOINTS.EMPLOYEES.BASE}?${queryParams}` : API_ENDPOINTS.EMPLOYEES.BASE;
-    
+
     return apiRequest(
       () => axiosInstance.get(url),
       'employees-list'
@@ -15,7 +53,7 @@ class EmployeeService {
   }
 
   // Get employee by ID
-  async getEmployeeById(id) {
+  async getEmployee(id) {
     return apiRequest(
       () => axiosInstance.get(API_ENDPOINTS.EMPLOYEES.BY_ID(id)),
       `employee-${id}`
@@ -23,7 +61,7 @@ class EmployeeService {
   }
 
   // Create new employee
-  async createEmployee(employeeData) {
+  async addEmployee(employeeData) {
     return apiRequest(
       () => axiosInstance.post(API_ENDPOINTS.EMPLOYEES.CREATE, employeeData),
       'employee-create'
@@ -46,102 +84,61 @@ class EmployeeService {
     );
   }
 
-  // Search employees
+  // Search employees (using the main endpoint with search params)
   async searchEmployees(searchTerm, filters = {}) {
     const params = { search: searchTerm, ...filters };
-    const queryParams = new URLSearchParams(params).toString();
-    
-    return apiRequest(
-      () => axiosInstance.get(`${API_ENDPOINTS.EMPLOYEES.SEARCH}?${queryParams}`),
-      'employees-search'
-    );
+    return this.getEmployees(params);
   }
 
   // Get departments
   async getDepartments() {
     return apiRequest(
-      () => axiosInstance.get(API_ENDPOINTS.EMPLOYEES.DEPARTMENTS),
+      () => axiosInstance.get(API_ENDPOINTS.EMPLOYEES.DEPARTMENTS_ALL),
       'departments'
     );
   }
 
-  // Get positions
-  async getPositions() {
+  // Create department
+  async createDepartment(departmentData) {
     return apiRequest(
-      () => axiosInstance.get(API_ENDPOINTS.EMPLOYEES.POSITIONS),
-      'positions'
+      () => axiosInstance.post(API_ENDPOINTS.EMPLOYEES.DEPARTMENTS, departmentData),
+      'department-create'
     );
   }
 
-  // Bulk upload employees
-  async bulkUpload(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    
+  // Get department by ID
+  async getDepartment(id) {
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.EMPLOYEES.BULK_UPLOAD, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      () => axiosInstance.get(API_ENDPOINTS.EMPLOYEES.DEPARTMENT_BY_ID(id)),
+      `department-${id}`
+    );
+  }
+
+  // Update department
+  async updateDepartment(id, departmentData) {
+    return apiRequest(
+      () => axiosInstance.put(API_ENDPOINTS.EMPLOYEES.DEPARTMENT_BY_ID(id), departmentData),
+      `department-update-${id}`
+    );
+  }
+
+  // Delete department
+  async deleteDepartment(id) {
+    return apiRequest(
+      () => axiosInstance.delete(API_ENDPOINTS.EMPLOYEES.DEPARTMENT_BY_ID(id)),
+      `department-delete-${id}`
+    );
+  }
+
+  // Upload document for employee
+  async uploadDocument(employeeId, formData) {
+    return apiRequest(
+      () => axiosInstance.post(`${API_ENDPOINTS.EMPLOYEES.BY_ID(employeeId)}/documents`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       }),
-      'employees-bulk-upload'
-    );
-  }
-
-  // Export employees
-  async exportEmployees(format = 'excel', filters = {}) {
-    const params = { format, ...filters };
-    const queryParams = new URLSearchParams(params).toString();
-    
-    return apiRequest(
-      () => axiosInstance.get(`${API_ENDPOINTS.EMPLOYEES.EXPORT}?${queryParams}`, {
-        responseType: 'blob'
-      }),
-      'employees-export'
-    );
-  }
-
-  // Get employee statistics
-  async getStatistics() {
-    return apiRequest(
-      () => axiosInstance.get(API_ENDPOINTS.EMPLOYEES.STATISTICS),
-      'employees-statistics'
-    );
-  }
-
-  // Deactivate employee
-  async deactivateEmployee(id) {
-    return apiRequest(
-      () => axiosInstance.patch(API_ENDPOINTS.EMPLOYEES.DEACTIVATE(id)),
-      `employee-deactivate-${id}`
-    );
-  }
-
-  // Activate employee
-  async activateEmployee(id) {
-    return apiRequest(
-      () => axiosInstance.patch(API_ENDPOINTS.EMPLOYEES.ACTIVATE(id)),
-      `employee-activate-${id}`
-    );
-  }
-
-  // Get employee documents
-  async getEmployeeDocuments(id) {
-    return apiRequest(
-      () => axiosInstance.get(API_ENDPOINTS.EMPLOYEES.DOCUMENTS(id)),
-      `employee-documents-${id}`
-    );
-  }
-
-  // Upload employee document
-  async uploadDocument(id, file, documentType) {
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('type', documentType);
-    
-    return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.EMPLOYEES.UPLOAD_DOCUMENT(id), formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      }),
-      `employee-upload-document-${id}`
+      `employee-document-upload-${employeeId}`
     );
   }
 }

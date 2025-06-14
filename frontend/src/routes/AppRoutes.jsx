@@ -80,11 +80,39 @@ const AppRoutes = () => {
         {/* Profile */}
         <Route path="profile" element={<ProfilePage />} />
 
-        {/* Employees */}
-        <Route path="employees" element={<EmployeesPage />} />
-        <Route path="employees/add" element={<AddEmployeePage />} />
-        <Route path="employees/:id" element={<EmployeeDetailsPage />} />
-        <Route path="employees/:id/edit" element={<EditEmployeePage />} />
+        {/* Employees - Admin/Manager Only */}
+        <Route
+          path="employees"
+          element={
+            <ProtectedRoute requiredRoles={['admin', 'manager']}>
+              <EmployeesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="employees/add"
+          element={
+            <ProtectedRoute requiredRoles={['admin', 'manager']}>
+              <AddEmployeePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="employees/:id"
+          element={
+            <ProtectedRoute requiredRoles={['admin', 'manager']}>
+              <EmployeeDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="employees/:id/edit"
+          element={
+            <ProtectedRoute requiredRoles={['admin', 'manager']}>
+              <EditEmployeePage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Attendance */}
         <Route path="attendance" element={<AttendancePage />} />

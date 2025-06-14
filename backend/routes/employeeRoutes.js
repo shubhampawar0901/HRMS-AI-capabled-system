@@ -44,16 +44,39 @@ const upload = multer({
 // EMPLOYEE ROUTES
 // ==========================================
 
-// Get all employees
+// Get all employees (no pagination)
+router.get('/all',
+  authenticateToken,
+  authorize('admin', 'manager'),
+  [
+    query('status').optional().isIn(['active', 'inactive', 'terminated']).withMessage('Invalid status')
+  ],
+  validateRequest,
+  EmployeeController.getAllEmployeesNoPagination
+);
+
+// Get all employees (with pagination)
 router.get('/',
   authenticateToken,
   authorize('admin', 'manager'),
   [
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-    query('departmentId').optional().isInt().withMessage('Department ID must be valid'),
+    query('departmentId').optional().custom((value) => {
+      if (value === '' || value === undefined || value === null) return true;
+      if (!Number.isInteger(Number(value)) || Number(value) < 1) {
+        throw new Error('Department ID must be a valid positive integer');
+      }
+      return true;
+    }),
     query('status').optional().isIn(['active', 'inactive', 'terminated']).withMessage('Invalid status'),
-    query('search').optional().isLength({ min: 1, max: 100 }).withMessage('Search term must be 1-100 characters')
+    query('search').optional().custom((value) => {
+      if (value === '' || value === undefined || value === null) return true;
+      if (typeof value !== 'string' || value.length < 1 || value.length > 100) {
+        throw new Error('Search term must be 1-100 characters');
+      }
+      return true;
+    })
   ],
   validateRequest,
   EmployeeController.getAllEmployees
@@ -74,22 +97,6 @@ router.get('/:id',
 router.post('/',
   authenticateToken,
   authorize('admin', 'manager'),
-  [
-    body('firstName').notEmpty().isLength({ min: 1, max: 50 }).withMessage('First name is required (1-50 characters)'),
-    body('lastName').notEmpty().isLength({ min: 1, max: 50 }).withMessage('Last name is required (1-50 characters)'),
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('phone').optional().isLength({ max: 20 }).withMessage('Phone number max 20 characters'),
-    body('dateOfBirth').optional().isISO8601().withMessage('Valid date of birth required'),
-    body('gender').optional().isIn(['male', 'female', 'other']).withMessage('Invalid gender'),
-    body('departmentId').isInt().withMessage('Valid department ID is required'),
-    body('position').notEmpty().isLength({ min: 1, max: 100 }).withMessage('Position is required (1-100 characters)'),
-    body('hireDate').isISO8601().withMessage('Valid hire date is required'),
-    body('basicSalary').optional().isFloat({ min: 0 }).withMessage('Basic salary must be positive'),
-    body('managerId').optional().isInt().withMessage('Manager ID must be valid'),
-    body('emergencyContact').optional().isLength({ max: 100 }).withMessage('Emergency contact max 100 characters'),
-    body('emergencyPhone').optional().isLength({ max: 20 }).withMessage('Emergency phone max 20 characters')
-  ],
-  validateRequest,
   EmployeeController.createEmployee
 );
 

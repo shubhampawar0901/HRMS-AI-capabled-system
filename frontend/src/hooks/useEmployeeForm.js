@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useEmployees } from './useEmployees';
+import { useEmployee, useEmployeeMutations, useDepartments } from './useEmployees';
 
 const initialFormData = {
   firstName: '',
@@ -22,28 +22,39 @@ const initialFormData = {
 export const useEmployeeForm = (employeeId = null) => {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [availableManagers, setAvailableManagers] = useState([]);
 
+  const { employee: currentEmployee, isLoading: loadingEmployee } = useEmployee(employeeId);
+  const { departments } = useDepartments();
   const {
-    currentEmployee,
-    departments,
-    addEmployee,
-    editEmployee,
-    loadEmployee,
-    clearEmployee,
+    isLoading: isSubmitting,
     error: apiError,
-    success: apiSuccess
-  } = useEmployees();
+    success: apiSuccess,
+    addEmployee,
+    updateEmployee,
+    clearMessages
+  } = useEmployeeMutations();
 
-  // Load employee data if editing
+  // Load available managers
   useEffect(() => {
-    if (employeeId) {
-      loadEmployee(employeeId);
-    } else {
-      clearEmployee();
+    loadManagers();
+  }, []);
+
+  const loadManagers = async () => {
+    try {
+      // For now, we'll use departments to get managers
+      // In a real app, you might have a separate endpoint for managers
+      const managersFromDepts = departments.filter(dept => dept.managerId).map(dept => ({
+        id: dept.managerId,
+        name: dept.managerName || `Manager ${dept.managerId}`,
+        department: dept.name
+      }));
+      setAvailableManagers(managersFromDepts);
+    } catch (error) {
+      console.error('Failed to load managers:', error);
     }
-  }, [employeeId, loadEmployee, clearEmployee]);
+  };
 
   // Populate form when employee data is loaded
   useEffect(() => {
@@ -56,11 +67,11 @@ export const useEmployeeForm = (employeeId = null) => {
         dateOfBirth: currentEmployee.dateOfBirth ? currentEmployee.dateOfBirth.split('T')[0] : '',
         gender: currentEmployee.gender || '',
         address: currentEmployee.address || '',
-        departmentId: currentEmployee.departmentId || '',
+        departmentId: currentEmployee.departmentId?.toString() || '',
         position: currentEmployee.position || '',
         hireDate: currentEmployee.hireDate ? currentEmployee.hireDate.split('T')[0] : '',
-        basicSalary: currentEmployee.basicSalary || '',
-        managerId: currentEmployee.managerId || '',
+        basicSalary: currentEmployee.basicSalary?.toString() || '',
+        managerId: currentEmployee.managerId?.toString() || '',
         emergencyContact: currentEmployee.emergencyContact || '',
         emergencyPhone: currentEmployee.emergencyPhone || '',
         status: currentEmployee.status || 'active'
@@ -136,13 +147,13 @@ export const useEmployeeForm = (employeeId = null) => {
   // Submit form
   const handleSubmit = useCallback(async (e) => {
     if (e) e.preventDefault();
-    
+
     if (!validateForm()) {
       return { success: false, errors };
     }
 
-    setIsSubmitting(true);
-    
+    clearMessages();
+
     try {
       const submitData = {
         ...formData,
@@ -153,7 +164,7 @@ export const useEmployeeForm = (employeeId = null) => {
 
       let result;
       if (employeeId) {
-        result = await editEmployee(employeeId, submitData);
+        result = await updateEmployee(employeeId, submitData);
       } else {
         result = await addEmployee(submitData);
       }
@@ -168,10 +179,8 @@ export const useEmployeeForm = (employeeId = null) => {
       return result;
     } catch (error) {
       return { success: false, error: error.message };
-    } finally {
-      setIsSubmitting(false);
     }
-  }, [formData, validateForm, employeeId, addEmployee, editEmployee, errors]);
+  }, [formData, validateForm, employeeId, addEmployee, updateEmployee, errors, clearMessages]);
 
   // Reset form
   const resetForm = useCallback(() => {
@@ -191,19 +200,10 @@ export const useEmployeeForm = (employeeId = null) => {
            formData.hireDate;
   }, [errors, formData]);
 
-  // Get available managers (employees who can be managers)
-  const getAvailableManagers = useCallback(() => {
-    return departments.reduce((managers, dept) => {
-      if (dept.managerId && dept.managerId !== parseInt(employeeId)) {
-        managers.push({
-          id: dept.managerId,
-          name: dept.managerName || `Manager ${dept.managerId}`,
-          department: dept.name
-        });
-      }
-      return managers;
-    }, []);
-  }, [departments, employeeId]);
+  // Update available managers when departments change
+  useEffect(() => {
+    loadManagers();
+  }, [departments]);
 
   return {
     // Form data
@@ -218,7 +218,7 @@ export const useEmployeeForm = (employeeId = null) => {
     // Employee data
     currentEmployee,
     departments,
-    availableManagers: getAvailableManagers(),
+    availableManagers,
     
     // API states
     apiError,

@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import EmployeeCard from './EmployeeCard';
 import EmployeeSearch from './EmployeeSearch';
-import { useEmployees } from '@/hooks/useEmployees';
-import { 
-  Plus, 
-  Users, 
-  ChevronLeft, 
+import { useEmployees, useEmployeeMutations, useDepartments } from '@/hooks/useEmployees';
+import {
+  Plus,
+  Users,
+  ChevronLeft,
   ChevronRight,
   AlertCircle,
   Loader2,
@@ -18,25 +18,34 @@ import {
 const EmployeeList = () => {
   const navigate = useNavigate();
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  
+
+  // Use hooks for employee management
   const {
     employees,
-    departments,
     pagination,
     filters,
     isLoading,
-    isDeleting,
-    error,
-    success,
-    searchEmployees,
+    error: listError,
+    fetchEmployees,
     updateFilters,
+    searchEmployees,
     goToPage,
     nextPage,
     prevPage,
-    removeEmployee,
-    clearErrorMessage,
-    clearSuccessMessage
+    clearError: clearListError
   } = useEmployees();
+
+  const {
+    isLoading: isDeleting,
+    error: deleteError,
+    success: deleteSuccess,
+    deleteEmployee,
+    clearMessages
+  } = useEmployeeMutations();
+
+  const { departments } = useDepartments();
+
+  // Note: fetchEmployees is now called automatically by the useEmployees hook
 
   const handleSearch = (searchTerm) => {
     searchEmployees(searchTerm);
@@ -64,9 +73,11 @@ const EmployeeList = () => {
 
   const confirmDelete = async () => {
     if (deleteConfirm) {
-      const result = await removeEmployee(deleteConfirm);
+      const result = await deleteEmployee(deleteConfirm);
       if (result.success) {
         setDeleteConfirm(null);
+        // Refresh the employee list
+        fetchEmployees();
       }
     }
   };
@@ -155,15 +166,18 @@ const EmployeeList = () => {
       </div>
 
       {/* Success/Error Messages */}
-      {error && (
+      {(listError || deleteError) && (
         <Alert className="border-red-200 bg-red-50">
           <AlertCircle className="h-4 w-4 text-red-600" />
           <div className="ml-2">
-            <p className="text-red-800">{error}</p>
-            <Button 
-              variant="link" 
-              size="sm" 
-              onClick={clearErrorMessage}
+            <p className="text-red-800">{listError || deleteError}</p>
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => {
+                clearListError();
+                clearMessages();
+              }}
               className="text-red-600 p-0 h-auto"
             >
               Dismiss
@@ -172,14 +186,14 @@ const EmployeeList = () => {
         </Alert>
       )}
 
-      {success && (
+      {deleteSuccess && (
         <Alert className="border-green-200 bg-green-50">
           <div className="ml-2">
-            <p className="text-green-800">{success}</p>
-            <Button 
-              variant="link" 
-              size="sm" 
-              onClick={clearSuccessMessage}
+            <p className="text-green-800">{deleteSuccess}</p>
+            <Button
+              variant="link"
+              size="sm"
+              onClick={clearMessages}
               className="text-green-600 p-0 h-auto"
             >
               Dismiss

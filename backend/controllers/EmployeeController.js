@@ -63,20 +63,6 @@ class EmployeeController {
     try {
       const employeeData = req.body;
 
-      // Validate required fields
-      const requiredFields = ['firstName', 'lastName', 'email', 'departmentId', 'position', 'hireDate'];
-      for (const field of requiredFields) {
-        if (!employeeData[field]) {
-          return sendError(res, `${field} is required`, 400);
-        }
-      }
-
-      // Check if user already exists with this email
-      const existingUser = await User.findByEmail(employeeData.email);
-      if (existingUser) {
-        return sendError(res, 'User already exists with this email', 409);
-      }
-
       // Generate employee code
       employeeData.employeeCode = await Employee.generateEmployeeCode();
       console.log('Generated employee code:', employeeData.employeeCode);

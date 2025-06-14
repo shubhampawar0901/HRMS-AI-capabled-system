@@ -8,13 +8,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { useEmployees } from '@/hooks/useEmployees';
-import { 
-  Upload, 
-  File, 
-  X, 
-  AlertCircle, 
-  CheckCircle,
+import { useEmployeeMutations } from '@/hooks/useEmployees';
+import {
+  Upload,
+  File,
+  X,
+  AlertCircle,
   Loader2,
   ChevronDown,
   FileText,
@@ -29,7 +28,7 @@ const DocumentUpload = ({ employeeId, onClose, onSuccess }) => {
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef(null);
 
-  const { uploadDocument, isUploadingDocument } = useEmployees();
+  const { uploadDocument, isLoading: isUploadingDocument } = useEmployeeMutations();
 
   const documentTypes = [
     { value: 'resume', label: 'Resume/CV', icon: FileText },

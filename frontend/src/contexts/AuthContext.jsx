@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { authService } from '@/services/authService';
 
 const AuthContext = createContext(null);
@@ -61,8 +61,8 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Login function
-  const login = async (credentials) => {
+  // Login function - memoized to prevent re-creation on every render
+  const login = useCallback(async (credentials) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -99,13 +99,13 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Logout function
-  const logout = async () => {
+  // Logout function - memoized to prevent re-creation on every render
+  const logout = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+
       // Call logout API (optional, continue even if it fails)
       try {
         await authService.logout();
@@ -128,10 +128,10 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Update user profile (local state only, no API call)
-  const updateUserProfile = (updatedData) => {
+  // Update user profile (local state only, no API call) - memoized
+  const updateUserProfile = useCallback((updatedData) => {
     try {
       const updatedUser = { ...user, ...updatedData };
       setUser(updatedUser);
@@ -139,34 +139,35 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error updating user profile:', error);
     }
-  };
+  }, [user]);
 
-  // Clear error
-  const clearError = () => {
+  // Clear error - memoized
+  const clearError = useCallback(() => {
     setError(null);
-  };
+  }, []);
 
-  // Role checking functions
-  const hasRole = (roles) => {
+  // Role checking functions - memoized to prevent unnecessary re-calculations
+  const hasRole = useCallback((roles) => {
     if (!user || !user.role) return false;
-    
+
     if (Array.isArray(roles)) {
       return roles.includes(user.role.toLowerCase());
     }
     return user.role.toLowerCase() === roles.toLowerCase();
-  };
+  }, [user]);
 
-  const hasPermission = (permission) => {
+  const hasPermission = useCallback((permission) => {
     if (!user || !user.permissions) return false;
     return user.permissions.includes(permission);
-  };
+  }, [user]);
 
-  // Computed values
-  const isAdmin = hasRole('admin');
-  const isManager = hasRole(['admin', 'manager']);
-  const isEmployee = hasRole(['admin', 'manager', 'employee']);
+  // Computed values - memoized to prevent infinite re-renders
+  const isAdmin = useMemo(() => hasRole('admin'), [hasRole]);
+  const isManager = useMemo(() => hasRole(['admin', 'manager']), [hasRole]);
+  const isEmployee = useMemo(() => hasRole(['admin', 'manager', 'employee']), [hasRole]);
 
-  const value = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     // State
     user,
     token,
@@ -186,7 +187,22 @@ export const AuthProvider = ({ children }) => {
     isAdmin,
     isManager,
     isEmployee
-  };
+  }), [
+    user,
+    token,
+    isAuthenticated,
+    isLoading,
+    error,
+    login,
+    logout,
+    updateUserProfile,
+    clearError,
+    hasRole,
+    hasPermission,
+    isAdmin,
+    isManager,
+    isEmployee
+  ]);
 
   return (
     <AuthContext.Provider value={value}>
