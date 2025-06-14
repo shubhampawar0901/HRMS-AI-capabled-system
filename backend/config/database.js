@@ -16,9 +16,9 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  acquireTimeout: 30000,
-  timeout: 10000,
-  reconnect: true,
+  // acquireTimeout: 30000,  // ❌ Invalid option for MySQL2
+  // timeout: 10000,         // ❌ Invalid option for MySQL2
+  // reconnect: true,        // ❌ Invalid option for MySQL2
   charset: 'utf8mb4'
 };
 

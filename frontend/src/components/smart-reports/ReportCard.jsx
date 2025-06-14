@@ -9,7 +9,7 @@ import {
   ClockIcon
 } from '@heroicons/react/24/outline';
 import ReportStatusBadge from './ReportStatusBadge';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * Report Card Component

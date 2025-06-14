@@ -12,7 +12,7 @@ import ReportStatusBadge from './ReportStatusBadge';
 import InsightsSection from './InsightsSection';
 import RecommendationsSection from './RecommendationsSection';
 import DataSnapshotModal from './DataSnapshotModal';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * Report Viewer Component

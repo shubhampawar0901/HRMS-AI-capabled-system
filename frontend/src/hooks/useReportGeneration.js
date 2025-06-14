@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { smartReportsService } from '@/services/smartReportsService';
 import { dataService } from '@/services/dataService';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * Custom hook for managing Smart Report generation

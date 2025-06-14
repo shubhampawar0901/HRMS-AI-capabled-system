@@ -7,7 +7,7 @@ import {
   EyeIcon,
   InformationCircleIcon
 } from '@heroicons/react/24/outline';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import ReportsList from '@/components/smart-reports/ReportsList';
 import ReportViewer from '@/components/smart-reports/ReportViewer';
 

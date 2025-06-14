@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  LightBulbIcon, 
-  ChevronDownIcon, 
+import {
+  LightBulbIcon,
+  ChevronDownIcon,
   ChevronUpIcon,
   SparklesIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
@@ -50,14 +50,14 @@ const InsightsSection = ({
     switch (category) {
       case 'positive':
         return {
-          icon: TrendingUpIcon,
+          icon: ArrowTrendingUpIcon,
           iconColor: 'text-green-600',
           bgColor: 'bg-green-50',
           borderColor: 'border-green-200'
         };
       case 'negative':
         return {
-          icon: TrendingDownIcon,
+          icon: ArrowTrendingDownIcon,
           iconColor: 'text-red-600',
           bgColor: 'bg-red-50',
           borderColor: 'border-red-200'

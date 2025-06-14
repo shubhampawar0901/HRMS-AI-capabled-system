@@ -6,9 +6,8 @@ import {
   PlusIcon
 } from '@heroicons/react/24/outline';
 import { useSmartReports } from '@/hooks/useSmartReports';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import ReportCard, { ReportCardSkeleton, ReportsEmptyState } from './ReportCard';
-import ReportStatusBadge from './ReportStatusBadge';
 
 /**
  * Reports List Component

@@ -5,7 +5,7 @@ import {
   ChartBarIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import ReportGenerationForm from '@/components/smart-reports/ReportGenerationForm';
 import ReportsList from '@/components/smart-reports/ReportsList';
 import ReportViewer from '@/components/smart-reports/ReportViewer';
