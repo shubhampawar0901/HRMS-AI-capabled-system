@@ -312,6 +312,43 @@ class Attendance {
     return rows[0];
   }
 
+  // System-wide attendance statistics for admin users
+  static async getSystemWideStats(startDate, endDate) {
+    const query = `
+      SELECT
+        -- Employee counts
+        (SELECT COUNT(DISTINCT id) FROM employees WHERE status = 'active') as total_employees,
+        COUNT(DISTINCT a.employeeId) as active_employees,
+
+        -- Overall attendance metrics
+        COUNT(*) as total_working_days,
+        SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) as total_present_days,
+        SUM(CASE WHEN a.status = 'absent' THEN 1 ELSE 0 END) as total_absent_days,
+        SUM(CASE WHEN a.status = 'late' THEN 1 ELSE 0 END) as total_late_days,
+        SUM(CASE WHEN a.status = 'half_day' THEN 1 ELSE 0 END) as total_half_days,
+
+        -- Work hours metrics
+        SUM(a.totalHours) as total_work_hours,
+        AVG(a.totalHours) as avg_work_hours_per_employee,
+        SUM(CASE WHEN a.totalHours > 8 THEN (a.totalHours - 8) ELSE 0 END) as total_overtime_hours,
+        SUM(CASE WHEN a.totalHours < 8 AND a.status = 'present' THEN (8 - a.totalHours) ELSE 0 END) as total_undertime_hours,
+
+        -- Attendance percentage
+        (SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) / COUNT(*)) * 100 as overall_attendance_percentage,
+
+        -- Early departures (placeholder - would need additional logic)
+        0 as total_early_departures
+
+      FROM attendance a
+      INNER JOIN employees e ON a.employeeId = e.id
+      WHERE a.date BETWEEN ? AND ?
+        AND e.status = 'active'
+    `;
+
+    const rows = await executeQuery(query, [startDate, endDate]);
+    return rows[0];
+  }
+
   // Instance methods
   calculateTotalHours() {
     if (!this.checkInTime || !this.checkOutTime) return 0;

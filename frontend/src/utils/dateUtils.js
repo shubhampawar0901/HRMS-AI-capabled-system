@@ -138,11 +138,122 @@ export const getWorkingDays = (startDate, endDate) => {
  */
 export const formatDuration = (minutes) => {
   if (!minutes || minutes < 0) return '0h 0m';
-  
+
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  
+
   return `${hours}h ${mins}m`;
+};
+
+/**
+ * Format time from backend format (HH:mm:ss) to display format (hh:mm AM/PM)
+ * @param {string} timeString - Time string in HH:mm:ss format
+ * @returns {string} Formatted time string
+ */
+export const formatTimeFromBackend = (timeString) => {
+  if (!timeString) return 'Invalid Time';
+
+  try {
+    // Handle HH:mm:ss format
+    const timeParts = timeString.split(':');
+    if (timeParts.length >= 2) {
+      const hours = parseInt(timeParts[0]);
+      const minutes = parseInt(timeParts[1]);
+
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+
+    return 'Invalid Time';
+  } catch (error) {
+    console.warn('Time formatting error:', error);
+    return 'Invalid Time';
+  }
+};
+
+/**
+ * Calculate work duration from check-in and check-out times
+ * @param {string} checkInTime - Check-in time (HH:mm:ss)
+ * @param {string} checkOutTime - Check-out time (HH:mm:ss)
+ * @returns {string} Duration string (e.g., "8h 30m")
+ */
+export const calculateWorkDuration = (checkInTime, checkOutTime) => {
+  if (!checkInTime) return '0h 0m';
+
+  try {
+    const checkIn = new Date();
+    const checkInParts = checkInTime.split(':');
+    checkIn.setHours(parseInt(checkInParts[0]), parseInt(checkInParts[1]), parseInt(checkInParts[2] || 0), 0);
+
+    let checkOut;
+    if (checkOutTime) {
+      checkOut = new Date();
+      const checkOutParts = checkOutTime.split(':');
+      checkOut.setHours(parseInt(checkOutParts[0]), parseInt(checkOutParts[1]), parseInt(checkOutParts[2] || 0), 0);
+    } else {
+      // If not checked out, use current time
+      checkOut = new Date();
+    }
+
+    // Handle case where checkout is next day
+    if (checkOut < checkIn) {
+      checkOut.setDate(checkOut.getDate() + 1);
+    }
+
+    const diffInMs = checkOut.getTime() - checkIn.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+    return formatDuration(diffInMinutes);
+  } catch (error) {
+    console.warn('Work duration calculation error:', error);
+    return '0h 0m';
+  }
+};
+
+/**
+ * Check if check-in time is late (after 9:00 AM)
+ * @param {string} checkInTime - Check-in time (HH:mm:ss)
+ * @returns {boolean} True if late
+ */
+export const isLateCheckIn = (checkInTime) => {
+  if (!checkInTime) return false;
+
+  try {
+    const timeParts = checkInTime.split(':');
+    const hours = parseInt(timeParts[0]);
+    const minutes = parseInt(timeParts[1]);
+
+    // Late if after 9:00 AM
+    return hours > 9 || (hours === 9 && minutes > 0);
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
+ * Check if check-out time is early (before 5:00 PM)
+ * @param {string} checkOutTime - Check-out time (HH:mm:ss)
+ * @returns {boolean} True if early
+ */
+export const isEarlyCheckOut = (checkOutTime) => {
+  if (!checkOutTime) return false;
+
+  try {
+    const timeParts = checkOutTime.split(':');
+    const hours = parseInt(timeParts[0]);
+    const minutes = parseInt(timeParts[1]);
+
+    // Early if before 5:00 PM (17:00)
+    return hours < 17 || (hours === 17 && minutes === 0);
+  } catch (error) {
+    return false;
+  }
 };
 
 /**
@@ -226,6 +337,10 @@ export default {
   getCurrentWeekRange,
   getWorkingDays,
   formatDuration,
+  formatTimeFromBackend,
+  calculateWorkDuration,
+  isLateCheckIn,
+  isEarlyCheckOut,
   getRelativeTime,
   isWeekend,
   getTimezoneOffset

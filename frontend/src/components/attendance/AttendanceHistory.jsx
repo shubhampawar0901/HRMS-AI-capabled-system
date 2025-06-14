@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
 import { useAttendance } from '@/hooks/useAttendance';
-import { 
-  Calendar, 
-  Clock, 
-  ChevronLeft, 
+import { formatTimeFromBackend, formatDate as formatDateUtil, calculateWorkDuration, isLateCheckIn as checkIsLate, isEarlyCheckOut as checkIsEarly } from '@/utils/dateUtils';
+import {
+  Calendar,
+  Clock,
+  ChevronLeft,
   ChevronRight,
   Search,
   Filter,
@@ -48,6 +49,17 @@ const AttendanceHistory = () => {
     loadAttendanceHistory();
   }, [loadAttendanceHistory]);
 
+  // Debug: Log attendance history data
+  useEffect(() => {
+    console.log('🔍 AttendanceHistory Component - Data:', {
+      attendanceHistory,
+      attendanceHistoryLength: attendanceHistory?.length,
+      isLoading,
+      error,
+      pagination
+    });
+  }, [attendanceHistory, isLoading, error, pagination]);
+
   const handleDateRangeChange = (field, value) => {
     const newRange = { ...dateRange, [field]: value };
     setDateRange(newRange);
@@ -64,20 +76,12 @@ const AttendanceHistory = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatDateUtil(dateString, 'short');
   };
 
-  const formatTime = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const formatTime = (timeString) => {
+    if (!timeString) return 'N/A';
+    return formatTimeFromBackend(timeString);
   };
 
   const getStatusColor = (status) => {
@@ -107,19 +111,11 @@ const AttendanceHistory = () => {
   };
 
   const isLateCheckIn = (checkInTime) => {
-    if (!checkInTime) return false;
-    const checkIn = new Date(checkInTime);
-    const expectedTime = new Date(checkIn);
-    expectedTime.setHours(9, 0, 0, 0); // 9 AM expected time
-    return checkIn > expectedTime;
+    return checkIsLate(checkInTime);
   };
 
   const isEarlyCheckOut = (checkOutTime) => {
-    if (!checkOutTime) return false;
-    const checkOut = new Date(checkOutTime);
-    const expectedTime = new Date(checkOut);
-    expectedTime.setHours(17, 0, 0, 0); // 5 PM expected time
-    return checkOut < expectedTime;
+    return checkIsEarly(checkOutTime);
   };
 
   const renderPagination = () => {
@@ -286,7 +282,7 @@ const AttendanceHistory = () => {
             <div className="space-y-4">
               {attendanceHistory.map((record) => {
                 const status = getAttendanceStatus(record);
-                const workHours = calculateWorkHours(record.checkInTime, record.checkOutTime);
+                const workDuration = calculateWorkDuration(record.checkInTime, record.checkOutTime);
                 const isLate = isLateCheckIn(record.checkInTime);
                 const isEarly = isEarlyCheckOut(record.checkOutTime);
 
@@ -329,9 +325,9 @@ const AttendanceHistory = () => {
                         </div>
                         
                         <div className="text-right">
-                          <div className="text-sm text-gray-600">Work Hours</div>
+                          <div className="text-sm text-gray-600">Work Duration</div>
                           <div className="text-lg font-bold text-blue-600">
-                            {workHours > 0 ? `${workHours}h` : 'N/A'}
+                            {record.checkInTime ? workDuration : 'N/A'}
                           </div>
                         </div>
                       </div>

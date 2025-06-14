@@ -53,6 +53,7 @@ export const API_ENDPOINTS = {
     TODAY: '/attendance/today',              // GET - Today's attendance
     HISTORY: '/attendance/history',          // GET - Attendance history with pagination
     SUMMARY: '/attendance/summary',          // GET - Attendance summary (monthly)
+    STATS: '/attendance/stats',              // GET - Attendance statistics
 
     // Manager/Admin Operations
     TEAM: '/attendance/team',                // GET - Team attendance (managers)
@@ -245,12 +246,13 @@ TOTAL VERIFIED APIS: 37 endpoints
 - POST /employees/departments
 - GET/PUT/DELETE /employees/departments/:id
 
-✅ ATTENDANCE (7 APIs):
+✅ ATTENDANCE (8 APIs):
 - POST /attendance/check-in
 - POST /attendance/check-out
 - GET /attendance/today
 - GET /attendance/history
 - GET /attendance/summary
+- GET /attendance/stats
 - GET /attendance/team
 - POST /attendance/mark
 

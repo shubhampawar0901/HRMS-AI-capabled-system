@@ -4,15 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useCheckInOut } from '@/hooks/useCheckInOut';
-import { 
-  Clock, 
-  MapPin, 
-  CheckCircle, 
-  XCircle, 
+import { useAuth } from '@/hooks/useAuth';
+import {
+  formatTimeFromBackend,
+  calculateWorkDuration,
+  isLateCheckIn,
+  isEarlyCheckOut
+} from '@/utils/dateUtils';
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertCircle,
   Loader2,
-  RefreshCw,
-  Calendar
+  Calendar,
+  Shield
 } from 'lucide-react';
 
 const CheckInOut = () => {
@@ -20,15 +26,13 @@ const CheckInOut = () => {
   const [showError, setShowError] = useState(false);
   const [message, setMessage] = useState('');
 
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   const {
     currentTime,
     formatTime,
     formatDate,
-    location,
-    locationError,
-    isGettingLocation,
-    getCurrentLocation,
-    getLocationStatus,
     todayAttendance,
     getWorkStatus,
     getWorkDuration,
@@ -44,7 +48,6 @@ const CheckInOut = () => {
   const workStatus = getWorkStatus();
   const workDuration = getWorkDuration();
   const todaySummary = getTodaySummary();
-  const locationStatus = getLocationStatus();
 
   const handleCheckInClick = async () => {
     const result = await handleCheckIn();
@@ -98,18 +101,7 @@ const CheckInOut = () => {
     }
   };
 
-  const getLocationIcon = () => {
-    switch (locationStatus) {
-      case 'getting':
-        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
-      case 'available':
-        return <MapPin className="h-4 w-4 text-green-500" />;
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <MapPin className="h-4 w-4 text-gray-400" />;
-    }
-  };
+
 
   return (
     <div className="space-y-6">
@@ -164,110 +156,94 @@ const CheckInOut = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Location Status */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              {getLocationIcon()}
-              <span className="text-sm font-medium">Location</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              {locationStatus === 'available' && (
-                <span className="text-xs text-green-600">Available</span>
-              )}
-              {locationStatus === 'error' && (
-                <span className="text-xs text-red-600">Error</span>
-              )}
-              {locationStatus === 'getting' && (
-                <span className="text-xs text-blue-600">Getting location...</span>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={getCurrentLocation}
-                disabled={isGettingLocation}
-                className="h-6 w-6 p-0"
-              >
-                <RefreshCw className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
 
-          {locationError && (
-            <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-              {locationError}
+          {/* Admin Notice */}
+          {isAdmin && (
+            <div className="text-center p-6 bg-blue-50 rounded-lg border border-blue-200">
+              <Shield className="h-12 w-12 text-blue-600 mx-auto mb-3" />
+              <div className="text-blue-800 font-medium mb-2">Admin Account</div>
+              <div className="text-sm text-blue-600">
+                Attendance check-in/check-out is only available for employees.
+                As an admin, you can manage attendance through the Team Attendance section.
+              </div>
             </div>
           )}
 
-          {/* Work Duration */}
-          {workStatus !== 'not-started' && (
+
+          {/* Work Duration - Only for employees */}
+          {!isAdmin && workStatus !== 'not-started' && todayAttendance && (
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-sm text-gray-600">Work Duration</div>
-              <div className="text-2xl font-bold text-blue-600">{workDuration}</div>
-              {todaySummary.totalHours > 0 && (
+              <div className="text-2xl font-bold text-blue-600">
+                {calculateWorkDuration(todayAttendance.checkInTime, todayAttendance.checkOutTime)}
+              </div>
+              {todayAttendance.totalHours && (
                 <div className="text-sm text-gray-600">
-                  Total: {todaySummary.totalHours} hours
+                  Total: {todayAttendance.totalHours} hours
                 </div>
               )}
             </div>
           )}
 
-          {/* Check In/Out Buttons */}
-          <div className="space-y-3">
-            {canCheckIn() && (
-              <Button
-                onClick={handleCheckInClick}
-                disabled={isCheckingIn || (locationStatus === 'error')}
-                className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
-                size="lg"
-              >
-                {isCheckingIn ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Checking In...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Check In
-                  </>
-                )}
-              </Button>
-            )}
+          {/* Check In/Out Buttons - Only for employees */}
+          {!isAdmin && (
+            <div className="space-y-3">
+              {canCheckIn() && (
+                <Button
+                  onClick={handleCheckInClick}
+                  disabled={isCheckingIn}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                  size="lg"
+                >
+                  {isCheckingIn ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Checking In...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Check In
+                    </>
+                  )}
+                </Button>
+              )}
 
-            {canCheckOut() && (
-              <Button
-                onClick={handleCheckOutClick}
-                disabled={isCheckingOut}
-                className="w-full bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
-                size="lg"
-              >
-                {isCheckingOut ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Checking Out...
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Check Out
-                  </>
-                )}
-              </Button>
-            )}
+              {canCheckOut() && (
+                <Button
+                  onClick={handleCheckOutClick}
+                  disabled={isCheckingOut}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                  size="lg"
+                >
+                  {isCheckingOut ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Checking Out...
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Check Out
+                    </>
+                  )}
+                </Button>
+              )}
 
-            {workStatus === 'completed' && (
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <div className="text-green-800 font-medium">Work completed for today!</div>
-                <div className="text-sm text-green-600">
-                  Total work time: {todaySummary.totalHours} hours
+              {workStatus === 'completed' && todayAttendance && (
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <div className="text-green-800 font-medium">Work completed for today!</div>
+                  <div className="text-sm text-green-600">
+                    Total work time: {todayAttendance.totalHours} hours
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
-          {/* Today's Summary */}
-          {todayAttendance && (
+          {/* Today's Summary - Only for employees */}
+          {!isAdmin && todayAttendance && (
             <div className="border-t pt-4 space-y-2">
               <h4 className="font-medium text-gray-900">Today's Summary</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -275,27 +251,21 @@ const CheckInOut = () => {
                   <div>
                     <span className="text-gray-600">Check In:</span>
                     <div className="font-medium">
-                      {new Date(todayAttendance.checkInTime).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {formatTimeFromBackend(todayAttendance.checkInTime)}
                     </div>
-                    {todaySummary.isLate && (
+                    {isLateCheckIn(todayAttendance.checkInTime) && (
                       <Badge className="bg-yellow-100 text-yellow-800 text-xs">Late</Badge>
                     )}
                   </div>
                 )}
-                
+
                 {todayAttendance.checkOutTime && (
                   <div>
                     <span className="text-gray-600">Check Out:</span>
                     <div className="font-medium">
-                      {new Date(todayAttendance.checkOutTime).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {formatTimeFromBackend(todayAttendance.checkOutTime)}
                     </div>
-                    {todaySummary.isEarly && (
+                    {isEarlyCheckOut(todayAttendance.checkOutTime) && (
                       <Badge className="bg-orange-100 text-orange-800 text-xs">Early</Badge>
                     )}
                   </div>

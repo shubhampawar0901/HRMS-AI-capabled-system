@@ -71,6 +71,15 @@ router.get('/summary',
   AttendanceController.getAttendanceSummary
 );
 
+// GET /api/attendance/stats
+router.get('/stats',
+  query('period').optional().isIn(['week', 'month', 'quarter', 'year']).withMessage('Invalid period'),
+  query('startDate').optional().isDate().withMessage('Invalid start date'),
+  query('endDate').optional().isDate().withMessage('Invalid end date'),
+  validateRequest,
+  AttendanceController.getAttendanceStats
+);
+
 // ==========================================
 // MANAGER/ADMIN ROUTES
 // ==========================================
@@ -103,6 +112,7 @@ router.get('/health', (req, res) => {
       'GET /today': 'Today\'s attendance',
       'GET /history': 'Attendance history',
       'GET /summary': 'Attendance summary',
+      'GET /stats': 'Attendance statistics',
       'GET /team': 'Team attendance (managers)',
       'POST /mark': 'Mark attendance (admin)'
     }

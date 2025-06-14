@@ -64,13 +64,15 @@ export const useAttendance = () => {
       
       const response = await attendanceService.getAttendanceHistory(params);
       const data = response.data.data;
-      
-      setAttendanceHistory(data.records || []);
+
+      console.log('📊 Attendance History API Response:', data);
+
+      setAttendanceHistory(data.attendance || []);
       setPagination({
-        currentPage: data.currentPage || 1,
-        totalPages: data.totalPages || 1,
-        totalRecords: data.totalRecords || 0,
-        limit: data.limit || 10
+        currentPage: data.pagination?.page || 1,
+        totalPages: data.pagination?.pages || 1,
+        totalRecords: data.pagination?.total || 0,
+        limit: data.pagination?.limit || 10
       });
     } catch (error) {
       setError(error.message || 'Failed to load attendance history');
@@ -98,11 +100,14 @@ export const useAttendance = () => {
   }, []);
 
   // Load attendance statistics
-  const loadAttendanceStats = useCallback(async (period = 'month') => {
+  const loadAttendanceStats = useCallback(async (params = {}) => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
+      // Handle both object and string parameters for backward compatibility
+      const period = typeof params === 'string' ? params : (params.period || 'month');
+
       const response = await attendanceService.getAttendanceStats({ period });
       setAttendanceStats(response.data.data);
     } catch (error) {

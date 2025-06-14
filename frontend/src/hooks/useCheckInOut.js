@@ -1,12 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAttendance } from './useAttendance';
-import { attendanceService } from '@/services/attendanceService';
+import { calculateWorkDuration, formatTimeFromBackend } from '@/utils/dateUtils';
 
 export const useCheckInOut = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [location, setLocation] = useState(null);
-  const [locationError, setLocationError] = useState(null);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const {
     todayAttendance,
@@ -29,31 +26,14 @@ export const useCheckInOut = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Get current location on mount
-  useEffect(() => {
-    getCurrentLocation();
-  }, []);
 
-  // Get current location
-  const getCurrentLocation = useCallback(async () => {
-    setIsGettingLocation(true);
-    setLocationError(null);
 
-    try {
-      const currentLocation = await attendanceService.getCurrentLocation();
-      setLocation(currentLocation);
-    } catch (error) {
-      setLocationError(error.message);
-      console.warn('Location error:', error);
-    } finally {
-      setIsGettingLocation(false);
-    }
-  }, []);
+
 
   // Handle check in
   const handleCheckIn = useCallback(async () => {
     try {
-      const result = await performCheckIn(location);
+      const result = await performCheckIn();
       if (result.success) {
         // Refresh today's attendance to get updated data
         setTimeout(() => {
@@ -64,7 +44,7 @@ export const useCheckInOut = () => {
     } catch (error) {
       return { success: false, error: error.message };
     }
-  }, [performCheckIn, location, refreshTodayAttendance]);
+  }, [performCheckIn, refreshTodayAttendance]);
 
   // Handle check out
   const handleCheckOut = useCallback(async () => {
@@ -112,20 +92,11 @@ export const useCheckInOut = () => {
 
   // Get work duration
   const getWorkDuration = useCallback(() => {
-    if (!todayAttendance?.checkInTime) return '00:00:00';
+    if (!todayAttendance?.checkInTime) return '0h 0m';
 
-    const checkInTime = new Date(todayAttendance.checkInTime);
-    const endTime = todayAttendance.checkOutTime 
-      ? new Date(todayAttendance.checkOutTime) 
-      : currentTime;
-
-    const diffMs = endTime - checkInTime;
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, [todayAttendance, currentTime]);
+    // Use the utility function to calculate work duration
+    return calculateWorkDuration(todayAttendance.checkInTime, todayAttendance.checkOutTime);
+  }, [todayAttendance]);
 
   // Get total work hours for today
   const getTotalWorkHours = useCallback(() => {
@@ -135,26 +106,22 @@ export const useCheckInOut = () => {
     return calculateWorkHours(todayAttendance.checkInTime, todayAttendance.checkOutTime);
   }, [todayAttendance, calculateWorkHours]);
 
-  // Check if late check-in
+  // Check if late check-in (using utility function)
   const isLateCheckIn = useCallback(() => {
     if (!todayAttendance?.checkInTime) return false;
-    
-    const checkInTime = new Date(todayAttendance.checkInTime);
-    const expectedTime = new Date(checkInTime);
-    expectedTime.setHours(9, 0, 0, 0); // Assuming 9 AM is the expected time
-    
-    return checkInTime > expectedTime;
+
+    // Import and use the utility function
+    const { isLateCheckIn: checkIsLate } = require('@/utils/dateUtils');
+    return checkIsLate(todayAttendance.checkInTime);
   }, [todayAttendance]);
 
-  // Check if early check-out
+  // Check if early check-out (using utility function)
   const isEarlyCheckOut = useCallback(() => {
     if (!todayAttendance?.checkOutTime) return false;
-    
-    const checkOutTime = new Date(todayAttendance.checkOutTime);
-    const expectedTime = new Date(checkOutTime);
-    expectedTime.setHours(17, 0, 0, 0); // Assuming 5 PM is the expected time
-    
-    return checkOutTime < expectedTime;
+
+    // Import and use the utility function
+    const { isEarlyCheckOut: checkIsEarly } = require('@/utils/dateUtils');
+    return checkIsEarly(todayAttendance.checkOutTime);
   }, [todayAttendance]);
 
   // Get attendance summary for today
@@ -183,51 +150,31 @@ export const useCheckInOut = () => {
     todayAttendance
   ]);
 
-  // Check if location is required
-  const isLocationRequired = useCallback(() => {
-    // This could be configurable based on company policy
-    return true;
-  }, []);
 
-  // Get location status
-  const getLocationStatus = useCallback(() => {
-    if (isGettingLocation) return 'getting';
-    if (locationError) return 'error';
-    if (location) return 'available';
-    return 'unavailable';
-  }, [isGettingLocation, locationError, location]);
 
   return {
     // Time data
     currentTime,
     formatTime,
     formatDate,
-    
-    // Location data
-    location,
-    locationError,
-    isGettingLocation,
-    getCurrentLocation,
-    isLocationRequired,
-    getLocationStatus,
-    
+
     // Attendance data
     todayAttendance,
     getWorkStatus,
     getWorkDuration,
     getTotalWorkHours,
     getTodaySummary,
-    
+
     // Status checks
     canCheckIn,
     canCheckOut,
     isLateCheckIn,
     isEarlyCheckOut,
-    
+
     // Actions
     handleCheckIn,
     handleCheckOut,
-    
+
     // Loading states
     isCheckingIn,
     isCheckingOut

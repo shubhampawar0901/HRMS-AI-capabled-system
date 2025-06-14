@@ -73,49 +73,9 @@ class AttendanceService {
     return await axiosInstance.put(`${API_ENDPOINTS.ATTENDANCE.BASE}/${id}`, data);
   }
 
-  // Get current location (for location-based check-in)
-  getCurrentLocation() {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation is not supported by this browser'));
-        return;
-      }
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy
-          });
-        },
-        (error) => {
-          reject(error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        }
-      );
-    });
-  }
 
-  // Export attendance
-  async exportAttendance(params = {}) {
-    const queryParams = new URLSearchParams();
 
-    if (params.startDate) queryParams.append('startDate', params.startDate);
-    if (params.endDate) queryParams.append('endDate', params.endDate);
-    if (params.employeeIds) queryParams.append('employeeIds', params.employeeIds.join(','));
-    if (params.format) queryParams.append('format', params.format);
-
-    const url = queryParams.toString()
-      ? `${API_ENDPOINTS.ATTENDANCE.EXPORT}?${queryParams.toString()}`
-      : API_ENDPOINTS.ATTENDANCE.EXPORT;
-
-    return await axiosInstance.get(url, { responseType: 'blob' });
-  }
 }
 
 export const attendanceService = new AttendanceService();
