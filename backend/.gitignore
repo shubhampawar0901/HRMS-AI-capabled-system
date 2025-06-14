@@ -143,3 +143,16 @@ insomnia-test-results/
 ai-cache/
 # Session files
 sessions/
+
+# =============================================
+# PROJECT DOCUMENTATION AND TEST FILES (DO NOT COMMIT)
+# =============================================
+# Project planning and documentation
+Final plan/
+../Final plan/
+"Final plan/"
+
+# Test authentication files
+test-auth.html
+../test-auth.html
+**/test-auth.html
