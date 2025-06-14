@@ -16,8 +16,8 @@ export const handleApiError = (error) => {
       case 401:
         return {
           type: 'UNAUTHORIZED',
-          message: 'Authentication required',
-          shouldRedirect: true
+          message: data.error?.message || data.message || 'Invalid credentials',
+          shouldRedirect: !window.location.pathname.includes('/login')
         };
       case 403:
         return {

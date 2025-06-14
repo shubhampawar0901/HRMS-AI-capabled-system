@@ -11,6 +11,8 @@ class AuthService {
     );
   }
 
+
+
   // Logout user
   async logout() {
     return apiRequest(
@@ -81,8 +83,14 @@ class AuthService {
 
   // Get stored user data
   getStoredUser() {
-    const userData = localStorage.getItem('user');
-    return userData ? JSON.parse(userData) : null;
+    try {
+      const userData = localStorage.getItem('user');
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      console.warn('Failed to parse user data from localStorage:', error);
+      localStorage.removeItem('user'); // Remove corrupted data
+      return null;
+    }
   }
 }
 

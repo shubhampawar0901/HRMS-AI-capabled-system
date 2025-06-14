@@ -60,27 +60,34 @@ const LoginForm = () => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear validation error for this field
     if (validationErrors[field]) {
       setValidationErrors(prev => ({ ...prev, [field]: '' }));
     }
-    
-    // Clear global error
-    if (error) {
-      dispatch(clearError());
-    }
+
+    // Don't clear global error immediately when typing
+    // Let it persist so user can see the login error
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
+    // Clear any previous errors before attempting login
+    if (error) {
+      dispatch(clearError());
+    }
+
+    console.log('Login attempt:', formData);
+    console.log('API Base URL:', process.env.REACT_APP_API_BASE_URL);
+
     try {
-      await dispatch(loginUser(formData)).unwrap();
+      const result = await dispatch(loginUser(formData)).unwrap();
+      console.log('Login successful:', result);
       // Navigation handled by useEffect
     } catch (error) {
       // Error handled by Redux
@@ -119,6 +126,30 @@ const LoginForm = () => {
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Debug API Test */}
+        <div className="mb-4 p-3 bg-gray-100 rounded">
+          <button
+            type="button"
+            onClick={() => {
+              console.log('Testing API...');
+              fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api'}/auth/health`)
+                .then(res => res.json())
+                .then(data => {
+                  console.log('API Health Response:', data);
+                  alert(`API Health: ${JSON.stringify(data)}`);
+                })
+                .catch(err => {
+                  console.error('API Error:', err);
+                  alert(`API Error: ${err.message}`);
+                });
+            }}
+            className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+          >
+            Test API Connection
+          </button>
+          <p className="text-xs mt-1">API URL: {process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api'}</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -199,8 +230,9 @@ const LoginForm = () => {
 
         <div className="text-center text-sm text-gray-600">
           <p>Demo Credentials:</p>
-          <p className="text-xs">Admin: admin@hrms.com / password</p>
-          <p className="text-xs">Employee: employee@hrms.com / password</p>
+          <p className="text-xs">Admin: admin@hrms.com / admin123</p>
+          <p className="text-xs">Manager: manager@hrms.com / Manager123!</p>
+          <p className="text-xs">Employee: employee@hrms.com / Employee123!</p>
         </div>
       </CardContent>
     </Card>
