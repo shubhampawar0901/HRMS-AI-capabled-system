@@ -169,8 +169,11 @@ router.post('/smart-reports',
   authenticateToken,
   authorize('admin', 'manager'),
   [
-    body('reportType').isIn(['employee', 'attendance', 'leave', 'performance', 'payroll']).withMessage('Invalid report type'),
-    body('parameters').isObject().withMessage('Parameters must be an object')
+    body('reportType').isIn(['employee', 'team']).withMessage('Report type must be "employee" or "team"'),
+    body('targetId').isInt({ min: 1 }).withMessage('Target ID must be a positive integer'),
+    body('reportName').optional().isLength({ min: 3, max: 200 }).withMessage('Report name must be between 3 and 200 characters'),
+    body('dateRange.startDate').optional().isISO8601().withMessage('Start date must be a valid ISO 8601 date'),
+    body('dateRange.endDate').optional().isISO8601().withMessage('End date must be a valid ISO 8601 date')
   ],
   validateRequest,
   AIController.generateSmartReport

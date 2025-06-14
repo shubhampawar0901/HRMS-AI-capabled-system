@@ -118,6 +118,8 @@ class Payroll {
   }
 
   static async findByEmployee(employeeId, options = {}) {
+    console.log('🔍 Payroll.findByEmployee called with:', employeeId, options);
+
     let query = `
       SELECT p.*,
              CONCAT(proc.first_name, ' ', proc.last_name) as processed_by_name
@@ -128,14 +130,17 @@ class Payroll {
     `;
     const params = [employeeId];
 
-    if (options.month) {
+    console.log('🔍 Base query:', query);
+    console.log('🔍 Base params:', params);
+
+    if (options.month && options.month !== 'null' && options.month !== null) {
       query += ' AND p.month = ?';
       params.push(options.month);
     }
 
     if (options.year) {
       query += ' AND p.year = ?';
-      params.push(options.year);
+      params.push(parseInt(options.year));
     }
 
     if (options.status) {
@@ -146,18 +151,27 @@ class Payroll {
     query += ' ORDER BY p.year DESC, p.month DESC';
 
     if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
+      const limit = parseInt(options.limit);
+      query += ` LIMIT ${limit}`;
+
+      if (options.page) {
+        const offset = (parseInt(options.page) - 1) * limit;
+        query += ` OFFSET ${offset}`;
+      }
     }
 
-    if (options.page && options.limit) {
-      const offset = (options.page - 1) * options.limit;
-      query += ' OFFSET ?';
-      params.push(offset);
-    }
+    console.log('🔍 Final query:', query);
+    console.log('🔍 Final params:', params);
 
-    const rows = await executeQuery(query, params);
-    return rows.map(row => new Payroll(row));
+    try {
+      const rows = await executeQuery(query, params);
+      console.log('✅ Query executed successfully, rows:', rows.length);
+      console.log('📄 Sample row:', rows[0] || 'No rows found');
+      return rows.map(row => new Payroll(row));
+    } catch (error) {
+      console.error('❌ Query execution failed:', error);
+      throw error;
+    }
   }
 
   static async findAll(options = {}) {
@@ -176,7 +190,7 @@ class Payroll {
     `;
     const params = [];
 
-    if (options.month) {
+    if (options.month && options.month !== 'null' && options.month !== null) {
       query += ' AND p.month = ?';
       params.push(options.month);
     }
@@ -217,7 +231,7 @@ class Payroll {
     let query = 'SELECT COUNT(*) as total FROM payroll_records p LEFT JOIN employees e ON p.employee_id = e.id WHERE 1=1';
     const params = [];
 
-    if (options.month) {
+    if (options.month && options.month !== 'null' && options.month !== null) {
       query += ' AND p.month = ?';
       params.push(options.month);
     }
@@ -245,7 +259,7 @@ class Payroll {
     let query = 'SELECT COUNT(*) as total FROM payroll_records WHERE employee_id = ?';
     const params = [employeeId];
 
-    if (options.month) {
+    if (options.month && options.month !== 'null' && options.month !== null) {
       query += ' AND month = ?';
       params.push(options.month);
     }

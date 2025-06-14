@@ -1,9 +1,10 @@
-const { 
-  AIAttritionPrediction, 
-  AISmartFeedback, 
-  AIAttendanceAnomaly, 
-  AIChatbotInteraction, 
+const {
+  AIAttritionPrediction,
+  AISmartFeedback,
+  AIAttendanceAnomaly,
+  AIChatbotInteraction,
   AIResumeParser,
+  AISmartReport,
   Employee,
   User,
   Attendance,
@@ -271,15 +272,58 @@ class AIController {
   
   static async generateSmartReport(req, res) {
     try {
-      const { reportType, parameters } = req.body;
-      
+      const { role, userId, employeeId } = req.user;
+      const { reportType, targetId, dateRange, reportName } = req.body;
+
+      // Check permissions
+      if (role !== 'admin' && role !== 'manager') {
+        return sendError(res, 'Access denied. Only admin and manager roles can generate smart reports.', 403);
+      }
+
+      // For team reports, ensure targetId is the manager's employee ID
+      if (reportType === 'team') {
+        if (role === 'manager' && targetId !== employeeId) {
+          return sendError(res, 'Managers can only generate reports for their own team.', 403);
+        }
+      }
+
+      // For employee reports, check if manager can access this employee
+      if (reportType === 'employee' && role === 'manager') {
+        const employee = await Employee.findById(targetId);
+        if (!employee) {
+          return sendError(res, 'Employee not found.', 404);
+        }
+        if (employee.managerId !== employeeId) {
+          return sendError(res, 'Managers can only generate reports for their team members.', 403);
+        }
+      }
+
       // Generate report using AI service
       const aiService = AIController.getAIService();
-      const report = await aiService.generateSmartReport(reportType, parameters);
-      
-      return sendSuccess(res, report, 'Smart report generated');
+      const reportData = await aiService.generateSmartReport(reportType, {
+        targetId,
+        dateRange,
+        reportName,
+        userId
+      });
+
+      // Save report to database
+      const savedReport = await AISmartReport.create({
+        reportType,
+        targetId,
+        reportName: reportData.reportName,
+        aiSummary: reportData.aiSummary,
+        insights: reportData.insights,
+        recommendations: reportData.recommendations,
+        dataSnapshot: reportData.dataSnapshot,
+        generatedBy: userId,
+        status: 'completed'
+      });
+
+      return sendCreated(res, savedReport, 'Smart report generated successfully');
     } catch (error) {
-      return sendError(res, error.message, 500);
+      console.error('Generate smart report error:', error);
+      return sendError(res, 'Failed to generate smart report', 500);
     }
   }
 

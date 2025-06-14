@@ -403,17 +403,34 @@ class AIService {
   // ==========================================
   // SMART REPORTS
   // ==========================================
-  
+
   async generateSmartReport(reportType, parameters) {
     try {
-      // This would generate AI-powered insights for reports
-      const insights = await this.generateReportInsights(reportType, parameters);
-      
+      const SmartReportsDataService = require('./SmartReportsDataService');
+      const dataService = new SmartReportsDataService();
+
+      // Collect comprehensive data based on report type
+      let reportData;
+      if (reportType === 'employee') {
+        reportData = await dataService.getEmployeePerformanceData(parameters.targetId, parameters.dateRange);
+      } else if (reportType === 'team') {
+        reportData = await dataService.getTeamPerformanceData(parameters.targetId, parameters.dateRange);
+      } else {
+        throw new Error(`Unsupported report type: ${reportType}`);
+      }
+
+      // Generate natural language summary using Gemini
+      const aiSummary = await this.generateNaturalLanguageSummary(reportType, reportData);
+
       return {
         reportType,
-        generatedAt: new Date(),
-        insights,
-        recommendations: await this.generateReportRecommendations(insights)
+        targetId: parameters.targetId,
+        reportName: parameters.reportName || `${reportType} Report - ${new Date().toLocaleDateString()}`,
+        aiSummary: aiSummary.summary,
+        insights: aiSummary.insights,
+        recommendations: aiSummary.recommendations,
+        dataSnapshot: reportData,
+        generatedAt: new Date()
       };
     } catch (error) {
       console.error('Smart report error:', error);
@@ -421,14 +438,24 @@ class AIService {
     }
   }
 
-  async generateReportInsights(reportType, parameters) {
-    // Simplified insights generation
-    return {
-      summary: `AI-generated insights for ${reportType} report`,
-      keyMetrics: [],
-      trends: [],
-      alerts: []
-    };
+  async generateNaturalLanguageSummary(reportType, data) {
+    try {
+      const prompt = this.buildSmartReportPrompt(reportType, data);
+
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      try {
+        return JSON.parse(text.replace(/```json|```/g, '').trim());
+      } catch (parseError) {
+        // Fallback to structured response
+        return this.fallbackSmartReportSummary(reportType, data);
+      }
+    } catch (error) {
+      console.error('Natural language summary error:', error);
+      return this.fallbackSmartReportSummary(reportType, data);
+    }
   }
 
   async generateReportRecommendations(insights) {
@@ -437,6 +464,128 @@ class AIService {
       "Address identified issues",
       "Monitor trends closely"
     ];
+  }
+
+  buildSmartReportPrompt(reportType, data) {
+    switch(reportType) {
+      case 'employee':
+        return `
+          Generate a comprehensive natural language performance summary for this employee:
+
+          EMPLOYEE INFORMATION:
+          - Name: ${data.employee.name}
+          - Position: ${data.employee.position}
+          - Department: ${data.employee.department}
+          - Tenure: ${data.employee.tenure} years
+
+          PERFORMANCE METRICS (${data.dateRange.startDate.toDateString()} to ${data.dateRange.endDate.toDateString()}):
+          - Average Rating: ${data.performance.averageRating}/5.0
+          - Total Reviews: ${data.performance.totalReviews}
+          - Rating Trend: ${data.performance.ratingTrend}
+
+          ATTENDANCE METRICS:
+          - Attendance Rate: ${data.attendance.attendanceRate}%
+          - Punctuality Rate: ${data.attendance.punctualityRate}%
+          - Total Hours: ${data.attendance.totalHours}
+
+          GOALS PERFORMANCE:
+          - Goal Completion Rate: ${data.goals.completionRate}%
+          - Average Achievement: ${data.goals.averageAchievement}%
+          - Active Goals: ${data.goals.activeGoals}
+
+          LEAVE UTILIZATION:
+          - Leave Days Used: ${data.leave.approvedDays}
+          - Utilization Rate: ${data.leave.utilizationRate}%
+
+          Please generate a professional, narrative summary that includes:
+          1. Overall performance assessment (2-3 paragraphs)
+          2. Key strengths and achievements
+          3. Areas for improvement or concern
+          4. Specific recommendations for development
+          5. Risk factors (if any)
+
+          Return ONLY a JSON object with this structure:
+          {
+            "summary": "A comprehensive 3-4 paragraph narrative summary in professional language",
+            "insights": [
+              "Key insight 1 in natural language",
+              "Key insight 2 in natural language",
+              "Key insight 3 in natural language"
+            ],
+            "recommendations": [
+              "Specific actionable recommendation 1",
+              "Specific actionable recommendation 2",
+              "Specific actionable recommendation 3"
+            ]
+          }
+
+          Make the summary conversational yet professional, as if written by an experienced HR manager.
+        `;
+
+      case 'team':
+        return `
+          Generate a comprehensive team performance summary:
+
+          TEAM INFORMATION:
+          - Manager: ${data.manager.name}
+          - Department: ${data.manager.department}
+          - Team Size: ${data.team.size} employees
+
+          TEAM METRICS (${data.dateRange.startDate.toDateString()} to ${data.dateRange.endDate.toDateString()}):
+          - Average Performance Rating: ${data.teamMetrics.averageRating}/5.0
+          - Average Goal Achievement: ${data.teamMetrics.averageGoalAchievement}%
+          - Average Attendance Rate: ${data.teamMetrics.averageAttendanceRate}%
+
+          TEAM MEMBERS SUMMARY:
+          ${data.memberSummaries.map(member =>
+            `- ${member.employee.name}: Rating ${member.performance.averageRating}/5.0, Attendance ${member.attendance.attendanceRate}%`
+          ).join('\n')}
+
+          Generate a narrative summary focusing on:
+          1. Team dynamics and overall performance
+          2. Individual standout performances
+          3. Areas needing management attention
+          4. Team development recommendations
+          5. Strategic insights for team growth
+
+          Return the same JSON structure as employee reports but focused on team insights.
+        `;
+
+      default:
+        throw new Error(`Unsupported report type: ${reportType}`);
+    }
+  }
+
+  fallbackSmartReportSummary(reportType, data) {
+    if (reportType === 'employee') {
+      return {
+        summary: `${data.employee.name} has shown ${data.performance.ratingTrend} performance with an average rating of ${data.performance.averageRating}/5.0. Their attendance rate of ${data.attendance.attendanceRate}% demonstrates ${data.attendance.attendanceRate > 95 ? 'excellent' : data.attendance.attendanceRate > 85 ? 'good' : 'concerning'} commitment. Goal completion rate of ${data.goals.completionRate}% indicates ${data.goals.completionRate > 80 ? 'strong' : 'developing'} execution capabilities.`,
+        insights: [
+          `Performance rating trend is ${data.performance.ratingTrend}`,
+          `Attendance rate of ${data.attendance.attendanceRate}% is ${data.attendance.attendanceRate > 95 ? 'excellent' : 'acceptable'}`,
+          `Goal completion rate of ${data.goals.completionRate}% shows execution capability`
+        ],
+        recommendations: [
+          data.performance.ratingTrend === 'declining' ? 'Schedule performance improvement discussion' : 'Continue current performance trajectory',
+          data.attendance.attendanceRate < 90 ? 'Address attendance concerns' : 'Maintain current attendance standards',
+          data.goals.completionRate < 80 ? 'Review goal setting and support mechanisms' : 'Consider stretch goals for continued growth'
+        ]
+      };
+    } else {
+      return {
+        summary: `Team of ${data.team.size} members under ${data.manager.name} shows average performance rating of ${data.teamMetrics.averageRating}/5.0 with ${data.teamMetrics.averageAttendanceRate}% attendance rate.`,
+        insights: [
+          `Team size: ${data.team.size} members`,
+          `Average performance: ${data.teamMetrics.averageRating}/5.0`,
+          `Team attendance: ${data.teamMetrics.averageAttendanceRate}%`
+        ],
+        recommendations: [
+          'Regular team performance reviews',
+          'Focus on team development',
+          'Monitor individual performance trends'
+        ]
+      };
+    }
   }
 
   // ==========================================

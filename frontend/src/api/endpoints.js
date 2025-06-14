@@ -91,6 +91,7 @@ export const API_ENDPOINTS = {
 
     // Employee/Manager Operations
     PAYSLIP: (id) => `/payroll/payslip/${id}`,      // GET - Get specific payslip
+    PAYSLIP_DOWNLOAD: (id) => `/payroll/payslip/${id}/download`,  // GET - Download payslip PDF
     PAYSLIPS: '/payroll/payslips',                  // GET - Get employee payslips
     SALARY_STRUCTURE: (employeeId) => `/payroll/salary-structure/${employeeId}`  // GET - Get salary structure
   },
@@ -159,6 +160,28 @@ export const API_ENDPOINTS = {
 
     // Dashboard Analytics
     ANALYTICS: '/reports/analytics'          // GET - Dashboard analytics
+  },
+
+  // ==========================================
+  // 🧠 SMART REPORTS APIS (Admin/Manager Only)
+  // ==========================================
+  SMART_REPORTS: {
+    GENERATE: '/smart-reports',              // POST - Generate new smart report
+    LIST: '/smart-reports',                  // GET - List smart reports with pagination
+    GET: '/smart-reports',                   // GET - Get smart report by ID (/smart-reports/:id)
+    STATUS: '/smart-reports',                // GET - Get report status (/smart-reports/:id/status)
+    DELETE: '/smart-reports'                 // DELETE - Delete smart report (/smart-reports/:id)
+  },
+
+  // ==========================================
+  // 📊 DATA AGGREGATION APIS (Supporting Smart Reports)
+  // ==========================================
+  DATA: {
+    EMPLOYEE_SUMMARY: '/data/employee-summary',      // GET - Employee performance summary (/data/employee-summary/:id)
+    TEAM_SUMMARY: '/data/team-summary',              // GET - Team performance summary (/data/team-summary/:managerId)
+    DEPARTMENT_SUMMARY: '/data/department-summary',  // GET - Department performance summary (/data/department-summary/:deptId)
+    PERFORMANCE_METRICS: '/data/performance-metrics', // GET - Performance metrics only (/data/performance-metrics/:empId)
+    ATTENDANCE_METRICS: '/data/attendance-metrics'   // GET - Attendance metrics only (/data/attendance-metrics/:empId)
   }
 };
 
@@ -201,7 +224,7 @@ export const getDashboardEndpoint = (role) => {
  */
 export const hasApiAccess = (role, apiCategory) => {
   const adminOnlyApis = ['EMPLOYEES', 'REPORTS'];
-  const adminManagerApis = ['AI', 'PERFORMANCE'];
+  const adminManagerApis = ['AI', 'PERFORMANCE', 'SMART_REPORTS', 'DATA'];
   const allRolesApis = ['AUTH', 'DASHBOARD', 'ATTENDANCE', 'LEAVE', 'PAYROLL'];
 
   if (adminOnlyApis.includes(apiCategory)) {

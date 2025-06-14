@@ -1,13 +1,8 @@
 import React from 'react';
-import PlaceholderPage from '@/components/common/PlaceholderPage';
+import PayrollDashboard from '@/components/payroll/PayrollDashboard';
 
 const PayrollPage = () => {
-  return (
-    <PlaceholderPage 
-      title="Payroll Management"
-      description="View payslips, salary details, and payroll history."
-    />
-  );
+  return <PayrollDashboard />;
 };
 
 export default PayrollPage;

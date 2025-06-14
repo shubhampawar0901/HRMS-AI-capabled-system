@@ -6,32 +6,34 @@ class PayrollService {
   // Get payroll records
   async getPayrollRecords(params = {}) {
     const queryParams = new URLSearchParams(params).toString();
-    const url = queryParams ? `${API_ENDPOINTS.PAYROLL.BASE}?${queryParams}` : API_ENDPOINTS.PAYROLL.BASE;
-    
+    const url = queryParams ? `${API_ENDPOINTS.PAYROLL.RECORDS}?${queryParams}` : API_ENDPOINTS.PAYROLL.RECORDS;
+
     return apiRequest(
       () => axiosInstance.get(url),
       'payroll-records'
     );
   }
 
-  // Get payroll by ID
+  // Get payroll by ID (using payslip endpoint)
   async getPayrollById(id) {
     return apiRequest(
-      () => axiosInstance.get(API_ENDPOINTS.PAYROLL.BY_ID(id)),
+      () => axiosInstance.get(API_ENDPOINTS.PAYROLL.PAYSLIP(id)),
       `payroll-${id}`
     );
   }
 
-  // Get employee payroll
+  // Get employee payroll (using payslips endpoint)
   async getEmployeePayroll(employeeId, params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    const url = queryParams 
-      ? `${API_ENDPOINTS.PAYROLL.BY_EMPLOYEE(employeeId)}?${queryParams}` 
-      : API_ENDPOINTS.PAYROLL.BY_EMPLOYEE(employeeId);
-    
+    // Remove employeeId from params since backend gets it from token
+    const { employeeId: _, ...cleanParams } = params;
+    const queryParams = new URLSearchParams(cleanParams).toString();
+    const url = queryParams
+      ? `${API_ENDPOINTS.PAYROLL.PAYSLIPS}?${queryParams}`
+      : API_ENDPOINTS.PAYROLL.PAYSLIPS;
+
     return apiRequest(
       () => axiosInstance.get(url),
-      `payroll-employee-${employeeId}`
+      `payroll-employee-${employeeId || 'current'}`
     );
   }
 
@@ -46,7 +48,7 @@ class PayrollService {
   // Process payroll
   async processPayroll(payrollId, data = {}) {
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.PAYROLL.PROCESS, { payrollId, ...data }),
+      () => axiosInstance.put(API_ENDPOINTS.PAYROLL.PROCESS(payrollId), data),
       'payroll-process'
     );
   }
@@ -62,7 +64,7 @@ class PayrollService {
   // Download payslip PDF
   async downloadPayslip(payrollId) {
     return apiRequest(
-      () => axiosInstance.get(API_ENDPOINTS.PAYROLL.PAYSLIP(payrollId), {
+      () => axiosInstance.get(API_ENDPOINTS.PAYROLL.PAYSLIP_DOWNLOAD(payrollId), {
         responseType: 'blob',
         headers: { 'Accept': 'application/pdf' }
       }),
@@ -102,6 +104,14 @@ class PayrollService {
         year
       }),
       'payroll-calculate'
+    );
+  }
+
+  // Get salary structure for an employee
+  async getSalaryStructure(employeeId) {
+    return apiRequest(
+      () => axiosInstance.get(API_ENDPOINTS.PAYROLL.SALARY_STRUCTURE(employeeId)),
+      `salary-structure-${employeeId}`
     );
   }
 }

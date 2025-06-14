@@ -16,6 +16,7 @@ const AISmartFeedback = require('./AISmartFeedback');
 const AIAttendanceAnomaly = require('./AIAttendanceAnomaly');
 const AIChatbotInteraction = require('./AIChatbotInteraction');
 const AIResumeParser = require('./AIResumeParser');
+const AISmartReport = require('./AISmartReport');
 
 // Export all models
 module.exports = {
@@ -45,6 +46,7 @@ module.exports = {
   AIAttendanceAnomaly,
   AIChatbotInteraction,
   AIResumeParser,
+  AISmartReport,
 
   // Database utilities
   executeQuery,

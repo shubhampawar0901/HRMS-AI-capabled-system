@@ -45,6 +45,10 @@ import AIFeaturesPage from '@/pages/ai-features/AIFeaturesPage';
 import ChatbotPage from '@/pages/ai-features/ChatbotPage';
 import AttritionPage from '@/pages/ai-features/AttritionPage';
 
+// Smart Reports Pages
+import AdminSmartReports from '@/pages/admin/SmartReports';
+import ManagerSmartReports from '@/pages/manager/SmartReports';
+
 // Reports Pages
 import ReportsPage from '@/pages/reports/ReportsPage';
 import CustomReportPage from '@/pages/reports/CustomReportPage';
@@ -136,6 +140,25 @@ const AppRoutes = () => {
         <Route path="ai-features" element={<AIFeaturesPage />} />
         <Route path="ai-features/chatbot" element={<ChatbotPage />} />
         <Route path="ai-features/attrition" element={<AttritionPage />} />
+
+        {/* Smart Reports - Role-based Routes */}
+        <Route
+          path="admin/smart-reports"
+          element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AdminSmartReports />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="manager/smart-reports"
+          element={
+            <ProtectedRoute requiredRoles={['manager']}>
+              <ManagerSmartReports />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* Reports */}
         <Route path="reports" element={<ReportsPage />} />
