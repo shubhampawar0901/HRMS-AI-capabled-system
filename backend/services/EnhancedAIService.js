@@ -611,8 +611,8 @@ Return only the response text (no JSON):`;
       }
 
       // Step 2: Combine search results into context
-      const policyContext = searchResults.map(result => result.content).join('\n\n');
-      const sources = searchResults.map(result => result.metadata?.filename || 'Policy Document');
+      const policyContext = searchResults.map(result => result.text).join('\n\n');
+      const sources = searchResults.map(result => result.filename || result.metadata?.filename || 'Policy Document');
 
       // Step 3: Generate comprehensive response using Gemini 2.5 Flash
       const prompt = `You are Shubh, a professional HR assistant. Answer the user's policy question using the provided policy context.
