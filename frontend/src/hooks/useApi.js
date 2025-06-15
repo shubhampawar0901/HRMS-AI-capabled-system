@@ -242,7 +242,7 @@ export const usePaginatedApi = (apiFunction, options = {}) => {
 
   return {
     data: allData,
-    currentData: data?.data || [],
+    currentData: data || [],
     error,
     isLoading,
     currentPage,
@@ -253,7 +253,7 @@ export const usePaginatedApi = (apiFunction, options = {}) => {
     loadMore,
     reset,
     ...rest,
-    
+
     // Computed values
     hasNextPage: currentPage < totalPages,
     hasPreviousPage: currentPage > 1,
