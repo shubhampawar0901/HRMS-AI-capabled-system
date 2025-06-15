@@ -45,19 +45,20 @@ class AISmartReport {
         generated_by, status, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
-    
+
+    // Ensure no undefined values are passed to the database
     const result = await executeQuery(query, [
-      reportData.reportType,
-      reportData.targetId,
-      reportData.reportName,
-      reportData.aiSummary,
+      reportData.reportType || null,
+      reportData.targetId || null,
+      reportData.reportName || null,
+      reportData.aiSummary || null,
       JSON.stringify(reportData.insights || []),
       JSON.stringify(reportData.recommendations || []),
       JSON.stringify(reportData.dataSnapshot || {}),
-      reportData.generatedBy,
+      reportData.generatedBy || null,
       reportData.status || 'completed'
     ]);
-    
+
     return await AISmartReport.findById(result.insertId);
   }
 
@@ -75,9 +76,10 @@ class AISmartReport {
       if (reportData[camelField] !== undefined) {
         updates.push(`${field} = ?`);
         if (field.includes('_json')) {
-          values.push(JSON.stringify(reportData[camelField]));
+          values.push(JSON.stringify(reportData[camelField] || (field === 'insights_json' || field === 'recommendations_json' ? [] : {})));
         } else {
-          values.push(reportData[camelField]);
+          // Convert undefined to null for SQL compatibility
+          values.push(reportData[camelField] === undefined ? null : reportData[camelField]);
         }
       }
     });

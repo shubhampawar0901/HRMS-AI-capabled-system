@@ -122,6 +122,17 @@ class SmartReportsController {
       return sendCreated(res, completedReport, 'Smart report generated successfully');
     } catch (error) {
       console.error('Generate smart report sync error:', error);
+
+      // Handle specific API quota errors
+      if (error.status === 429 || error.message?.includes('quota')) {
+        return sendError(res, 'AI service quota exceeded. Please try again later or contact administrator.', 429);
+      }
+
+      // Handle database errors
+      if (error.message?.includes('Bind parameters must not contain undefined')) {
+        return sendError(res, 'Data validation error. Please check your input parameters.', 400);
+      }
+
       return sendError(res, 'Failed to generate smart report', 500);
     }
   }

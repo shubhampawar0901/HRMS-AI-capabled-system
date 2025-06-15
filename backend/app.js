@@ -106,9 +106,27 @@ app.use('/api/data', authenticateToken, dataRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
+// Ensure required directories exist
+const ensureDirectories = async () => {
+  const fs = require('fs').promises;
+  const uploadsDir = process.env.UPLOAD_PATH || './uploads';
+
+  try {
+    await fs.access(uploadsDir);
+    console.log('✅ Uploads directory exists:', uploadsDir);
+  } catch (error) {
+    console.log('📁 Creating uploads directory:', uploadsDir);
+    await fs.mkdir(uploadsDir, { recursive: true });
+    console.log('✅ Uploads directory created successfully');
+  }
+};
+
 // Database connection and server startup
 const startServer = async () => {
   try {
+    // Ensure required directories exist
+    await ensureDirectories();
+
     // Connect to database
     await connectDB();
     console.log('✅ Database connection established');

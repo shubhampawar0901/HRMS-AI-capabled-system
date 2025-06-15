@@ -26,9 +26,9 @@ class AIService {
       model: 'gemini-1.5-pro'
     });
 
-    // Smart Reports model - Gemini 1.5 Pro for comprehensive analysis
+    // Smart Reports model - Gemini 1.5 Flash for efficient analysis (avoiding quota limits)
     this.smartReportsModel = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-pro'
+      model: 'gemini-1.5-flash'
     });
 
     // Gemini 2.0 Pro model for resume parsing
@@ -161,26 +161,78 @@ class AIService {
     try {
       console.log('Extracting text from file:', file.originalname, 'at path:', file.path);
 
+      // Ensure uploads directory exists
+      const path = require('path');
+      const uploadsDir = path.dirname(file.path);
+      try {
+        await fs.access(uploadsDir);
+      } catch (dirError) {
+        console.log('Creating uploads directory:', uploadsDir);
+        await fs.mkdir(uploadsDir, { recursive: true });
+      }
+
       // Check if file exists
+      try {
+        await fs.access(file.path);
+      } catch (fileError) {
+        throw new Error(`File not found at path: ${file.path}. Upload may have failed.`);
+      }
+
       const fileBuffer = await fs.readFile(file.path);
 
       // Extract text based on file type
       if (file.mimetype === 'application/pdf') {
         const pdfData = await pdfParse(fileBuffer);
         console.log('PDF text extracted, length:', pdfData.text.length);
+
+        // Clean up the uploaded file after processing
+        try {
+          await fs.unlink(file.path);
+          console.log('Temporary file cleaned up:', file.path);
+        } catch (cleanupError) {
+          console.warn('Failed to cleanup temporary file:', cleanupError.message);
+        }
+
         return pdfData.text;
       } else if (file.mimetype === 'application/msword' ||
                  file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         // For Word documents, we'll use a simple fallback for now
         // In production, you'd use mammoth.js or similar
         console.log('Word document detected, using fallback text extraction');
+
+        // Clean up the uploaded file
+        try {
+          await fs.unlink(file.path);
+        } catch (cleanupError) {
+          console.warn('Failed to cleanup temporary file:', cleanupError.message);
+        }
+
         return `Word document content from ${file.originalname}. Please convert to PDF for better text extraction.`;
       } else {
         console.log('Unsupported file type:', file.mimetype);
+
+        // Clean up the uploaded file
+        try {
+          await fs.unlink(file.path);
+        } catch (cleanupError) {
+          console.warn('Failed to cleanup temporary file:', cleanupError.message);
+        }
+
         return `Unsupported file type: ${file.mimetype}. Please upload a PDF file for best results.`;
       }
     } catch (error) {
       console.error('Text extraction error:', error);
+
+      // Try to clean up the file even if processing failed
+      if (file.path) {
+        try {
+          await fs.unlink(file.path);
+          console.log('Cleaned up failed upload file:', file.path);
+        } catch (cleanupError) {
+          console.warn('Failed to cleanup failed upload file:', cleanupError.message);
+        }
+      }
+
       // Return a fallback that includes the error info for debugging
       return `Error extracting text from ${file.originalname}: ${error.message}. Please try uploading a different file.`;
     }
@@ -1312,9 +1364,9 @@ class AIService {
         reportType,
         targetId: parameters.targetId,
         reportName: parameters.reportName || `${reportType} Report - ${new Date().toLocaleDateString()}`,
-        aiSummary: aiSummary.summary,
-        insights: aiSummary.insights,
-        recommendations: aiSummary.recommendations,
+        aiSummary: aiSummary.reportDocument || aiSummary.summary || 'Report generated successfully',
+        insights: aiSummary.keyMetrics || aiSummary.insights || [],
+        recommendations: aiSummary.recommendations || [],
         dataSnapshot: reportData,
         generatedAt: new Date()
       };
@@ -1328,7 +1380,7 @@ class AIService {
     try {
       const prompt = this.buildSmartReportPrompt(reportType, data);
 
-      // Use Gemini 1.5 Pro for comprehensive Smart Reports
+      // Use Gemini 1.5 Flash for Smart Reports (efficient and avoids quota limits)
       const result = await this.smartReportsModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -1336,11 +1388,16 @@ class AIService {
       try {
         return JSON.parse(text.replace(/```json|```/g, '').trim());
       } catch (parseError) {
+        console.error('JSON parse error in Smart Reports:', parseError);
         // Fallback to structured response
         return this.fallbackSmartReportSummary(reportType, data);
       }
     } catch (error) {
       console.error('Natural language summary error:', error);
+      // Check if it's a quota error and provide specific fallback
+      if (error.status === 429 || error.message?.includes('quota')) {
+        console.warn('API quota exceeded, using fallback Smart Report generation');
+      }
       return this.fallbackSmartReportSummary(reportType, data);
     }
   }
