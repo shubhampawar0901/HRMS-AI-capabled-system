@@ -45,6 +45,7 @@ import AIFeaturesPage from '@/pages/ai-features/AIFeaturesPage';
 import AttritionPage from '@/pages/ai-features/AttritionPage';
 import AnomalyDetectionPage from '@/pages/ai-features/AnomalyDetectionPage';
 import SmartFeedbackPage from '@/pages/ai-features/SmartFeedbackPage';
+import ResumeParserPage from '@/pages/ai-features/ResumeParserPage';
 
 // Chatbot Page
 import ChatbotPage from '@/pages/ChatbotPage';
@@ -176,6 +177,16 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute requiredRoles={['admin']}>
               <AnomalyDetectionPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* AI Features - Resume Parser (Admin/Manager Only) */}
+        <Route
+          path="ai-features/resume-parser"
+          element={
+            <ProtectedRoute requiredRoles={['admin', 'manager']}>
+              <ResumeParserPage />
             </ProtectedRoute>
           }
         />

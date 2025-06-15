@@ -17,7 +17,8 @@ import {
   ChevronLeft,
   AlertTriangle,
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  FileText
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -129,8 +130,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
           href: '/ai-features/attrition',
           icon: TrendingUp,
           roles: ['admin'],
-          description: 'AI-powered employee attrition risk analysis',
-          badge: 'NEW'
+          description: 'AI-powered employee attrition risk analysis'
         },
         {
           name: 'Anomaly Detection',
@@ -138,6 +138,13 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
           icon: AlertTriangle,
           roles: ['admin'],
           description: 'AI-powered attendance anomaly detection'
+        },
+        {
+          name: 'Resume Parser',
+          href: '/ai-features/resume-parser',
+          icon: FileText,
+          roles: ['admin', 'manager'],
+          description: 'AI-powered resume parsing and employee onboarding'
         },
         {
           name: 'Smart Reports',

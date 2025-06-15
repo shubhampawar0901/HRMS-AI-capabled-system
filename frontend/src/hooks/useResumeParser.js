@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useEmployee, useEmployeeMutations, useDepartments } from './useEmployees';
+import { useDepartments, useEmployeeMutations } from './useEmployees';
 
 const initialFormData = {
   firstName: '',
@@ -19,7 +19,7 @@ const initialFormData = {
   status: 'active'
 };
 
-export const useEmployeeForm = (employeeId = null) => {
+export const useResumeParser = () => {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isDirty, setIsDirty] = useState(false);
@@ -27,24 +27,19 @@ export const useEmployeeForm = (employeeId = null) => {
   const [aiPopulatedFields, setAiPopulatedFields] = useState(new Set());
   const [resumeParseSuccess, setResumeParseSuccess] = useState(false);
   const [resumeParseMessage, setResumeParseMessage] = useState('');
-
-  const { employee: currentEmployee, isLoading: loadingEmployee } = useEmployee(employeeId);
+  const [employeeCreationSuccess, setEmployeeCreationSuccess] = useState(false);
+  const [createdEmployeeDetails, setCreatedEmployeeDetails] = useState(null);
   const { departments } = useDepartments();
   const {
-    isLoading: isSubmitting,
+    isLoading: isCreatingEmployee,
     error: apiError,
     success: apiSuccess,
     addEmployee,
-    updateEmployee,
     clearMessages
   } = useEmployeeMutations();
 
   // Load available managers
-  useEffect(() => {
-    loadManagers();
-  }, []);
-
-  const loadManagers = async () => {
+  const loadManagers = useCallback(async () => {
     try {
       // For now, we'll use departments to get managers
       // In a real app, you might have a separate endpoint for managers
@@ -56,32 +51,9 @@ export const useEmployeeForm = (employeeId = null) => {
       setAvailableManagers(managersFromDepts);
     } catch (error) {
       console.error('Failed to load managers:', error);
+      setAvailableManagers([]);
     }
-  };
-
-  // Populate form when employee data is loaded
-  useEffect(() => {
-    if (currentEmployee && employeeId) {
-      setFormData({
-        firstName: currentEmployee.firstName || '',
-        lastName: currentEmployee.lastName || '',
-        email: currentEmployee.email || '',
-        phone: currentEmployee.phone || '',
-        dateOfBirth: currentEmployee.dateOfBirth ? currentEmployee.dateOfBirth.split('T')[0] : '',
-        gender: currentEmployee.gender || '',
-        address: currentEmployee.address || '',
-        departmentId: currentEmployee.departmentId?.toString() || '',
-        position: currentEmployee.position || '',
-        hireDate: currentEmployee.hireDate ? currentEmployee.hireDate.split('T')[0] : '',
-        basicSalary: currentEmployee.basicSalary?.toString() || '',
-        managerId: currentEmployee.managerId?.toString() || '',
-        emergencyContact: currentEmployee.emergencyContact || '',
-        emergencyPhone: currentEmployee.emergencyPhone || '',
-        status: currentEmployee.status || 'active'
-      });
-      setIsDirty(false);
-    }
-  }, [currentEmployee, employeeId]);
+  }, [departments]);
 
   // Handle form field changes
   const handleChange = useCallback((field, value) => {
@@ -145,71 +117,11 @@ export const useEmployeeForm = (employeeId = null) => {
     if (formData.dateOfBirth && new Date(formData.dateOfBirth) > new Date()) {
       newErrors.dateOfBirth = 'Date of birth cannot be in the future';
     }
-    if (formData.hireDate && new Date(formData.hireDate) > new Date()) {
-      newErrors.hireDate = 'Hire date cannot be in the future';
-    }
+    // Remove hire date future validation - hire dates can be in the future
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);
-
-  // Submit form
-  const handleSubmit = useCallback(async (e) => {
-    if (e) e.preventDefault();
-
-    if (!validateForm()) {
-      return { success: false, errors };
-    }
-
-    clearMessages();
-
-    try {
-      const submitData = {
-        ...formData,
-        basicSalary: formData.basicSalary ? parseFloat(formData.basicSalary) : null,
-        departmentId: parseInt(formData.departmentId),
-        managerId: formData.managerId ? parseInt(formData.managerId) : null
-      };
-
-      let result;
-      if (employeeId) {
-        result = await updateEmployee(employeeId, submitData);
-      } else {
-        result = await addEmployee(submitData);
-      }
-
-      if (result.success) {
-        setIsDirty(false);
-        if (!employeeId) {
-          resetForm();
-        }
-      }
-
-      return result;
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }, [formData, validateForm, employeeId, addEmployee, updateEmployee, errors, clearMessages]);
-
-  // Reset form
-  const resetForm = useCallback(() => {
-    setFormData(initialFormData);
-    setErrors({});
-    setIsDirty(false);
-  }, []);
-
-  // Check if form is valid
-  const isValid = useCallback(() => {
-    return Object.keys(errors).length === 0 &&
-           formData.firstName &&
-           formData.lastName &&
-           formData.email &&
-           formData.dateOfBirth &&
-           formData.gender &&
-           formData.departmentId &&
-           formData.position &&
-           formData.hireDate;
-  }, [errors, formData]);
 
   // Handle resume parse success
   const handleResumeParseSuccess = useCallback((parsedData, confidence) => {
@@ -240,21 +152,6 @@ export const useEmployeeForm = (employeeId = null) => {
     if (parsedData.address && parsedData.address.trim()) {
       fieldsToUpdate.address = parsedData.address.trim();
       updatedFields.add('address');
-    }
-
-    if (parsedData.position && parsedData.position.trim()) {
-      fieldsToUpdate.position = parsedData.position.trim();
-      updatedFields.add('position');
-    }
-
-    if (parsedData.emergencyContact && parsedData.emergencyContact.trim()) {
-      fieldsToUpdate.emergencyContact = parsedData.emergencyContact.trim();
-      updatedFields.add('emergencyContact');
-    }
-
-    if (parsedData.emergencyPhone && parsedData.emergencyPhone.trim()) {
-      fieldsToUpdate.emergencyPhone = parsedData.emergencyPhone.trim();
-      updatedFields.add('emergencyPhone');
     }
 
     // Update form data with extracted fields
@@ -294,45 +191,172 @@ export const useEmployeeForm = (employeeId = null) => {
     }
   }, []);
 
+  // Reset form
+  const resetForm = useCallback(() => {
+    setFormData(initialFormData);
+    setErrors({});
+    setIsDirty(false);
+    setAiPopulatedFields(new Set());
+    setResumeParseSuccess(false);
+    setResumeParseMessage('');
+    setEmployeeCreationSuccess(false);
+    setCreatedEmployeeDetails(null);
+    clearMessages();
+  }, [clearMessages]);
+
+  // Check if form is valid
+  const isValid = useCallback(() => {
+    // First validate the form to get current errors
+    const currentErrors = {};
+
+    // Required fields validation
+    if (!formData.firstName?.trim()) {
+      currentErrors.firstName = 'First name is required';
+    }
+    if (!formData.lastName?.trim()) {
+      currentErrors.lastName = 'Last name is required';
+    }
+    if (!formData.email?.trim()) {
+      currentErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      currentErrors.email = 'Email is invalid';
+    }
+    if (!formData.dateOfBirth) {
+      currentErrors.dateOfBirth = 'Date of birth is required';
+    }
+    if (!formData.gender) {
+      currentErrors.gender = 'Gender is required';
+    }
+    if (!formData.departmentId) {
+      currentErrors.departmentId = 'Department is required';
+    }
+    if (!formData.position?.trim()) {
+      currentErrors.position = 'Position is required';
+    }
+    if (!formData.hireDate) {
+      currentErrors.hireDate = 'Hire date is required';
+    }
+
+    // Optional field validations
+    if (formData.phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.phone)) {
+      currentErrors.phone = 'Phone number is invalid';
+    }
+    if (formData.emergencyPhone && !/^\+?[\d\s\-\(\)]+$/.test(formData.emergencyPhone)) {
+      currentErrors.emergencyPhone = 'Emergency phone number is invalid';
+    }
+    if (formData.basicSalary && (isNaN(formData.basicSalary) || parseFloat(formData.basicSalary) < 0)) {
+      currentErrors.basicSalary = 'Basic salary must be a positive number';
+    }
+    if (formData.dateOfBirth && new Date(formData.dateOfBirth) > new Date()) {
+      currentErrors.dateOfBirth = 'Date of birth cannot be in the future';
+    }
+
+    return Object.keys(currentErrors).length === 0 &&
+           formData.firstName?.trim() &&
+           formData.lastName?.trim() &&
+           formData.email?.trim() &&
+           formData.dateOfBirth &&
+           formData.gender &&
+           formData.departmentId &&
+           formData.position?.trim() &&
+           formData.hireDate;
+  }, [formData]);
+
+  // Create employee from parsed data
+  const createEmployee = useCallback(async () => {
+    if (!validateForm()) {
+      return { success: false, errors };
+    }
+
+    clearMessages();
+
+    try {
+      const submitData = {
+        ...formData,
+        basicSalary: formData.basicSalary ? parseFloat(formData.basicSalary) : null,
+        departmentId: parseInt(formData.departmentId),
+        managerId: formData.managerId ? parseInt(formData.managerId) : null
+      };
+
+      const result = await addEmployee(submitData);
+
+      if (result.success) {
+        setIsDirty(false);
+
+        // Show success notification with employee details
+        setCreatedEmployeeDetails({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          employeeCode: result.data?.employeeCode || 'N/A',
+          departmentId: formData.departmentId,
+          position: formData.position
+        });
+        setEmployeeCreationSuccess(true);
+
+        // Reset form after showing success message for 3 seconds
+        setTimeout(() => {
+          setEmployeeCreationSuccess(false);
+          setCreatedEmployeeDetails(null);
+          resetForm();
+        }, 3000);
+
+        return { success: true, data: result.data };
+      }
+
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, [formData, validateForm, errors, resetForm, addEmployee, clearMessages]);
+
   // Update available managers when departments change
   useEffect(() => {
     loadManagers();
-  }, [departments]);
+  }, [loadManagers]);
+
+  // Validate form when data changes
+  useEffect(() => {
+    if (isDirty) {
+      validateForm();
+    }
+  }, [formData, isDirty, validateForm]);
 
   return {
     // Form data
     formData,
     errors,
-    
+
     // States
-    isSubmitting,
     isDirty,
     isValid: isValid(),
-    
-    // Employee data
-    currentEmployee,
+    isCreatingEmployee,
+
+    // Data
     departments,
     availableManagers,
-    
+
     // API states
     apiError,
     apiSuccess,
-    
+
     // Actions
     handleChange,
-    handleSubmit,
     validateForm,
     resetForm,
     handleResumeParseSuccess,
+    createEmployee,
 
     // Utilities
-    isEditing: !!employeeId,
     aiPopulatedFields,
 
     // Resume parse notifications
     resumeParseSuccess,
-    resumeParseMessage
+    resumeParseMessage,
+
+    // Employee creation success
+    employeeCreationSuccess,
+    createdEmployeeDetails
   };
 };
 
-export default useEmployeeForm;
+export default useResumeParser;

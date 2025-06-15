@@ -10,8 +10,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { useEmployeeForm } from '@/hooks/useEmployeeForm';
-import ResumeUpload from './ResumeUpload';
+import { useResumeParser } from '@/hooks/useResumeParser';
+import ResumeUpload from '@/components/employees/ResumeUpload';
 import {
   User,
   Mail,
@@ -26,34 +26,38 @@ import {
   Loader2,
   Save,
   X,
-  ChevronDown
+  ChevronDown,
+  FileText,
+  UserPlus,
+  Sparkles
 } from 'lucide-react';
 
-const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
+const ResumeParserForm = ({ onCancel }) => {
   const {
     formData,
     errors,
-    isSubmitting,
     isDirty,
     isValid,
+    isCreatingEmployee,
     departments,
     availableManagers,
     apiError,
     apiSuccess,
     handleChange,
-    handleSubmit,
+    validateForm,
     resetForm,
-    isEditing,
     handleResumeParseSuccess,
+    createEmployee,
     resumeParseSuccess,
-    resumeParseMessage
-  } = useEmployeeForm(employeeId);
+    resumeParseMessage,
+    employeeCreationSuccess,
+    createdEmployeeDetails
+  } = useResumeParser();
 
   const handleFormSubmit = async (e) => {
-    const result = await handleSubmit(e);
-    if (result.success && onSuccess) {
-      onSuccess();
-    }
+    e.preventDefault();
+    await createEmployee();
+    // Success handling is now done internally in the hook
   };
 
   const handleCancel = () => {
@@ -69,7 +73,7 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
   const renderField = (field, label, type = 'text', options = {}) => {
     const { placeholder, required = false, icon: Icon, disabled = false } = options;
 
-    // Consistent focus styling for all input types - using !important to override shadcn defaults
+    // Consistent focus styling for all input types
     const baseFocusClasses = "focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:shadow-sm";
     const baseClasses = "border-gray-300 hover:border-gray-400 transition-all duration-200 ring-0";
     const errorClasses = errors[field] ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "";
@@ -171,11 +175,12 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent mb-2">
-            {isEditing ? 'Edit Employee' : 'Add New Employee'}
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent mb-2 flex items-center justify-center gap-3">
+            <FileText className="h-10 w-10 text-blue-500" />
+            AI Resume Parser
           </h1>
           <p className="text-gray-600 text-lg">
-            {isEditing ? 'Update employee information' : 'Fill in the details to add a new employee'}
+            Upload a resume and let AI extract employee information for you
           </p>
         </div>
 
@@ -197,26 +202,55 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
           </Alert>
         )}
 
+        {/* Employee Creation Success Notification */}
+        {employeeCreationSuccess && createdEmployeeDetails && (
+          <Alert className="border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 mb-6 shadow-lg animate-in slide-in-from-top-2 duration-500">
+            <CheckCircle className="h-6 w-6 text-green-600 animate-pulse" />
+            <div className="ml-3">
+              <h4 className="text-green-800 font-bold text-xl mb-3 flex items-center">
+                🎉 Employee Created Successfully!
+                <Sparkles className="h-5 w-5 ml-2 text-green-600 animate-bounce" />
+              </h4>
+              <div className="text-green-700 space-y-2 bg-white/50 p-3 rounded-lg border border-green-200">
+                <p className="flex items-center"><strong className="w-32">Name:</strong> {createdEmployeeDetails.firstName} {createdEmployeeDetails.lastName}</p>
+                <p className="flex items-center"><strong className="w-32">Employee Code:</strong> <span className="font-mono bg-green-100 px-2 py-1 rounded text-green-800">{createdEmployeeDetails.employeeCode}</span></p>
+                <p className="flex items-center"><strong className="w-32">Department:</strong> {departments.find(d => d.id.toString() === createdEmployeeDetails.departmentId)?.name || 'N/A'}</p>
+                <p className="flex items-center"><strong className="w-32">Position:</strong> {createdEmployeeDetails.position}</p>
+              </div>
+              <p className="text-green-600 text-sm mt-3 italic flex items-center justify-center bg-green-100 p-2 rounded-lg">
+                <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
+                Form will be reset automatically for the next employee in 3 seconds...
+              </p>
+            </div>
+          </Alert>
+        )}
+
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Form */}
           <div className="lg:col-span-2">
             <form onSubmit={handleFormSubmit} className="space-y-6">
-        {/* Resume Parse Success Notification */}
-        {resumeParseMessage && (
-          <Alert className={`${resumeParseSuccess ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
-            {resumeParseSuccess ? (
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            ) : (
-              <AlertCircle className="h-4 w-4 text-blue-600" />
-            )}
-            <div className="ml-2">
-              <p className={`font-medium ${resumeParseSuccess ? 'text-green-800' : 'text-blue-800'}`}>
-                {resumeParseMessage}
-              </p>
-            </div>
-          </Alert>
-        )}
+              {/* Resume Parse Success Notification */}
+              {resumeParseMessage && (
+                <Alert className={`${resumeParseSuccess ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
+                  {resumeParseSuccess ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                  )}
+                  <div className="ml-2">
+                    <p className={`font-medium ${resumeParseSuccess ? 'text-green-800' : 'text-blue-800'}`}>
+                      {resumeParseMessage}
+                    </p>
+                  </div>
+                </Alert>
+              )}
+
+              {/* Resume Upload Section */}
+              <ResumeUpload
+                onParseSuccess={handleResumeParseSuccess}
+                onError={(error) => console.error('Resume parse error:', error)}
+              />
 
               {/* Personal Information */}
               <Card className="bg-white border border-gray-200 shadow-sm">
@@ -227,60 +261,52 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {renderField('firstName', 'First Name', 'text', {
-              placeholder: 'Enter first name',
-              required: true,
-              icon: User
-            })}
-            
-            {renderField('lastName', 'Last Name', 'text', {
-              placeholder: 'Enter last name',
-              required: true,
-              icon: User
-            })}
-            
-            {renderField('email', 'Email Address', 'email', {
-              placeholder: 'Enter email address',
-              required: true,
-              icon: Mail
-            })}
-            
-            {renderField('phone', 'Phone Number', 'tel', {
-              placeholder: 'Enter phone number',
-              icon: Phone
-            })}
-            
-            {renderField('dateOfBirth', 'Date of Birth', 'date', {
-              required: true,
-              icon: Calendar
-            })}
-            
-            {renderField('gender', 'Gender', 'select', {
-              placeholder: 'Select gender',
-              required: true,
-              options: [
-                { value: 'male', label: 'Male' },
-                { value: 'female', label: 'Female' },
-                { value: 'other', label: 'Other' }
-              ]
-            })}
-            
-            <div className="md:col-span-2">
-              {renderField('address', 'Address', 'textarea', {
-                placeholder: 'Enter full address',
-                icon: MapPin
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-              {/* Resume Upload Section - Only show for new employees */}
-              {!isEditing && (
-                <ResumeUpload
-                  onParseSuccess={handleResumeParseSuccess}
-                  onError={(error) => console.error('Resume parse error:', error)}
-                />
-              )}
+                  {renderField('firstName', 'First Name', 'text', {
+                    placeholder: 'Enter first name',
+                    required: true,
+                    icon: User
+                  })}
+                  
+                  {renderField('lastName', 'Last Name', 'text', {
+                    placeholder: 'Enter last name',
+                    required: true,
+                    icon: User
+                  })}
+                  
+                  {renderField('email', 'Email Address', 'email', {
+                    placeholder: 'Enter email address',
+                    required: true,
+                    icon: Mail
+                  })}
+                  
+                  {renderField('phone', 'Phone Number', 'tel', {
+                    placeholder: 'Enter phone number',
+                    icon: Phone
+                  })}
+                  
+                  {renderField('dateOfBirth', 'Date of Birth', 'date', {
+                    required: true,
+                    icon: Calendar
+                  })}
+                  
+                  {renderField('gender', 'Gender', 'select', {
+                    placeholder: 'Select gender',
+                    required: true,
+                    options: [
+                      { value: 'male', label: 'Male' },
+                      { value: 'female', label: 'Female' },
+                      { value: 'other', label: 'Other' }
+                    ]
+                  })}
+                  
+                  <div className="md:col-span-2">
+                    {renderField('address', 'Address', 'textarea', {
+                      placeholder: 'Enter full address',
+                      icon: MapPin
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Employment Information */}
               <Card className="bg-white border border-gray-200 shadow-sm">
@@ -291,50 +317,50 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {renderField('departmentId', 'Department', 'select', {
-              placeholder: 'Select department',
-              required: true,
-              icon: Building2,
-              options: departments.map(dept => ({
-                value: dept.id.toString(),
-                label: dept.name
-              }))
-            })}
-            
-            {renderField('position', 'Position', 'text', {
-              placeholder: 'Enter job position',
-              required: true,
-              icon: User
-            })}
-            
-            {renderField('hireDate', 'Hire Date', 'date', {
-              required: true,
-              icon: Calendar
-            })}
-            
-            {renderField('basicSalary', 'Basic Salary', 'number', {
-              placeholder: 'Enter basic salary',
-              icon: DollarSign
-            })}
-            
-            {renderField('managerId', 'Manager', 'select', {
-              placeholder: 'Select manager (optional)',
-              icon: Users,
-              options: availableManagers.map(manager => ({
-                value: manager.id.toString(),
-                label: `${manager.name} (${manager.department})`
-              }))
-            })}
-            
-            {renderField('status', 'Status', 'select', {
-              placeholder: 'Select status',
-              required: true,
-              options: [
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' },
-                { value: 'terminated', label: 'Terminated' }
-              ]
-            })}
+                  {renderField('departmentId', 'Department', 'select', {
+                    placeholder: 'Select department',
+                    required: true,
+                    icon: Building2,
+                    options: departments.map(dept => ({
+                      value: dept.id.toString(),
+                      label: dept.name
+                    }))
+                  })}
+
+                  {renderField('position', 'Position', 'text', {
+                    placeholder: 'Enter job position',
+                    required: true,
+                    icon: User
+                  })}
+
+                  {renderField('hireDate', 'Hire Date', 'date', {
+                    required: true,
+                    icon: Calendar
+                  })}
+
+                  {renderField('basicSalary', 'Basic Salary', 'number', {
+                    placeholder: 'Enter basic salary',
+                    icon: DollarSign
+                  })}
+
+                  {renderField('managerId', 'Manager', 'select', {
+                    placeholder: 'Select manager (optional)',
+                    icon: Users,
+                    options: availableManagers.map(manager => ({
+                      value: manager.id.toString(),
+                      label: `${manager.name} (${manager.department})`
+                    }))
+                  })}
+
+                  {renderField('status', 'Status', 'select', {
+                    placeholder: 'Select status',
+                    required: true,
+                    options: [
+                      { value: 'active', label: 'Active' },
+                      { value: 'inactive', label: 'Inactive' },
+                      { value: 'terminated', label: 'Terminated' }
+                    ]
+                  })}
                 </CardContent>
               </Card>
 
@@ -347,15 +373,15 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {renderField('emergencyContact', 'Emergency Contact Name', 'text', {
-              placeholder: 'Enter emergency contact name',
-              icon: User
-            })}
-            
-            {renderField('emergencyPhone', 'Emergency Contact Phone', 'tel', {
-              placeholder: 'Enter emergency contact phone',
-              icon: Phone
-            })}
+                  {renderField('emergencyContact', 'Emergency Contact Name', 'text', {
+                    placeholder: 'Enter emergency contact name',
+                    icon: User
+                  })}
+
+                  {renderField('emergencyPhone', 'Emergency Contact Phone', 'tel', {
+                    placeholder: 'Enter emergency contact phone',
+                    icon: Phone
+                  })}
                 </CardContent>
               </Card>
 
@@ -365,7 +391,7 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
                   type="button"
                   variant="outline"
                   onClick={handleCancel}
-                  disabled={isSubmitting}
+                  disabled={isCreatingEmployee}
                   className="hover:bg-gray-50 transition-all duration-300"
                 >
                   <X className="h-4 w-4 mr-2" />
@@ -373,19 +399,30 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
                 </Button>
 
                 <Button
+                  type="button"
+                  onClick={resetForm}
+                  variant="outline"
+                  disabled={isCreatingEmployee || !isDirty}
+                  className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-300"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Reset Form
+                </Button>
+
+                <Button
                   type="submit"
-                  disabled={!isValid || isSubmitting}
+                  disabled={!isValid || isCreatingEmployee}
                   className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
-                  {isSubmitting ? (
+                  {isCreatingEmployee ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {isEditing ? 'Updating...' : 'Creating...'}
+                      Creating Employee...
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4 mr-2" />
-                      {isEditing ? 'Update Employee' : 'Create Employee'}
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Create Employee
                     </>
                   )}
                 </Button>
@@ -504,6 +541,35 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
                         )}
                       </div>
                     </div>
+
+                    {/* Debug Info - Remove in production */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="mt-2 text-xs text-gray-500">
+                        <div>Valid: {isValid ? 'Yes' : 'No'}</div>
+                        <div>Errors: {Object.keys(errors).length}</div>
+                        <div>Required fields filled: {
+                          [
+                            formData.firstName?.trim() ? 'firstName' : null,
+                            formData.lastName?.trim() ? 'lastName' : null,
+                            formData.email?.trim() ? 'email' : null,
+                            formData.departmentId ? 'department' : null,
+                            formData.position?.trim() ? 'position' : null,
+                            formData.hireDate ? 'hireDate' : null
+                          ].filter(Boolean).join(', ') || 'None'
+                        }</div>
+                        {Object.keys(errors).length > 0 && (
+                          <div>Current errors: {Object.keys(errors).join(', ')}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AI Enhancement Badge */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-center p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                      <Sparkles className="h-5 w-5 text-blue-500 mr-2" />
+                      <span className="text-sm font-medium text-gray-700">AI-Enhanced Resume Parser</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -515,4 +581,4 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
   );
 };
 
-export default EmployeeForm;
+export default ResumeParserForm;
