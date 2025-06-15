@@ -14,15 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   User,
   TrendingUp,
-  AlertTriangle,
-  Lightbulb,
-  Calendar,
-  Building,
-  Mail,
-  Phone,
-  FileText,
-  Download,
-  Clock
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -78,18 +70,7 @@ const AttritionDetailModal = ({
       .replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const getRecommendationDescription = (recommendation) => {
-    const descriptions = {
-      schedule_one_on_one: 'Schedule a private meeting to discuss career goals and concerns',
-      review_workload: 'Assess current workload and redistribute tasks if necessary',
-      career_development: 'Provide opportunities for skill development and career advancement',
-      workload_adjustment: 'Reduce or redistribute workload to prevent burnout',
-      performance_improvement: 'Implement a structured performance improvement plan',
-      team_integration: 'Improve team dynamics and collaboration opportunities'
-    };
-    
-    return descriptions[recommendation] || 'Take appropriate action based on risk factors';
-  };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -239,55 +220,6 @@ const AttritionDetailModal = ({
                   </div>
                 </CardContent>
               </Card>
-            </div>
-
-            {/* AI Recommendations */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5" />
-                  AI Recommendations
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {employee?.recommendations?.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {employee.recommendations.map((rec, index) => (
-                      <div key={index} className="p-4 border rounded-lg space-y-3">
-                        <h4 className="font-medium text-sm">
-                          {formatFactorLabel(rec)}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {getRecommendationDescription(rec)}
-                        </p>
-                        <Button size="sm" variant="outline" className="w-full">
-                          Take Action
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No specific recommendations available at this time
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 border-t">
-              <Button variant="outline" className="flex-1">
-                <FileText className="h-4 w-4 mr-2" />
-                Generate Report
-              </Button>
-              <Button variant="outline" className="flex-1">
-                <Download className="h-4 w-4 mr-2" />
-                Export Analysis
-              </Button>
-              <Button variant="outline" className="flex-1">
-                <Calendar className="h-4 w-4 mr-2" />
-                Schedule Follow-up
-              </Button>
             </div>
           </div>
         )}

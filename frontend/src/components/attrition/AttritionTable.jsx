@@ -29,14 +29,12 @@ import { cn } from '@/lib/utils';
  * @param {Array} props.predictions - Prediction data
  * @param {boolean} props.isLoading - Loading state
  * @param {Function} props.onViewDetails - View details callback
- * @param {Function} props.onGenerateReport - Generate report callback
  * @returns {JSX.Element} Attrition table component
  */
-const AttritionTable = ({ 
-  predictions = [], 
-  isLoading, 
-  onViewDetails, 
-  onGenerateReport 
+const AttritionTable = ({
+  predictions = [],
+  isLoading,
+  onViewDetails
 }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -235,21 +233,13 @@ const AttritionTable = ({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => onViewDetails?.(prediction)}
                           className="h-8 w-8 p-0"
                         >
                           <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => onGenerateReport?.(prediction)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <FileText className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -276,7 +266,6 @@ const AttritionTable = ({
               key={prediction.employeeId}
               prediction={prediction}
               onViewDetails={onViewDetails}
-              onGenerateReport={onGenerateReport}
             />
           ))}
         </div>
@@ -331,7 +320,7 @@ const getRiskVariant = (riskLevel) => {
 /**
  * Mobile card view for individual employee
  */
-const MobileEmployeeCard = ({ prediction, onViewDetails, onGenerateReport }) => (
+const MobileEmployeeCard = ({ prediction, onViewDetails }) => (
   <Card className="transition-all duration-200 hover:shadow-md">
     <CardContent className="p-4">
       <div className="flex items-start justify-between mb-3">
@@ -372,21 +361,14 @@ const MobileEmployeeCard = ({ prediction, onViewDetails, onGenerateReport }) => 
         </div>
         
         <div className="flex gap-2 pt-2">
-          <Button 
-            size="sm" 
-            variant="outline" 
+          <Button
+            size="sm"
+            variant="outline"
             onClick={() => onViewDetails?.(prediction)}
             className="flex-1"
           >
             <Eye className="h-4 w-4 mr-2" />
             View Details
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => onGenerateReport?.(prediction)}
-          >
-            <FileText className="h-4 w-4" />
           </Button>
         </div>
       </div>

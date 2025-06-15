@@ -112,8 +112,6 @@ const AttritionPage = () => {
         filters={filters}
         onFilterChange={handleFilterChange}
         onGeneratePredictions={handleGeneratePredictions}
-        onExportReport={handleExportReport}
-        onRefresh={handleRefresh}
         isLoading={isLoading || isFetching}
         isGenerating={isGenerating}
       />
@@ -132,7 +130,6 @@ const AttritionPage = () => {
         predictions={predictions}
         isLoading={isLoading}
         onViewDetails={handleViewDetails}
-        onGenerateReport={handleGenerateReport}
       />
 
       {/* Employee Detail Modal */}

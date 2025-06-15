@@ -487,6 +487,11 @@
     transition: transform var(--duration-normal) var(--ease-out);
   }
 
+  /* Hover Scale Utilities */
+  .hover\:scale-103:hover {
+    transform: scale(1.03);
+  }
+
   /* Modal Overlay System */
   .hrms-modal-overlay {
     position: fixed;

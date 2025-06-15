@@ -13,7 +13,6 @@ export const useAttritionFilters = () => {
   const [filters, setFilters] = useState(() => ({
     riskThreshold: searchParams.get('riskThreshold') || '0.5',
     departmentFilter: searchParams.get('department') || 'all',
-    riskLevelFilter: searchParams.get('riskLevel') || 'all',
     sortBy: searchParams.get('sortBy') || 'riskScore',
     sortOrder: searchParams.get('sortOrder') || 'desc',
     page: parseInt(searchParams.get('page')) || 1,
@@ -28,7 +27,6 @@ export const useAttritionFilters = () => {
   const apiFilters = useMemo(() => ({
     riskThreshold: filters.riskThreshold !== 'all' ? parseFloat(filters.riskThreshold) : null,
     department: filters.departmentFilter !== 'all' ? filters.departmentFilter : null,
-    riskLevel: filters.riskLevelFilter !== 'all' ? filters.riskLevelFilter : null,
     sortBy: filters.sortBy,
     sortOrder: filters.sortOrder,
     page: filters.page,
@@ -37,7 +35,6 @@ export const useAttritionFilters = () => {
   }), [
     filters.riskThreshold,
     filters.departmentFilter,
-    filters.riskLevelFilter,
     filters.sortBy,
     filters.sortOrder,
     filters.page,
@@ -90,7 +87,6 @@ export const useAttritionFilters = () => {
     const defaultFilters = {
       riskThreshold: '0.5',
       departmentFilter: 'all',
-      riskLevelFilter: 'all',
       sortBy: 'riskScore',
       sortOrder: 'desc',
       page: 1,
@@ -135,11 +131,6 @@ export const useAttritionFilters = () => {
     updateFilter('departmentFilter', department);
   }, [updateFilter]);
 
-  // Risk level filter helpers
-  const setRiskLevelFilter = useCallback((riskLevel) => {
-    updateFilter('riskLevelFilter', riskLevel);
-  }, [updateFilter]);
-
   // Search helpers
   const setSearchQuery = useCallback((query) => {
     updateFilter('searchQuery', query);
@@ -163,19 +154,15 @@ export const useAttritionFilters = () => {
   // Filter summary for display
   const filterSummary = useMemo(() => {
     const active = [];
-    
+
     if (filters.riskThreshold !== '0.5') {
       active.push(`Risk: ${(parseFloat(filters.riskThreshold) * 100).toFixed(0)}%+`);
     }
-    
+
     if (filters.departmentFilter !== 'all') {
       active.push(`Dept: ${filters.departmentFilter}`);
     }
-    
-    if (filters.riskLevelFilter !== 'all') {
-      active.push(`Level: ${filters.riskLevelFilter}`);
-    }
-    
+
     if (filters.searchQuery) {
       active.push(`Search: "${filters.searchQuery}"`);
     }
@@ -192,7 +179,6 @@ export const useAttritionFilters = () => {
     return (
       filters.riskThreshold !== '0.5' ||
       filters.departmentFilter !== 'all' ||
-      filters.riskLevelFilter !== 'all' ||
       filters.sortBy !== 'riskScore' ||
       filters.sortOrder !== 'desc' ||
       filters.searchQuery !== ''
@@ -212,7 +198,6 @@ export const useAttritionFilters = () => {
     // Specific filter setters
     setRiskThreshold,
     setDepartmentFilter,
-    setRiskLevelFilter,
     setSearchQuery,
     clearSearch,
     

@@ -124,18 +124,18 @@ const EmptyState = React.memo(({ filters, onResetFilters }) => {
           <CheckCircle className="w-8 h-8 text-green-500" />
         )}
       </div>
-      
+
       <h3 className="text-lg font-semibold text-gray-900 mb-2">
         {hasActiveFilters ? 'No Anomalies Found' : 'No Active Anomalies'}
       </h3>
-      
+
       <p className="text-gray-600 mb-6 max-w-md mx-auto">
-        {hasActiveFilters 
+        {hasActiveFilters
           ? 'No anomalies match your current filter criteria. Try adjusting your filters or running a new detection.'
           : 'Great news! No attendance anomalies have been detected. Your team\'s attendance patterns look healthy.'
         }
       </p>
-      
+
       {hasActiveFilters && (
         <button
           onClick={onResetFilters}

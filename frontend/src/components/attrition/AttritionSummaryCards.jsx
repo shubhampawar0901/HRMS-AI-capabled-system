@@ -16,41 +16,45 @@ const AttritionSummaryCards = ({ summaryData, isLoading }) => {
       title: 'Critical Risk',
       count: summaryData?.critical || 0,
       icon: AlertTriangle,
-      gradient: 'from-red-50 to-red-100 dark:from-red-950 dark:to-red-900',
-      border: 'border-red-200 dark:border-red-800',
-      textColor: 'text-red-600 dark:text-red-400',
-      iconColor: 'text-red-500 dark:text-red-400',
-      countColor: 'text-red-700 dark:text-red-300'
+      gradient: 'from-red-50 to-red-100',
+      border: 'border-red-200',
+      textColor: 'text-red-600',
+      iconColor: 'text-red-500',
+      countColor: 'text-red-700',
+      glowColor: 'hover:shadow-red-200/50'
     },
     {
       title: 'High Risk',
       count: summaryData?.high || 0,
       icon: TrendingUp,
-      gradient: 'from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900',
-      border: 'border-orange-200 dark:border-orange-800',
-      textColor: 'text-orange-600 dark:text-orange-400',
-      iconColor: 'text-orange-500 dark:text-orange-400',
-      countColor: 'text-orange-700 dark:text-orange-300'
+      gradient: 'from-orange-50 to-orange-100',
+      border: 'border-orange-200',
+      textColor: 'text-orange-600',
+      iconColor: 'text-orange-500',
+      countColor: 'text-orange-700',
+      glowColor: 'hover:shadow-orange-200/50'
     },
     {
       title: 'Medium Risk',
       count: summaryData?.medium || 0,
       icon: Users,
-      gradient: 'from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900',
-      border: 'border-yellow-200 dark:border-yellow-800',
-      textColor: 'text-yellow-600 dark:text-yellow-400',
-      iconColor: 'text-yellow-500 dark:text-yellow-400',
-      countColor: 'text-yellow-700 dark:text-yellow-300'
+      gradient: 'from-yellow-50 to-yellow-100',
+      border: 'border-yellow-200',
+      textColor: 'text-yellow-600',
+      iconColor: 'text-yellow-500',
+      countColor: 'text-yellow-700',
+      glowColor: 'hover:shadow-yellow-200/50'
     },
     {
       title: 'Low Risk',
       count: summaryData?.low || 0,
       icon: Shield,
-      gradient: 'from-green-50 to-green-100 dark:from-green-950 dark:to-green-900',
-      border: 'border-green-200 dark:border-green-800',
-      textColor: 'text-green-600 dark:text-green-400',
-      iconColor: 'text-green-500 dark:text-green-400',
-      countColor: 'text-green-700 dark:text-green-300'
+      gradient: 'from-green-50 to-green-100',
+      border: 'border-green-200',
+      textColor: 'text-green-600',
+      iconColor: 'text-green-500',
+      countColor: 'text-green-700',
+      glowColor: 'hover:shadow-green-200/50'
     }
   ];
 
@@ -83,9 +87,10 @@ const AttritionSummaryCards = ({ summaryData, isLoading }) => {
           <Card
             key={card.title}
             className={cn(
-              "transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer group",
+              "transition-all duration-300 hover:shadow-xl hover:scale-103 cursor-pointer group",
               `bg-gradient-to-br ${card.gradient}`,
-              card.border
+              card.border,
+              card.glowColor
             )}
           >
             <CardContent className="p-6">
@@ -96,9 +101,9 @@ const AttritionSummaryCards = ({ summaryData, isLoading }) => {
                   </p>
                   <div className="flex items-baseline space-x-2">
                     <p className={cn("text-3xl font-bold", card.countColor)}>
-                      <AnimatedCounter 
-                        value={card.count} 
-                        duration={1000 + index * 200} 
+                      <AnimatedCounter
+                        value={card.count}
+                        duration={1000 + index * 200}
                       />
                     </p>
                     {summaryData?.total > 0 && (
@@ -110,16 +115,16 @@ const AttritionSummaryCards = ({ summaryData, isLoading }) => {
                 </div>
                 <div className={cn(
                   "p-3 rounded-full transition-transform duration-300 group-hover:scale-110",
-                  "bg-white/50 dark:bg-black/20"
+                  "bg-white/50"
                 )}>
                   <Icon className={cn("h-6 w-6", card.iconColor)} />
                 </div>
               </div>
-              
+
               {/* Progress indicator */}
               {summaryData?.total > 0 && (
                 <div className="mt-4">
-                  <div className="w-full bg-white/30 dark:bg-black/20 rounded-full h-2">
+                  <div className="w-full bg-white/30 rounded-full h-2">
                     <div
                       className={cn(
                         "h-2 rounded-full transition-all duration-1000 ease-out",
@@ -205,39 +210,39 @@ export const AttritionSummaryInfo = ({ summaryData }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 transition-all duration-300 hover:shadow-xl hover:scale-103 hover:shadow-blue-200/50">
         <CardContent className="p-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+            <p className="text-2xl font-bold text-blue-700">
               {summaryData.total}
             </p>
-            <p className="text-sm text-blue-600 dark:text-blue-400">
+            <p className="text-sm text-blue-600">
               Total Employees Analyzed
             </p>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-200 dark:border-purple-800">
+      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200 transition-all duration-300 hover:shadow-xl hover:scale-103 hover:shadow-purple-200/50">
         <CardContent className="p-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+            <p className="text-2xl font-bold text-purple-700">
               {highRiskPercentage}%
             </p>
-            <p className="text-sm text-purple-600 dark:text-purple-400">
+            <p className="text-sm text-purple-600">
               High Risk Employees
             </p>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950 dark:to-cyan-950 border-teal-200 dark:border-teal-800">
+      <Card className="bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-200 transition-all duration-300 hover:shadow-xl hover:scale-103 hover:shadow-teal-200/50">
         <CardContent className="p-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-teal-700 dark:text-teal-300">
+            <p className="text-2xl font-bold text-teal-700">
               {Math.round((summaryData.averageRisk || 0) * 100)}%
             </p>
-            <p className="text-sm text-teal-600 dark:text-teal-400">
+            <p className="text-sm text-teal-600">
               Average Risk Score
             </p>
           </div>
