@@ -42,8 +42,10 @@ import GoalsPage from '@/pages/performance/GoalsPage';
 
 // AI Features Pages
 import AIFeaturesPage from '@/pages/ai-features/AIFeaturesPage';
-import ChatbotPage from '@/pages/ai-features/ChatbotPage';
 import AttritionPage from '@/pages/ai-features/AttritionPage';
+
+// Chatbot Page
+import ChatbotPage from '@/pages/ChatbotPage';
 
 // Smart Reports Pages
 import AdminSmartReports from '@/pages/admin/SmartReports';
@@ -136,9 +138,18 @@ const AppRoutes = () => {
         <Route path="performance/review/:id" element={<ReviewPage />} />
         <Route path="performance/goals" element={<GoalsPage />} />
 
+        {/* AI Chatbot - Employee Only */}
+        <Route
+          path="ai-chatbot"
+          element={
+            <ProtectedRoute requiredRoles={['employee']}>
+              <ChatbotPage />
+            </ProtectedRoute>
+          }
+        />
+
         {/* AI Features */}
         <Route path="ai-features" element={<AIFeaturesPage />} />
-        <Route path="ai-features/chatbot" element={<ChatbotPage />} />
         <Route path="ai-features/attrition" element={<AttritionPage />} />
 
         {/* Smart Reports - Role-based Routes */}

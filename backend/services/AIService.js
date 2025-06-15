@@ -1,18 +1,45 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { 
-  Employee, 
-  Attendance, 
-  LeaveApplication, 
+const RAGService = require('./RAGService');
+const {
+  Employee,
+  Attendance,
+  LeaveApplication,
   PerformanceReview,
-  Payroll 
+  Payroll,
+  LeaveBalance,
+  AIPolicyDocument
 } = require('../models');
 
 class AIService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ 
-      model: process.env.GEMINI_MODEL || 'gemini-1.5-flash' 
+
+    // Fast model for quick responses (Gemini 1.5 Flash)
+    this.fastModel = this.genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash'
     });
+
+    // Advanced model for complex analysis (Gemini 2.0 Flash Exp)
+    this.advancedModel = this.genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp'
+    });
+
+    // Default to advanced model for backward compatibility
+    this.model = this.advancedModel;
+
+    this.ragService = new RAGService();
+
+    // Response cache for frequently asked questions
+    this.responseCache = new Map();
+    this.cacheExpiry = 5 * 60 * 1000; // 5 minutes
+
+    // Performance tracking
+    this.performanceMetrics = {
+      fastResponses: 0,
+      advancedResponses: 0,
+      cacheHits: 0,
+      averageResponseTime: 0
+    };
   }
 
   // ==========================================
@@ -320,12 +347,24 @@ class AIService {
   }
 
   // ==========================================
-  // CHATBOT
+  // RAG-ENHANCED CHATBOT
   // ==========================================
-  
+
   async processChatbotQuery(message, userContext) {
     try {
       const startTime = Date.now();
+
+      // Check cache first for fast responses
+      const cacheKey = this.generateCacheKey(message, userContext.role);
+      const cachedResponse = this.getCachedResponse(cacheKey);
+      if (cachedResponse) {
+        this.performanceMetrics.cacheHits++;
+        return {
+          ...cachedResponse,
+          responseTime: Date.now() - startTime,
+          cached: true
+        };
+      }
 
       // Role-based access control
       if (!this.hasAccess(message, userContext.role)) {
@@ -338,43 +377,52 @@ class AIService {
         };
       }
 
-      // Process query with context
-      const prompt = `
-        You are an HR assistant chatbot. Respond to the following query from a ${userContext.role}:
-        
-        Query: ${message}
-        User Role: ${userContext.role}
-        
-        Provide a helpful, professional response. If the query requires specific data access, 
-        explain what information would be needed and how to access it through the proper channels.
-        
-        Respond in JSON format:
-        {
-          "message": "your response",
-          "intent": "detected intent",
-          "confidence": 0.0-1.0,
-          "type": "response|access_denied|error"
-        }
-      `;
+      // Determine query intent and route accordingly
+      const intent = await this.detectQueryIntent(message);
+      let response;
 
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-
-      let chatResponse;
-      try {
-        chatResponse = JSON.parse(text.replace(/```json|```/g, '').trim());
-      } catch (parseError) {
-        chatResponse = {
-          message: "I understand your question, but I'm having trouble processing it right now. Please try rephrasing or contact HR directly.",
-          intent: 'general_query',
-          confidence: 0.5,
-          type: 'response'
-        };
+      switch (intent.type) {
+        case 'greeting':
+          response = await this.handleGreeting(message, userContext);
+          break;
+        case 'out_of_scope':
+          response = await this.handleOutOfScope(message, userContext);
+          break;
+        case 'unauthorized_access':
+          response = await this.handleUnauthorizedAccess(message, userContext);
+          break;
+        case 'ambiguous':
+          response = await this.handleAmbiguousQuery(message, userContext);
+          break;
+        case 'leave_balance':
+          response = await this.handleLeaveBalanceQuery(message, userContext);
+          break;
+        case 'policy_question':
+          response = await this.handlePolicyQuery(message, userContext);
+          break;
+        case 'employee_data':
+          response = await this.handleEmployeeDataQuery(message, userContext);
+          break;
+        case 'general_hr':
+          response = await this.handleGeneralHRQuery(message, userContext);
+          break;
+        default:
+          response = await this.handleGeneralQuery(message, userContext);
       }
 
-      chatResponse.responseTime = Date.now() - startTime;
-      return chatResponse;
+      response.responseTime = Date.now() - startTime;
+      response.intent = intent.type;
+      response.confidence = intent.confidence;
+
+      // Cache frequently asked questions (non-personal data only)
+      if (this.shouldCache(intent.type, response)) {
+        this.setCachedResponse(cacheKey, response);
+      }
+
+      // Update performance metrics
+      this.updatePerformanceMetrics(response.responseTime, intent.type);
+
+      return response;
     } catch (error) {
       console.error('Chatbot query error:', error);
       return {
@@ -387,9 +435,430 @@ class AIService {
     }
   }
 
+  async detectQueryIntent(message) {
+    const lowerMessage = message.toLowerCase().trim();
+
+    // 1. GREETING DETECTION - Highest Priority (with fuzzy matching)
+    const greetingPatterns = [
+      'hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening',
+      'namaste', 'greetings', 'hola', 'howdy', 'what\'s up', 'whatsup'
+    ];
+
+    // Enhanced greeting patterns with common misspellings
+    const greetingVariations = [
+      'hi', 'hii', 'hiii', 'hello', 'helo', 'hallo', 'hey', 'heyyy',
+      'good morning', 'gud morning', 'good mrng', 'gud mrng', 'gd morning',
+      'good afternoon', 'gud afternoon', 'good evening', 'gud evening',
+      'namaste', 'namaskar', 'greetings', 'greeting'
+    ];
+
+    if (greetingPatterns.some(pattern => lowerMessage === pattern || lowerMessage.startsWith(pattern + ' ')) ||
+        greetingVariations.some(pattern => lowerMessage === pattern || lowerMessage.startsWith(pattern + ' '))) {
+      return { type: 'greeting', confidence: 0.95 };
+    }
+
+    // 2. OUT-OF-SCOPE DETECTION - High Priority
+    const outOfScopePatterns = [
+      'weather', 'joke', 'story', 'recipe', 'sports', 'cricket', 'football', 'movie',
+      'sachin tendulkar', 'virat kohli', 'bollywood', 'politics', 'news', 'stock market',
+      'bitcoin', 'cryptocurrency', 'travel', 'restaurant', 'food', 'music', 'game',
+      'what is 2+2', 'what\'s 2+2', 'solve', 'calculate', 'math', 'physics', 'chemistry', 'history',
+      'geography', 'who is', 'what is the capital', 'tell me about', 'explain quantum',
+      'entertainment', 'celebrity', 'personal life', 'dating', 'relationship', 'hobby'
+    ];
+
+    // Enhanced out-of-scope patterns with common misspellings
+    const outOfScopeVariations = [
+      'weather', 'wether', 'wheather', 'joke', 'jok', 'joks', 'story', 'storys',
+      'recipe', 'recepie', 'sports', 'sport', 'cricket', 'criket', 'football', 'footbal',
+      'movie', 'movies', 'moive', 'politics', 'politcs', 'news', 'newz',
+      'travel', 'travle', 'restaurant', 'resturant', 'food', 'fud', 'music', 'muzic',
+      'game', 'games', 'gam', 'entertainment', 'entertanment'
+    ];
+
+    // Enhanced mathematical/calculation detection
+    const mathPatterns = [
+      /\b\d+\s*[\+\-\*\/\=]\s*\d+/,  // Mathematical expressions: 2+2, 5*3, etc.
+      /what['']?s\s+\d+[\+\-\*\/]/i,   // "What's 2+", "What's 5*"
+      /\d+\s+(divided\s+by|plus|minus|times|multiplied\s+by)\s+\d+/i, // "15 divided by 3"
+      /calculate|solve|math|equation|formula/i,
+      /\b(add|subtract|multiply|divide|plus|minus|times)\b/i
+    ];
+
+    // Check for out-of-scope patterns (but exclude HR-related unauthorized access)
+    const isOutOfScope = outOfScopePatterns.some(pattern => lowerMessage.includes(pattern)) ||
+                        outOfScopeVariations.some(pattern => lowerMessage.includes(pattern)) ||
+                        mathPatterns.some(pattern => pattern.test(message));
+
+    // Don't classify as out-of-scope if it's about employees/colleagues (should be unauthorized_access)
+    // or company policies/rules/benefits (should be policy_question or general_hr)
+    const isAboutEmployees = /tell me about (other|another)\s+(employee|colleague|coworker|person|staff)/i.test(message);
+    const isAboutCompanyPolicy = /tell me about (the\s+)?(company|office|hr)\s+(rule|policy|procedure)/i.test(message);
+    const isAboutHRTopics = /(compensation|benefits|pf|provident|gratuity|insurance|salary|payroll|leave|policy|hr)/i.test(message);
+
+    if (isOutOfScope && !isAboutEmployees && !isAboutCompanyPolicy && !isAboutHRTopics) {
+      return { type: 'out_of_scope', confidence: 0.9 };
+    }
+
+    // 3. UNAUTHORIZED DATA ACCESS DETECTION
+    const unauthorizedPatterns = [
+      'other employee', 'other employee\'s', 'someone else', 'colleague', 'colleague\'s', 'coworker', 'coworker\'s', 'team member', 'team member\'s',
+      'raj\'s salary', 'priya\'s leave', 'amit\'s performance', 'manager\'s data',
+      'everyone\'s', 'all employees', 'team salary', 'department salary', 'staff salary',
+      'tell me about other', 'show me other', 'give me other', 'what about other',
+      'other people', 'other staff', 'other workers', 'another employee', 'another person'
+    ];
+
+    // Enhanced patterns for indirect unauthorized requests
+    const indirectUnauthorizedPatterns = [
+      /tell me about (?!my|mine)\w+['']?s?\s+(salary|leave|performance|data|information|profile|details)/i,
+      /tell me about (other|another)\s+(employee|colleague|coworker|person|staff)/i,
+      /show me (?!my|mine)\w+['']?s?\s+(salary|leave|performance|data|information|profile|details)/i,
+      /what['']?s (?!my|mine)\w+['']?s?\s+(salary|leave|performance|data|information|profile|details)/i,
+      /(?!my|mine)\w+['']?s\s+(salary|leave|performance|data|information|profile|details)/i,
+      /other\s+employee['']?s?\s+(salary|leave|performance|data|information|profile|details)/i,
+      /(other|another)\s+employee['']?s?\s+(performance|data|information|profile|details)/i
+    ];
+
+    // Check for unauthorized access patterns
+    if (unauthorizedPatterns.some(pattern => lowerMessage.includes(pattern)) ||
+        indirectUnauthorizedPatterns.some(pattern => pattern.test(message))) {
+      return { type: 'unauthorized_access', confidence: 0.85 };
+    }
+
+    // 4. LEAVE BALANCE QUERIES (specific to balance/quota, not application process)
+    const leaveBalancePatterns = [
+      'leave balance', 'remaining leave', 'leave days left', 'leave quota',
+      'how many leave', 'my leave balance', 'my remaining leave'
+    ];
+
+    // Enhanced leave balance patterns with common misspellings
+    const leaveBalanceVariations = [
+      'leave balance', 'leav balance', 'leave balence', 'leav balence', 'leave balanc',
+      'remaining leave', 'remaining leav', 'remaning leave', 'remaning leav',
+      'leave days left', 'leav days left', 'leave day left',
+      'leave quota', 'leav quota', 'my leave balance', 'my leav balance',
+      'my leave balence', 'my leav balence', 'how many leave', 'how many leav'
+    ];
+
+    // Check both exact and fuzzy patterns
+    const isLeaveBalance = leaveBalancePatterns.some(pattern => lowerMessage.includes(pattern)) ||
+                          leaveBalanceVariations.some(pattern => lowerMessage.includes(pattern));
+    const isAboutApplication = /how.*(submit|apply|file|request).*leave/i.test(message);
+
+    if (isLeaveBalance && !isAboutApplication) {
+      return { type: 'leave_balance', confidence: 0.9 };
+    }
+
+    // 5. POLICY QUESTIONS (Check before leave balance to avoid conflicts)
+    const policyPatterns = [
+      'policy', 'procedure', 'rule', 'regulation', 'guideline',
+      'how to apply', 'how do i apply', 'how can i apply', 'how should i apply',
+      'how to', 'how do i', 'how can i', 'how should i',
+      'what is the rule', 'what are the rules', 'what\'s the rule', 'what\'s the process',
+      'what is the process', 'what are the steps', 'what\'s the procedure',
+      'company rule', 'company rules', 'hr policy', 'company policy', 'office policy',
+      'maternity leave', 'paternity leave', 'working hours', 'office hours',
+      'dress code', 'code of conduct', 'leave policy', 'attendance policy',
+      'what\'s the', 'what is the', 'explain the'
+    ];
+
+    // Enhanced procedural question patterns
+    const proceduralPatterns = [
+      /how\s+(do\s+i|can\s+i|should\s+i|to)\s+(apply|request|get|obtain|submit)/i,
+      /what['']?s\s+the\s+(process|procedure|steps|way)\s+(for|to)/i,
+      /how\s+(do\s+i|can\s+i|should\s+i)\s+(submit|file|request)/i,
+      /(what|how)\s+.*(policy|procedure|rule|process|steps)/i,
+      /tell\s+me\s+about\s+(the\s+)?(company|office|hr)\s+(rule|policy|procedure)/i,
+      /tell\s+me\s+about\s+the\s+company\s+rules/i
+    ];
+
+    if (policyPatterns.some(pattern => lowerMessage.includes(pattern)) ||
+        proceduralPatterns.some(pattern => pattern.test(message))) {
+      return { type: 'policy_question', confidence: 0.8 };
+    }
+
+    // 6. EMPLOYEE DATA QUERIES
+    if (lowerMessage.includes('my profile') ||
+        lowerMessage.includes('my information') ||
+        lowerMessage.includes('my details') ||
+        lowerMessage.includes('my data') ||
+        lowerMessage.includes('my attendance') ||
+        lowerMessage.includes('my performance') ||
+        lowerMessage.includes('my goals') ||
+        lowerMessage.includes('my payroll')) {
+      return { type: 'employee_data', confidence: 0.8 };
+    }
+
+    // 7. GENERAL HR QUERIES
+    if (lowerMessage.includes('hr') ||
+        lowerMessage.includes('human resource') ||
+        lowerMessage.includes('benefits') ||
+        lowerMessage.includes('payroll') ||
+        lowerMessage.includes('compensation') ||
+        lowerMessage.includes('training') ||
+        lowerMessage.includes('appraisal')) {
+      return { type: 'general_hr', confidence: 0.7 };
+    }
+
+    // 8. AMBIGUOUS OR MIXED QUERIES
+    const hrKeywords = ['leave', 'policy', 'hr', 'employee', 'work', 'office', 'company'];
+    const nonHrKeywords = ['weather', 'food', 'movie', 'sports', 'politics'];
+    const hasHrKeywords = hrKeywords.some(keyword => lowerMessage.includes(keyword));
+    const hasNonHrKeywords = nonHrKeywords.some(keyword => lowerMessage.includes(keyword));
+
+    if (hasHrKeywords && hasNonHrKeywords) {
+      return { type: 'ambiguous', confidence: 0.6 };
+    }
+
+    return { type: 'general', confidence: 0.5 };
+  }
+
+  // ==========================================
+  // SHUBH CHATBOT PERSONALITY HANDLERS
+  // ==========================================
+
+  async handleGreeting(message, userContext) {
+    const employeeName = userContext.employeeName || 'there';
+    return {
+      message: `Hello ${employeeName}! I'm Shubh, your HR assistant. I can help with company policies and your personal HR information like leave, payroll, goals, and attendance. What would you like to know today?`,
+      type: 'response',
+      intent: 'greeting'
+    };
+  }
+
+  async handleOutOfScope(message, userContext) {
+    return {
+      message: "I'm here to help with company policies and your personal HR records. I cannot assist with that. Please ask me about HR-related topics like leave policies, your attendance, or company procedures.",
+      type: 'response',
+      intent: 'out_of_scope'
+    };
+  }
+
+  async handleUnauthorizedAccess(message, userContext) {
+    return {
+      message: "For privacy reasons, I can only share your own information. I cannot provide details about other employees. Would you like to know about your own HR data instead?",
+      type: 'response',
+      intent: 'unauthorized_access'
+    };
+  }
+
+  async handleAmbiguousQuery(message, userContext) {
+    return {
+      message: "Can you please rephrase your question related to company policies or your HR information? I'm here to help with topics like leave policies, your attendance, payroll, or company procedures.",
+      type: 'response',
+      intent: 'ambiguous'
+    };
+  }
+
+  async handleLeaveBalanceQuery(message, userContext) {
+    try {
+      if (!userContext.employeeId) {
+        return {
+          message: "I couldn't find your employee information. Please contact HR for assistance.",
+          type: 'error'
+        };
+      }
+
+      // Get employee's leave balance
+      const leaveBalances = await LeaveBalance.findByEmployee(userContext.employeeId);
+      const currentYear = new Date().getFullYear();
+      const currentYearBalances = leaveBalances.filter(lb => lb.year === currentYear);
+
+      if (currentYearBalances.length === 0) {
+        return {
+          message: "I couldn't find your leave balance information for this year. Please contact HR for assistance.",
+          type: 'response'
+        };
+      }
+
+      let balanceText = "Here's your current leave balance:\n\n";
+      currentYearBalances.forEach(balance => {
+        balanceText += `• ${balance.leaveTypeName || 'Leave'}: ${balance.remainingDays} days remaining (${balance.usedDays} used out of ${balance.allocatedDays} allocated)\n`;
+      });
+
+      return {
+        message: balanceText,
+        type: 'response',
+        data: currentYearBalances
+      };
+    } catch (error) {
+      console.error('Error handling leave balance query:', error);
+      return {
+        message: "I'm having trouble accessing your leave balance. Please contact HR directly.",
+        type: 'error'
+      };
+    }
+  }
+
+  async handlePolicyQuery(message, userContext) {
+    try {
+      // Search for relevant policy documents using RAG
+      const relevantChunks = await this.ragService.searchWithAccessControl(
+        message,
+        userContext.role,
+        { topK: 2 } // Reduced from 3 to 2 for faster responses
+      );
+
+      if (relevantChunks.length === 0) {
+        return {
+          message: "I couldn't find specific policy information related to your question. Please contact HR for detailed policy information.",
+          type: 'response'
+        };
+      }
+
+      // Combine relevant chunks and limit context size for fast responses
+      let context = relevantChunks.map(chunk => chunk.text).join('\n\n');
+
+      // Truncate context if too large for fast model
+      const maxFastContextSize = 1500;
+      if (context.length > maxFastContextSize) {
+        context = context.substring(0, maxFastContextSize) + '...';
+      }
+
+      // Select optimal model based on context size
+      const selectedModel = await this.selectOptimalModel('policy_question', context.length);
+
+      // Generate response using optimal LLM with context
+      const prompt = `
+        You are Shubh, a professional HR chatbot assistant. Answer the employee's question using the provided policy information.
+
+        Employee Question: ${message}
+        Employee Role: ${userContext.role}
+
+        Relevant Policy Information:
+        ${context}
+
+        Provide a clear, helpful answer based on the policy information. If the policy information doesn't fully answer the question, mention that they should contact HR for more details.
+
+        Keep the response professional, concise, and helpful. Start responses naturally without saying "I'm Shubh" unless it's a greeting.
+      `;
+
+      const result = await selectedModel.generateContent(prompt);
+      const response = await result.response;
+      const responseText = response.text();
+
+      return {
+        message: responseText,
+        type: 'response',
+        sources: relevantChunks.map(chunk => ({
+          document: chunk.filename,
+          relevance: chunk.score
+        })),
+        modelUsed: selectedModel === this.fastModel ? 'fast' : 'advanced'
+      };
+    } catch (error) {
+      console.error('Error handling policy query:', error);
+      return {
+        message: "I'm having trouble accessing policy information. Please contact HR directly.",
+        type: 'error'
+      };
+    }
+  }
+
+  async handleEmployeeDataQuery(message, userContext) {
+    try {
+      if (!userContext.employeeId) {
+        return {
+          message: "I couldn't find your employee information. Please contact HR for assistance.",
+          type: 'error'
+        };
+      }
+
+      // Get employee information
+      const employee = await Employee.findById(userContext.employeeId);
+      if (!employee) {
+        return {
+          message: "I couldn't find your employee profile. Please contact HR for assistance.",
+          type: 'error'
+        };
+      }
+
+      // Generate response with employee data (filtered for privacy)
+      const employeeInfo = `
+        Here's your basic profile information:
+
+        • Name: ${employee.firstName} ${employee.lastName}
+        • Employee Code: ${employee.employeeCode}
+        • Department: ${employee.departmentName || 'Not assigned'}
+        • Position: ${employee.position || 'Not specified'}
+        • Hire Date: ${employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : 'Not available'}
+
+        For any updates to your profile, please contact HR.
+      `;
+
+      return {
+        message: employeeInfo,
+        type: 'response'
+      };
+    } catch (error) {
+      console.error('Error handling employee data query:', error);
+      return {
+        message: "I'm having trouble accessing your profile information. Please contact HR directly.",
+        type: 'error'
+      };
+    }
+  }
+
+  async handleGeneralHRQuery(message, userContext) {
+    try {
+      // Search for relevant information using RAG
+      const relevantChunks = await this.ragService.searchWithAccessControl(
+        message,
+        userContext.role,
+        { topK: 2 }
+      );
+
+      let context = '';
+      if (relevantChunks.length > 0) {
+        context = relevantChunks.map(chunk => chunk.text).join('\n\n');
+      }
+
+      // Select optimal model based on context size
+      const selectedModel = await this.selectOptimalModel('general_hr', context.length);
+
+      // Generate response
+      const prompt = `
+        You are Shubh, a professional HR chatbot assistant. Answer the employee's HR-related question.
+
+        Employee Question: ${message}
+        Employee Role: ${userContext.role}
+
+        ${context ? `Relevant Information:\n${context}\n\n` : ''}
+
+        Provide a helpful, professional response. If you don't have specific information, guide them to contact HR directly.
+        Keep the response concise and actionable. Start responses naturally without saying "I'm Shubh" unless it's a greeting.
+      `;
+
+      const result = await selectedModel.generateContent(prompt);
+      const response = await result.response;
+      const responseText = response.text();
+
+      return {
+        message: responseText,
+        type: 'response',
+        hasContext: relevantChunks.length > 0,
+        modelUsed: selectedModel === this.fastModel ? 'fast' : 'advanced'
+      };
+    } catch (error) {
+      console.error('Error handling general HR query:', error);
+      return {
+        message: "I'm here to help with HR questions. Please contact HR directly for specific assistance.",
+        type: 'error'
+      };
+    }
+  }
+
+  async handleGeneralQuery(message, userContext) {
+    return {
+      message: "I'm Shubh, your HR assistant. I can help you with:\n\n• Leave balance inquiries\n• HR policy questions\n• General HR procedures\n• Employee information\n• Attendance records\n• Payroll information\n• Performance goals\n\nPlease ask me about any HR-related topics, or contact HR directly for specific assistance.",
+      type: 'response'
+    };
+  }
+
   hasAccess(message, role) {
     const restrictedKeywords = ['salary', 'payroll', 'confidential', 'private'];
-    const hasRestrictedContent = restrictedKeywords.some(keyword => 
+    const hasRestrictedContent = restrictedKeywords.some(keyword =>
       message.toLowerCase().includes(keyword)
     );
 
@@ -398,6 +867,78 @@ class AIService {
     }
 
     return true;
+  }
+
+  // ==========================================
+  // PERFORMANCE OPTIMIZATION METHODS
+  // ==========================================
+
+  generateCacheKey(message, role) {
+    // Create a simple hash for caching (normalize message)
+    const normalizedMessage = message.toLowerCase().trim().replace(/[^\w\s]/g, '');
+    return `${normalizedMessage}_${role}`;
+  }
+
+  getCachedResponse(cacheKey) {
+    const cached = this.responseCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.cacheExpiry) {
+      return cached.response;
+    }
+    if (cached) {
+      this.responseCache.delete(cacheKey); // Remove expired cache
+    }
+    return null;
+  }
+
+  setCachedResponse(cacheKey, response) {
+    this.responseCache.set(cacheKey, {
+      response: { ...response },
+      timestamp: Date.now()
+    });
+  }
+
+  shouldCache(intentType, response) {
+    // Cache policy questions, greetings, and out-of-scope responses
+    // Don't cache personal data like leave balance or employee data
+    const cacheableIntents = ['policy_question', 'greeting', 'out_of_scope', 'unauthorized_access', 'ambiguous', 'general_hr'];
+    return cacheableIntents.includes(intentType) && response.type !== 'error';
+  }
+
+  updatePerformanceMetrics(responseTime, intentType) {
+    // Track which model was used based on response time
+    if (responseTime < 500) {
+      this.performanceMetrics.fastResponses++;
+    } else {
+      this.performanceMetrics.advancedResponses++;
+    }
+
+    // Update average response time
+    const totalResponses = this.performanceMetrics.fastResponses + this.performanceMetrics.advancedResponses;
+    this.performanceMetrics.averageResponseTime =
+      (this.performanceMetrics.averageResponseTime * (totalResponses - 1) + responseTime) / totalResponses;
+  }
+
+  async selectOptimalModel(intentType, contextSize = 0) {
+    // Use fast model for simple queries and small contexts
+    // Use advanced model for complex analysis and large contexts
+
+    const fastModelIntents = ['greeting', 'out_of_scope', 'unauthorized_access', 'ambiguous'];
+    const simpleContextThreshold = 1500; // characters - threshold for fast model
+
+    // Always use fast model for simple intents
+    if (fastModelIntents.includes(intentType)) {
+      return this.fastModel;
+    }
+
+    // For policy and HR queries, use fast model if context is small
+    if (contextSize > 0 && contextSize < simpleContextThreshold) {
+      console.log(`🚀 Using fast model for ${intentType} (context: ${contextSize} chars)`);
+      return this.fastModel;
+    }
+
+    // Use advanced model for complex queries or large contexts
+    console.log(`🧠 Using advanced model for ${intentType} (context: ${contextSize} chars)`);
+    return this.advancedModel;
   }
 
   // ==========================================

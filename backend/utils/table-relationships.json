@@ -1,0 +1,254 @@
+{
+  "primary_relationships": {
+    "description": "Main foreign key relationships between tables",
+    
+    "employees": {
+      "primary_key": "id",
+      "foreign_keys": {
+        "user_id": {
+          "references": "users.id",
+          "relationship": "one_to_one",
+          "description": "Links employee to login credentials"
+        },
+        "department_id": {
+          "references": "departments.id", 
+          "relationship": "many_to_one",
+          "description": "Employee belongs to a department"
+        },
+        "manager_id": {
+          "references": "employees.id",
+          "relationship": "many_to_one", 
+          "description": "Self-referencing for reporting hierarchy"
+        }
+      },
+      "referenced_by": [
+        "attendance.employeeId",
+        "leave_balances.employee_id",
+        "leave_applications.employee_id", 
+        "performance_reviews.employee_id",
+        "performance_goals.employee_id",
+        "payroll_records.employee_id",
+        "ai_chatbot_interactions.user_id"
+      ]
+    },
+    
+    "departments": {
+      "primary_key": "id",
+      "foreign_keys": {
+        "manager_id": {
+          "references": "employees.id",
+          "relationship": "one_to_one",
+          "description": "Department head/manager"
+        }
+      },
+      "referenced_by": [
+        "employees.department_id"
+      ]
+    },
+    
+    "attendance": {
+      "primary_key": "id",
+      "foreign_keys": {
+        "employeeId": {
+          "references": "employees.id",
+          "relationship": "many_to_one",
+          "description": "Attendance record belongs to employee"
+        }
+      }
+    },
+    
+    "leave_balances": {
+      "primary_key": "id",
+      "foreign_keys": {
+        "employee_id": {
+          "references": "employees.id",
+          "relationship": "many_to_one",
+          "description": "Leave balance belongs to employee"
+        },
+        "leave_type_id": {
+          "references": "leave_types.id",
+          "relationship": "many_to_one",
+          "description": "Type of leave (annual, sick, etc.)"
+        }
+      }
+    },
+    
+    "leave_applications": {
+      "primary_key": "id", 
+      "foreign_keys": {
+        "employee_id": {
+          "references": "employees.id",
+          "relationship": "many_to_one",
+          "description": "Leave application by employee"
+        },
+        "leave_type_id": {
+          "references": "leave_types.id",
+          "relationship": "many_to_one",
+          "description": "Type of leave being requested"
+        },
+        "approved_by": {
+          "references": "employees.id",
+          "relationship": "many_to_one",
+          "description": "Manager who approved/rejected"
+        }
+      }
+    },
+    
+    "performance_reviews": {
+      "primary_key": "id",
+      "foreign_keys": {
+        "employee_id": {
+          "references": "employees.id",
+          "relationship": "many_to_one",
+          "description": "Employee being reviewed"
+        },
+        "reviewer_id": {
+          "references": "employees.id",
+          "relationship": "many_to_one", 
+          "description": "Manager conducting review"
+        }
+      }
+    },
+    
+    "payroll_records": {
+      "primary_key": "id",
+      "foreign_keys": {
+        "employee_id": {
+          "references": "employees.id",
+          "relationship": "many_to_one",
+          "description": "Payroll record for employee"
+        }
+      }
+    }
+  },
+  
+  "common_joins": {
+    "description": "Frequently used JOIN patterns for queries",
+    
+    "employee_with_department": {
+      "sql": "SELECT e.*, d.name as department_name FROM employees e LEFT JOIN departments d ON e.department_id = d.id",
+      "description": "Employee information with department name",
+      "use_case": "Profile queries, employee listings"
+    },
+    
+    "attendance_with_employee": {
+      "sql": "SELECT a.*, e.first_name, e.last_name FROM attendance a JOIN employees e ON a.employeeId = e.id",
+      "description": "Attendance records with employee names",
+      "use_case": "Attendance reports, manager views"
+    },
+    
+    "leave_balance_with_types": {
+      "sql": "SELECT lb.*, lt.name as leave_type_name FROM leave_balances lb JOIN leave_types lt ON lb.leave_type_id = lt.id",
+      "description": "Leave balances with leave type names",
+      "use_case": "Leave balance queries"
+    },
+    
+    "leave_applications_with_details": {
+      "sql": "SELECT la.*, lt.name as leave_type_name, e.first_name as approver_name FROM leave_applications la JOIN leave_types lt ON la.leave_type_id = lt.id LEFT JOIN employees e ON la.approved_by = e.id",
+      "description": "Leave applications with type and approver details",
+      "use_case": "Leave application history"
+    },
+    
+    "performance_review_with_reviewer": {
+      "sql": "SELECT pr.*, e.first_name as reviewer_first_name, e.last_name as reviewer_last_name FROM performance_reviews pr LEFT JOIN employees e ON pr.reviewer_id = e.id",
+      "description": "Performance reviews with reviewer information",
+      "use_case": "Performance review queries"
+    },
+    
+    "team_hierarchy": {
+      "sql": "SELECT e.*, m.first_name as manager_first_name, m.last_name as manager_last_name FROM employees e LEFT JOIN employees m ON e.manager_id = m.id",
+      "description": "Employee with their manager information",
+      "use_case": "Organizational hierarchy queries"
+    }
+  },
+  
+  "query_optimization_hints": {
+    "description": "Tips for efficient queries based on relationships",
+    
+    "indexed_columns": [
+      "employees.id",
+      "employees.employee_code", 
+      "employees.department_id",
+      "employees.manager_id",
+      "attendance.employeeId",
+      "attendance.date",
+      "leave_balances.employee_id",
+      "leave_applications.employee_id",
+      "performance_reviews.employee_id"
+    ],
+    
+    "efficient_patterns": {
+      "employee_data_queries": {
+        "pattern": "Always start with employees table and JOIN others",
+        "reason": "employees.id is highly indexed and selective"
+      },
+      
+      "date_range_queries": {
+        "pattern": "Use BETWEEN for date ranges, not >= AND <=",
+        "reason": "Better index utilization"
+      },
+      
+      "status_filtering": {
+        "pattern": "Always include status = 'active' for employees",
+        "reason": "Excludes terminated employees efficiently"
+      }
+    }
+  },
+  
+  "data_integrity_rules": {
+    "description": "Business rules enforced by relationships",
+    
+    "cascade_rules": {
+      "employee_deactivation": {
+        "description": "When employee is deactivated, related records remain but queries should filter by active status",
+        "affected_tables": ["attendance", "leave_balances", "performance_reviews"]
+      },
+      
+      "department_changes": {
+        "description": "When employee changes department, historical records remain unchanged",
+        "affected_tables": ["attendance", "leave_applications"]
+      }
+    },
+    
+    "referential_integrity": {
+      "strict_references": [
+        "employees.department_id -> departments.id",
+        "attendance.employeeId -> employees.id",
+        "leave_balances.employee_id -> employees.id"
+      ],
+      
+      "nullable_references": [
+        "employees.manager_id -> employees.id (CEO has no manager)",
+        "leave_applications.approved_by -> employees.id (pending applications)"
+      ]
+    }
+  },
+  
+  "security_implications": {
+    "description": "Security considerations based on relationships",
+    
+    "access_control_joins": {
+      "employee_data": {
+        "rule": "Always JOIN with employees table to verify employee_id",
+        "example": "JOIN employees e ON a.employeeId = e.id WHERE e.id = ?"
+      },
+      
+      "manager_access": {
+        "rule": "For manager access, verify reporting relationship",
+        "example": "JOIN employees e ON e.manager_id = ? WHERE e.id = target_employee_id"
+      }
+    },
+    
+    "sensitive_joins": {
+      "payroll_data": {
+        "description": "Payroll requires extra security validation",
+        "additional_checks": ["role verification", "explicit permission"]
+      },
+      
+      "performance_data": {
+        "description": "Performance reviews need reviewer relationship validation",
+        "additional_checks": ["reviewer_id verification", "review period validation"]
+      }
+    }
+  }
+}

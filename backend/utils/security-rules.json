@@ -1,0 +1,199 @@
+{
+  "personal_data_queries": {
+    "description": "Rules for employee personal data access",
+    "required_filters": [
+      "employee_id = ?",
+      "employeeId = ?"
+    ],
+    "forbidden_operations": [
+      "UPDATE",
+      "DELETE", 
+      "INSERT",
+      "DROP",
+      "ALTER",
+      "CREATE"
+    ],
+    "allowed_tables": [
+      "attendance",
+      "leave_balances", 
+      "leave_applications",
+      "performance_reviews",
+      "performance_goals",
+      "payroll_records",
+      "employees"
+    ],
+    "sensitive_columns": [
+      "salary",
+      "basic_salary",
+      "gross_salary",
+      "net_salary",
+      "phone",
+      "email",
+      "date_of_birth",
+      "personal_details"
+    ],
+    "timeout_seconds": 30,
+    "max_records": 1000
+  },
+  
+  "role_based_access": {
+    "employee": {
+      "description": "Regular employee access rights",
+      "can_access_own_data": true,
+      "can_access_others_data": false,
+      "allowed_operations": ["SELECT"],
+      "restricted_columns": [
+        "salary",
+        "basic_salary", 
+        "gross_salary",
+        "net_salary"
+      ],
+      "allowed_tables": [
+        "attendance",
+        "leave_balances",
+        "leave_applications", 
+        "performance_reviews",
+        "performance_goals"
+      ]
+    },
+    
+    "manager": {
+      "description": "Manager access rights",
+      "can_access_own_data": true,
+      "can_access_team_data": true,
+      "allowed_operations": ["SELECT"],
+      "restricted_columns": [
+        "salary",
+        "basic_salary",
+        "gross_salary", 
+        "net_salary"
+      ],
+      "additional_filters": [
+        "manager_id = ?"
+      ]
+    },
+    
+    "hr": {
+      "description": "HR access rights",
+      "can_access_all_data": true,
+      "allowed_operations": ["SELECT"],
+      "no_restrictions": true
+    }
+  },
+  
+  "query_validation_rules": {
+    "sql_injection_patterns": [
+      "';",
+      "--",
+      "/*",
+      "*/",
+      "xp_",
+      "sp_",
+      "UNION",
+      "EXEC",
+      "EXECUTE"
+    ],
+    
+    "required_security_checks": [
+      "employee_id_filter_present",
+      "no_unauthorized_tables",
+      "no_forbidden_operations",
+      "parameterized_queries_only"
+    ],
+    
+    "timeout_rules": {
+      "default_timeout": 30,
+      "max_timeout": 60,
+      "simple_query_timeout": 15,
+      "complex_query_timeout": 45
+    }
+  },
+  
+  "unauthorized_access_patterns": {
+    "description": "Patterns that indicate unauthorized access attempts",
+    "direct_patterns": [
+      "other employee",
+      "colleague's",
+      "team member's",
+      "everyone's",
+      "all employees",
+      "staff salary",
+      "team salary"
+    ],
+    
+    "regex_patterns": [
+      "(?!my|mine)\\w+['']?s\\s+(salary|leave|performance|attendance)",
+      "show\\s+me\\s+(other|another)\\s+employee",
+      "tell\\s+me\\s+about\\s+\\w+['']?s\\s+(data|information)",
+      "(list|show)\\s+all\\s+(employees|staff|team)"
+    ],
+    
+    "security_responses": {
+      "privacy_violation": "For privacy reasons, I can only share your own information. I cannot provide details about other employees.",
+      "unauthorized_data": "I don't have permission to access that information. Please contact HR for assistance.",
+      "role_restriction": "Your current role doesn't allow access to this type of information."
+    }
+  },
+  
+  "data_classification": {
+    "public": {
+      "description": "Information available to all employees",
+      "examples": ["company policies", "general procedures", "office locations"]
+    },
+    
+    "personal": {
+      "description": "Employee's own data only",
+      "examples": ["own attendance", "own leave balance", "own performance"],
+      "security_level": "employee_id_required"
+    },
+    
+    "confidential": {
+      "description": "Sensitive personal information",
+      "examples": ["salary details", "personal contact info", "performance ratings"],
+      "security_level": "strict_access_control"
+    },
+    
+    "restricted": {
+      "description": "Manager/HR only information", 
+      "examples": ["team salaries", "disciplinary records", "hiring decisions"],
+      "security_level": "role_based_access"
+    }
+  },
+  
+  "error_handling": {
+    "security_violation": {
+      "log_level": "WARNING",
+      "response_type": "security_message",
+      "escalation": "notify_security_team"
+    },
+    
+    "unauthorized_query": {
+      "log_level": "INFO", 
+      "response_type": "redirect_to_authorized",
+      "escalation": "none"
+    },
+    
+    "sql_injection_attempt": {
+      "log_level": "CRITICAL",
+      "response_type": "block_request",
+      "escalation": "immediate_alert"
+    }
+  },
+  
+  "audit_requirements": {
+    "log_all_queries": true,
+    "log_failed_attempts": true,
+    "log_security_violations": true,
+    "retention_period_days": 90,
+    
+    "audit_fields": [
+      "user_id",
+      "employee_id", 
+      "query_type",
+      "tables_accessed",
+      "timestamp",
+      "success_status",
+      "security_level"
+    ]
+  }
+}

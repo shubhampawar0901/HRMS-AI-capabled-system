@@ -9,6 +9,7 @@ import {
   Target,
   Brain,
   Sparkles,
+  MessageCircle,
   X
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -78,6 +79,14 @@ const Sidebar = ({ isOpen, onClose }) => {
       description: user?.role === 'admin'
         ? 'AI-powered performance analytics'
         : 'Team performance insights'
+    },
+    {
+      name: 'AI Chatbot',
+      href: '/ai-chatbot',
+      icon: MessageCircle,
+      roles: ['employee'],
+      badge: 'AI',
+      description: 'Chat with Shubh, your HR assistant'
     },
     {
       name: 'AI Features',

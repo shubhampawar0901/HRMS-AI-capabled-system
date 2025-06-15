@@ -32,9 +32,11 @@ const leaveRoutes = require('./routes/leaveRoutes');
 const payrollRoutes = require('./routes/payrollRoutes');
 const performanceRoutes = require('./routes/performanceRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const enhancedAIRoutes = require('./routes/enhancedAI');
 const reportsRoutes = require('./routes/reportsRoutes');
 const smartReportsRoutes = require('./routes/smartReportsRoutes');
 const dataRoutes = require('./routes/dataRoutes');
+// const policyDocumentRoutes = require('./routes/policyDocumentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -94,9 +96,11 @@ app.use('/api/leave', authenticateToken, leaveRoutes);
 app.use('/api/payroll', authenticateToken, payrollRoutes);
 app.use('/api/performance', authenticateToken, performanceRoutes);
 app.use('/api/ai', authenticateToken, aiRoutes);
+app.use('/api/enhanced-ai', enhancedAIRoutes); // Enhanced AI routes with built-in auth
 app.use('/api/reports', authenticateToken, reportsRoutes);
 app.use('/api/smart-reports', authenticateToken, smartReportsRoutes);
 app.use('/api/data', authenticateToken, dataRoutes);
+// app.use('/api/ai/policy-documents', policyDocumentRoutes); // Policy document routes with built-in auth
 
 // Error handling middleware (must be last)
 app.use(notFound);

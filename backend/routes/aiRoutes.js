@@ -188,6 +188,91 @@ router.get('/feature-status',
   AIController.getAIFeatureStatus
 );
 
+// ==========================================
+// RAG KNOWLEDGE BASE ROUTES
+// ==========================================
+
+// Upload policy document
+router.post('/knowledge-base/upload',
+  authenticateToken,
+  authorize('admin', 'manager'),
+  upload.single('document'),
+  [
+    body('documentType').isIn(['leave_policy', 'attendance_policy', 'benefits_policy', 'employee_handbook', 'code_of_conduct', 'hr_procedures', 'company_policies', 'other']).withMessage('Invalid document type'),
+    body('description').optional().isLength({ max: 500 }).withMessage('Description too long'),
+    body('accessLevel').optional().isIn(['public', 'employee', 'manager', 'admin']).withMessage('Invalid access level'),
+    body('departmentSpecific').optional().isInt().withMessage('Department ID must be valid integer'),
+    body('tags').optional().isJSON().withMessage('Tags must be valid JSON array')
+  ],
+  validateRequest,
+  AIController.uploadPolicyDocument
+);
+
+// Get all policy documents
+router.get('/knowledge-base/documents',
+  authenticateToken,
+  authorize('admin', 'manager'),
+  [
+    query('documentType').optional().isIn(['leave_policy', 'attendance_policy', 'benefits_policy', 'employee_handbook', 'code_of_conduct', 'hr_procedures', 'company_policies', 'other']).withMessage('Invalid document type'),
+    query('processingStatus').optional().isIn(['pending', 'processing', 'completed', 'failed']).withMessage('Invalid processing status'),
+    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
+  ],
+  validateRequest,
+  AIController.getPolicyDocuments
+);
+
+// Get specific policy document
+router.get('/knowledge-base/documents/:id',
+  authenticateToken,
+  authorize('admin', 'manager'),
+  [
+    param('id').isInt().withMessage('Document ID must be valid integer')
+  ],
+  validateRequest,
+  AIController.getPolicyDocument
+);
+
+// Delete policy document
+router.delete('/knowledge-base/documents/:id',
+  authenticateToken,
+  authorize('admin'),
+  [
+    param('id').isInt().withMessage('Document ID must be valid integer')
+  ],
+  validateRequest,
+  AIController.deletePolicyDocument
+);
+
+// Reprocess policy document
+router.post('/knowledge-base/documents/:id/reprocess',
+  authenticateToken,
+  authorize('admin', 'manager'),
+  [
+    param('id').isInt().withMessage('Document ID must be valid integer')
+  ],
+  validateRequest,
+  AIController.reprocessPolicyDocument
+);
+
+// Get knowledge base statistics
+router.get('/knowledge-base/stats',
+  authenticateToken,
+  authorize('admin', 'manager'),
+  AIController.getKnowledgeBaseStats
+);
+
+// Search knowledge base
+router.get('/knowledge-base/search',
+  authenticateToken,
+  [
+    query('query').notEmpty().withMessage('Search query is required'),
+    query('documentType').optional().isIn(['leave_policy', 'attendance_policy', 'benefits_policy', 'employee_handbook', 'code_of_conduct', 'hr_procedures', 'company_policies', 'other']).withMessage('Invalid document type'),
+    query('topK').optional().isInt({ min: 1, max: 20 }).withMessage('topK must be between 1 and 20')
+  ],
+  validateRequest,
+  AIController.searchKnowledgeBase
+);
+
 // Health check
 router.get('/health', (req, res) => {
   res.json({
@@ -200,7 +285,8 @@ router.get('/health', (req, res) => {
       smartFeedback: 'active',
       anomalyDetection: 'active',
       chatbot: 'active',
-      smartReports: 'active'
+      smartReports: 'active',
+      ragKnowledgeBase: 'active'
     }
   });
 });

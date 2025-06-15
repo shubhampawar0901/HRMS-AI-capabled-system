@@ -5,6 +5,7 @@ const {
   AIChatbotInteraction,
   AIResumeParser,
   AISmartReport,
+  AIPolicyDocument,
   Employee,
   User,
   Attendance,
@@ -13,10 +14,12 @@ const {
 } = require('../models');
 const { sendSuccess, sendError, sendCreated } = require('../utils/responseHelper');
 const AIService = require('../services/AIService');
+const DocumentProcessingService = require('../services/DocumentProcessingService');
 
 class AIController {
   constructor() {
     this.aiService = new AIService();
+    this.documentService = new DocumentProcessingService();
   }
 
   // Get singleton instance
@@ -338,11 +341,154 @@ class AIController {
         attritionPredictor: { enabled: true, version: '1.0' },
         smartFeedback: { enabled: true, version: '1.0' },
         anomalyDetection: { enabled: true, version: '1.0' },
-        chatbot: { enabled: true, version: '1.0' },
-        smartReports: { enabled: true, version: '1.0' }
+        chatbot: { enabled: true, version: '2.0', features: ['RAG', 'Policy Search', 'Employee Data'] },
+        smartReports: { enabled: true, version: '1.0' },
+        ragKnowledgeBase: { enabled: true, version: '1.0' }
       };
 
       return sendSuccess(res, status, 'AI feature status retrieved');
+    } catch (error) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  // ==========================================
+  // DOCUMENT MANAGEMENT ENDPOINTS (RAG)
+  // ==========================================
+
+  static async uploadPolicyDocument(req, res) {
+    try {
+      if (!req.file) {
+        return sendError(res, 'No file uploaded', 400);
+      }
+
+      const { documentType, description, accessLevel, departmentSpecific, tags } = req.body;
+
+      // Validate file
+      const documentService = new DocumentProcessingService();
+      documentService.validateFile(req.file);
+
+      // Process document
+      const result = await documentService.processDocument(
+        req.file,
+        {
+          documentType: documentType || 'other',
+          description,
+          accessLevel: accessLevel || 'employee',
+          departmentSpecific: departmentSpecific ? parseInt(departmentSpecific) : null,
+          tags: tags ? JSON.parse(tags) : []
+        },
+        req.user.id
+      );
+
+      return sendCreated(res, result, 'Policy document uploaded and processed successfully');
+    } catch (error) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  static async getPolicyDocuments(req, res) {
+    try {
+      const { documentType, processingStatus, limit } = req.query;
+
+      const documents = await AIPolicyDocument.findAll({
+        documentType,
+        processingStatus,
+        limit: limit ? parseInt(limit) : undefined
+      });
+
+      return sendSuccess(res, documents, 'Policy documents retrieved');
+    } catch (error) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  static async getPolicyDocument(req, res) {
+    try {
+      const { id } = req.params;
+      const document = await AIPolicyDocument.findById(id);
+
+      if (!document) {
+        return sendError(res, 'Document not found', 404);
+      }
+
+      return sendSuccess(res, document, 'Policy document retrieved');
+    } catch (error) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  static async deletePolicyDocument(req, res) {
+    try {
+      const { id } = req.params;
+      const documentService = new DocumentProcessingService();
+
+      await documentService.deleteDocument(id);
+      return sendSuccess(res, null, 'Policy document deleted successfully');
+    } catch (error) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  static async reprocessPolicyDocument(req, res) {
+    try {
+      const { id } = req.params;
+      const documentService = new DocumentProcessingService();
+
+      const result = await documentService.reprocessDocument(id);
+      return sendSuccess(res, result, 'Policy document reprocessed successfully');
+    } catch (error) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  static async getKnowledgeBaseStats(req, res) {
+    try {
+      const documentService = new DocumentProcessingService();
+      const processingStats = await documentService.getProcessingStats();
+
+      // Get RAG service stats
+      const aiService = AIController.getAIService();
+      const ragStats = await aiService.ragService.getIndexStats();
+
+      const stats = {
+        documents: processingStats,
+        vectorDatabase: ragStats,
+        lastUpdated: new Date().toISOString()
+      };
+
+      return sendSuccess(res, stats, 'Knowledge base statistics retrieved');
+    } catch (error) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  static async searchKnowledgeBase(req, res) {
+    try {
+      const { query, documentType, topK = 5 } = req.query;
+
+      if (!query) {
+        return sendError(res, 'Search query is required', 400);
+      }
+
+      const aiService = AIController.getAIService();
+      let searchResults;
+
+      if (documentType) {
+        searchResults = await aiService.ragService.searchByDocumentType(
+          query,
+          documentType,
+          { topK: parseInt(topK) }
+        );
+      } else {
+        searchResults = await aiService.ragService.searchWithAccessControl(
+          query,
+          req.user.role,
+          { topK: parseInt(topK) }
+        );
+      }
+
+      return sendSuccess(res, searchResults, 'Knowledge base search completed');
     } catch (error) {
       return sendError(res, error.message, 500);
     }
