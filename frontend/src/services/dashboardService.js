@@ -1,5 +1,4 @@
 import axiosInstance from '@/api/axiosInstance';
-import { API_ENDPOINTS } from '@/api/endpoints';
 import { apiRequest } from '@/api/interceptors';
 
 class DashboardService {

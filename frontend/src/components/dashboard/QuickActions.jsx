@@ -1,20 +1,47 @@
 import React, { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Plus, 
-  Clock, 
-  Calendar, 
-  FileText, 
-  Users, 
+import {
+  Plus,
+  Clock,
+  Calendar,
+  FileText,
+  Users,
   BarChart3,
   MessageSquare,
-  Settings
+  Settings,
+  UserPlus,
+  TrendingDown,
+  DollarSign,
+  CheckCircle,
+  Brain,
+  User
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 const QuickActions = ({ actions = [], userRole = 'employee' }) => {
   const navigate = useNavigate();
+
+  // Icon mapping for string-based icon names
+  const getIconComponent = (iconName) => {
+    const iconMap = {
+      'UserPlus': UserPlus,
+      'TrendingDown': TrendingDown,
+      'DollarSign': DollarSign,
+      'Calendar': Calendar,
+      'BarChart3': BarChart3,
+      'CheckCircle': CheckCircle,
+      'FileText': FileText,
+      'Brain': Brain,
+      'Clock': Clock,
+      'User': User,
+      'Users': Users,
+      'MessageSquare': MessageSquare,
+      'Settings': Settings,
+      'Plus': Plus
+    };
+    return iconMap[iconName] || Plus;
+  };
 
   // Memoize default actions based on user role
   const getDefaultActions = useMemo(() => {
@@ -130,13 +157,15 @@ const QuickActions = ({ actions = [], userRole = 'employee' }) => {
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {actionsList.map((action) => {
-            const IconComponent = action.icon;
+            const IconComponent = typeof action.icon === 'string'
+              ? getIconComponent(action.icon)
+              : action.icon;
             return (
               <Button
                 key={action.id}
                 variant="outline"
                 className={`
-                  h-auto p-4 flex flex-col items-center space-y-2 
+                  h-auto p-4 flex flex-col items-center space-y-2
                   bg-gradient-to-r ${getColorClasses(action.color)}
                   text-white border-0 shadow-md hover:shadow-lg
                   transition-all duration-300 transform hover:scale-105

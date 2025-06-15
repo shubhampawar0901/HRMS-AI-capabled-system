@@ -1,107 +1,164 @@
 import React from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { User, Mail, Phone, MapPin, Calendar, Briefcase } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  User,
+  Target,
+  TrendingUp,
+  Award,
+  Coffee,
+  CheckCircle,
+  Star
+} from 'lucide-react';
+import useDashboardData from '@/hooks/useDashboardData';
+import StatsCard from './StatsCard';
+import QuickActions from './QuickActions';
+import AIInsightsWidget from './AIInsightsWidget';
+import AttendanceWidget from './AttendanceWidget';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 const EmployeeDashboard = () => {
   const { user } = useAuthContext();
+  const { dashboardData, loading, error } = useDashboardData();
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        </div>
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-lg p-6 border border-red-200">
+          <h1 className="text-2xl font-bold text-red-800 mb-2">Error Loading Dashboard</h1>
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const stats = dashboardData?.stats || {};
+  const quickActions = dashboardData?.quickActions || [];
+  const aiInsights = dashboardData?.aiInsights || [];
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-6 text-white shadow-lg">
-        <h1 className="text-3xl font-bold mb-2">
-          Hello, {user?.name || 'Employee'}! 🌟
-        </h1>
-        <p className="text-purple-100 text-lg">
-          Welcome to your personal dashboard. Here's your profile information.
-        </p>
-      </div>
-
-      {/* User Information Card */}
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
-          <User className="w-6 h-6 mr-3 text-purple-600" />
-          Your Profile Information
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
-              <div className="flex items-center mb-2">
-                <User className="w-5 h-5 text-purple-600 mr-3" />
-                <span className="text-sm font-medium text-gray-600">Full Name</span>
-              </div>
-              <div className="text-lg font-semibold text-gray-900">
-                {user?.name || 'Not Available'}
-              </div>
-            </div>
-
-            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-              <div className="flex items-center mb-2">
-                <Mail className="w-5 h-5 text-blue-600 mr-3" />
-                <span className="text-sm font-medium text-gray-600">Email Address</span>
-              </div>
-              <div className="text-lg font-semibold text-gray-900">
-                {user?.email || 'Not Available'}
-              </div>
-            </div>
-
-            <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
-              <div className="flex items-center mb-2">
-                <Briefcase className="w-5 h-5 text-green-600 mr-3" />
-                <span className="text-sm font-medium text-gray-600">Role</span>
-              </div>
-              <div className="text-lg font-semibold text-gray-900 capitalize">
-                {user?.role || 'Employee'}
-              </div>
-            </div>
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">
+              Hello, {user?.name || 'Employee'}! 🌟
+            </h1>
+            <p className="text-purple-100 text-lg">
+              Your personal workspace for productivity and growth.
+            </p>
           </div>
-
-          {/* Additional Information */}
-          <div className="space-y-4">
-            <div className="p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-100">
-              <div className="flex items-center mb-2">
-                <Phone className="w-5 h-5 text-orange-600 mr-3" />
-                <span className="text-sm font-medium text-gray-600">Phone Number</span>
-              </div>
-              <div className="text-lg font-semibold text-gray-900">
-                {user?.phone || 'Not Available'}
-              </div>
-            </div>
-
-            <div className="p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg border border-teal-100">
-              <div className="flex items-center mb-2">
-                <MapPin className="w-5 h-5 text-teal-600 mr-3" />
-                <span className="text-sm font-medium text-gray-600">Department</span>
-              </div>
-              <div className="text-lg font-semibold text-gray-900">
-                {user?.department || 'Not Available'}
-              </div>
-            </div>
-
-            <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
-              <div className="flex items-center mb-2">
-                <Calendar className="w-5 h-5 text-indigo-600 mr-3" />
-                <span className="text-sm font-medium text-gray-600">Employee ID</span>
-              </div>
-              <div className="text-lg font-semibold text-gray-900">
-                {user?.id || 'Not Available'}
-              </div>
+          <div className="hidden md:block">
+            <div className="p-4 bg-white/10 rounded-lg backdrop-blur-sm">
+              <User className="w-12 h-12 text-white" />
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Status Section */}
-        <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Status</h3>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-              <span className="text-gray-700">Active Employee</span>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatsCard
+          title="Personal Attendance This Month"
+          value={stats.personalAttendanceThisMonth}
+          icon={Clock}
+          color="blue"
+          format="percentage"
+          trend="up"
+          change={2}
+          changeType="percentage"
+        />
+        <StatsCard
+          title="Leave Balance"
+          value={stats.leaveBalance}
+          icon={Calendar}
+          color="green"
+          format="number"
+          trend="stable"
+          change={0}
+          changeType="number"
+        />
+        <StatsCard
+          title="Upcoming Holidays"
+          value={stats.upcomingHolidays}
+          icon={Coffee}
+          color="orange"
+          format="number"
+          trend="stable"
+          change={0}
+          changeType="number"
+        />
+        <StatsCard
+          title="Personal Performance Score"
+          value={stats.personalPerformanceScore}
+          icon={Star}
+          color="purple"
+          format="number"
+          trend="up"
+          change={5}
+          changeType="percentage"
+        />
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick Actions */}
+        <div className="lg:col-span-2">
+          <QuickActions actions={quickActions} userRole="employee" />
+        </div>
+
+        {/* AI Insights */}
+        <div>
+          <AIInsightsWidget insights={aiInsights} userRole="employee" />
+        </div>
+      </div>
+
+      {/* Secondary Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Attendance Widget */}
+        <AttendanceWidget />
+
+        {/* Personal Goals & Progress */}
+        <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <Target className="w-5 h-5 text-purple-600 mr-2" />
+            Personal Goals & Progress
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+              <div className="flex items-center">
+                <CheckCircle className="w-5 h-5 text-purple-600 mr-3" />
+                <span className="text-sm font-medium text-gray-700">Monthly Goals</span>
+              </div>
+              <span className="text-lg font-bold text-purple-700">8/10</span>
             </div>
-            <div className="text-sm text-gray-500">
-              Last updated: {new Date().toLocaleDateString()}
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+              <div className="flex items-center">
+                <TrendingUp className="w-5 h-5 text-green-600 mr-3" />
+                <span className="text-sm font-medium text-gray-700">Skill Development</span>
+              </div>
+              <span className="text-lg font-bold text-green-700">75%</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+              <div className="flex items-center">
+                <Award className="w-5 h-5 text-blue-600 mr-3" />
+                <span className="text-sm font-medium text-gray-700">Achievements</span>
+              </div>
+              <span className="text-lg font-bold text-blue-700">12</span>
             </div>
           </div>
         </div>
