@@ -391,7 +391,7 @@ class EmployeeService {
     const errors = [];
 
     // Check required fields
-    const requiredFields = ['firstName', 'lastName', 'email', 'departmentId', 'position', 'hireDate'];
+    const requiredFields = ['firstName', 'lastName', 'email', 'dateOfBirth', 'gender', 'departmentId', 'position', 'hireDate'];
     for (const field of requiredFields) {
       if (!employeeData[field]) {
         errors.push(`${field} is required`);

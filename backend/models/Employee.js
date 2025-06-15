@@ -185,16 +185,58 @@ class Employee {
   }
 
   static async generateEmployeeCode() {
-    const query = 'SELECT employee_code FROM employees ORDER BY id DESC LIMIT 1';
-    const rows = await executeQuery(query);
-    
-    if (rows.length === 0) {
-      return 'EMP001';
+    try {
+      console.log('🔍 Starting employee code generation...');
+
+      // Get all employee codes and find the highest number
+      const query = 'SELECT employee_code FROM employees WHERE employee_code LIKE "EMP%" ORDER BY employee_code DESC';
+      console.log('🔍 Executing query:', query);
+      const rows = await executeQuery(query);
+
+      console.log('🔍 Found existing employee codes:', rows.map(r => r.employee_code));
+
+      if (rows.length === 0) {
+        console.log('🔍 No existing employee codes found, starting with EMP001');
+        return 'EMP001';
+      }
+
+      // Extract numbers from all employee codes and find the maximum
+      let maxNumber = 0;
+      for (const row of rows) {
+        const codeNumber = parseInt(row.employee_code.replace('EMP', ''));
+        console.log(`🔍 Processing code: ${row.employee_code} -> number: ${codeNumber}`);
+        if (!isNaN(codeNumber) && codeNumber > maxNumber) {
+          maxNumber = codeNumber;
+        }
+      }
+
+      const nextNumber = maxNumber + 1;
+      const newCode = `EMP${nextNumber.toString().padStart(3, '0')}`;
+      console.log(`🔍 Generated new employee code: ${newCode} (previous max: EMP${maxNumber.toString().padStart(3, '0')})`);
+
+      // Double-check that this code doesn't exist (safety measure)
+      const checkQuery = 'SELECT COUNT(*) as count FROM employees WHERE employee_code = ?';
+      const checkResult = await executeQuery(checkQuery, [newCode]);
+
+      console.log(`🔍 Checking if ${newCode} exists: count = ${checkResult[0].count}`);
+
+      if (checkResult[0].count > 0) {
+        console.log(`⚠️ Generated code ${newCode} already exists, trying next number`);
+        const fallbackCode = `EMP${(nextNumber + 1).toString().padStart(3, '0')}`;
+        console.log(`🔍 Using fallback code: ${fallbackCode}`);
+        return fallbackCode;
+      }
+
+      console.log(`✅ Final employee code: ${newCode}`);
+      return newCode;
+    } catch (error) {
+      console.error('❌ Error generating employee code:', error);
+      // Fallback: use timestamp-based code
+      const timestamp = Date.now().toString().slice(-6);
+      const fallbackCode = `EMP${timestamp}`;
+      console.log(`🔍 Using timestamp fallback code: ${fallbackCode}`);
+      return fallbackCode;
     }
-    
-    const lastCode = rows[0].employee_code;
-    const number = parseInt(lastCode.replace('EMP', '')) + 1;
-    return `EMP${number.toString().padStart(3, '0')}`;
   }
 
   static async getByDepartment(departmentId) {

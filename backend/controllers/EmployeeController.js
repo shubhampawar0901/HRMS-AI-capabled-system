@@ -64,8 +64,9 @@ class EmployeeController {
       const employeeData = req.body;
 
       // Generate employee code
+      console.log('🔍 About to generate employee code...');
       employeeData.employeeCode = await Employee.generateEmployeeCode();
-      console.log('Generated employee code:', employeeData.employeeCode);
+      console.log('🔍 Generated employee code:', employeeData.employeeCode);
 
       // Create user account first
       const userData = {
