@@ -112,22 +112,52 @@ class PayrollController {
   // ==========================================
   static async getPayrollRecords(req, res) {
     try {
+      console.log('🔍 getPayrollRecords called');
+      console.log('User:', req.user);
+      console.log('Query params:', req.query);
+
       const { role, employeeId } = req.user;
-      const { month, year, page = 1, limit = 20 } = req.query;
+      const { month, year, page = 1, limit = 100 } = req.query;
+
+      console.log(`Role: ${role}, EmployeeId: ${employeeId}`);
+      console.log(`Filters - Month: ${month}, Year: ${year}, Page: ${page}, Limit: ${limit}`);
 
       let records;
       let total;
 
       if (role === 'admin') {
         // Admin can see all payroll records
-        const options = { month, year, page: parseInt(page), limit: parseInt(limit) };
+        console.log('🔍 Admin access - fetching all payroll records');
+        const options = {
+          month: month ? parseInt(month) : null,
+          year: year ? parseInt(year) : null,
+          page: parseInt(page),
+          limit: parseInt(limit)
+        };
+        console.log('🔍 Admin options:', options);
+
         records = await Payroll.findAll(options);
+        console.log('📄 Found records:', records.length);
+
         total = await Payroll.count(options);
+        console.log('📊 Total count:', total);
       } else {
         // Employee can only see their own records
-        const options = { employeeId, month, year, page: parseInt(page), limit: parseInt(limit) };
+        console.log('🔍 Employee access - fetching own records');
+        const options = {
+          employeeId,
+          month: month ? parseInt(month) : null,
+          year: year ? parseInt(year) : null,
+          page: parseInt(page),
+          limit: parseInt(limit)
+        };
+        console.log('🔍 Employee options:', options);
+
         records = await Payroll.findByEmployee(employeeId, options);
+        console.log('📄 Found records:', records.length);
+
         total = await Payroll.countByEmployee(employeeId, options);
+        console.log('📊 Total count:', total);
       }
 
       const responseData = {
@@ -140,10 +170,13 @@ class PayrollController {
         }
       };
 
+      console.log('✅ Sending response with', records.length, 'records');
       return sendSuccess(res, responseData, 'Payroll records retrieved');
     } catch (error) {
-      console.error('Get payroll records error:', error);
-      return sendError(res, 'Failed to get payroll records', 500);
+      console.error('❌ Get payroll records error:', error);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error message:', error.message);
+      return sendError(res, `Failed to get payroll records: ${error.message}`, 500);
     }
   }
 

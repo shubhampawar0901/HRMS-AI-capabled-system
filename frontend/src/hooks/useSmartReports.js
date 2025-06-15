@@ -261,4 +261,4 @@ export const useSmartReport = (reportId) => {
   };
 };
 
-export default useSmartReports;
+

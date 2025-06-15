@@ -758,7 +758,131 @@ Authorization: Bearer <token>
 
 ### **Performance Management APIs**
 
-#### **21. Get Team Performance**
+#### **21. Get Performance Reviews**
+```javascript
+GET /api/performance/reviews?status=null&period=current&page=1&limit=100
+Authorization: Bearer <token>
+
+// Response (✅ FIXED - Validation now handles null status)
+{
+  "success": true,
+  "message": "Performance reviews retrieved",
+  "data": {
+    "reviews": [
+      {
+        "id": 1,
+        "employeeId": 123,
+        "employeeName": "John Doe",
+        "reviewPeriod": "Q4 2024",
+        "overallRating": 4.2,
+        "comments": "Excellent performance this quarter",
+        "status": "completed",
+        "createdAt": "2024-11-15T10:00:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 100,
+      "total": 25,
+      "pages": 1
+    }
+  }
+}
+```
+
+#### **22. Create Performance Review**
+```javascript
+POST /api/performance/reviews
+Authorization: Bearer <token>
+
+// Request Body
+{
+  "employeeId": 123,
+  "reviewPeriod": "Q4 2024",
+  "overallRating": 4.2,
+  "comments": "Excellent performance this quarter"
+}
+
+// Response (Verified Implementation)
+{
+  "success": true,
+  "message": "Performance review created successfully",
+  "data": {
+    "review": {
+      "id": 1,
+      "employeeId": 123,
+      "reviewPeriod": "Q4 2024",
+      "overallRating": 4.2,
+      "comments": "Excellent performance this quarter",
+      "status": "draft"
+    }
+  }
+}
+```
+
+#### **23. Get Performance Goals**
+```javascript
+GET /api/performance/goals?status=null&period=current&page=1&limit=100
+Authorization: Bearer <token>
+
+// Response (✅ FIXED - Validation now handles null status)
+{
+  "success": true,
+  "message": "Performance goals retrieved",
+  "data": {
+    "goals": [
+      {
+        "id": 1,
+        "employeeId": 123,
+        "title": "Improve Sales Performance",
+        "description": "Increase quarterly sales by 15%",
+        "targetValue": 100,
+        "currentValue": 75,
+        "status": "active",
+        "dueDate": "2024-12-31T23:59:59Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 100,
+      "total": 12,
+      "pages": 1
+    }
+  }
+}
+```
+
+#### **24. Create Performance Goal**
+```javascript
+POST /api/performance/goals
+Authorization: Bearer <token>
+
+// Request Body
+{
+  "employeeId": 123,
+  "title": "Improve Sales Performance",
+  "description": "Increase quarterly sales by 15%",
+  "targetDate": "2024-12-31"
+}
+
+// Response (Verified Implementation)
+{
+  "success": true,
+  "message": "Performance goal created successfully",
+  "data": {
+    "goal": {
+      "id": 1,
+      "employeeId": 123,
+      "title": "Improve Sales Performance",
+      "description": "Increase quarterly sales by 15%",
+      "status": "active",
+      "targetDate": "2024-12-31T23:59:59Z"
+    }
+  }
+}
+```
+
+#### **25. Get Team Performance**
 ```javascript
 GET /api/performance/team
 Authorization: Bearer <token>
@@ -782,28 +906,18 @@ Authorization: Bearer <token>
 }
 ```
 
-#### **22. Create Performance Review**
+#### **26. Get Performance Dashboard**
 ```javascript
-POST /api/performance/reviews
+GET /api/performance/dashboard
 Authorization: Bearer <token>
-
-// Request Body
-{
-  "employeeId": 123,
-  "reviewPeriod": "Q4 2024",
-  "overallRating": 4.2,
-  "comments": "Excellent performance this quarter",
-  "status": "draft"
-}
 
 // Response (Verified Implementation)
 {
   "success": true,
-  "message": "Performance review created successfully",
+  "message": "Performance dashboard retrieved",
   "data": {
-    "review": {
-      // Created review object
-    }
+    "reviews": { "total": 25, "pending": 3 },
+    "goals": { "total": 12, "active": 8, "completed": 4 }
   }
 }
 ```
@@ -1260,14 +1374,37 @@ GET /api/payroll/reports
 
 #### **2. Performance APIs**
 ```javascript
-// MISSING: These APIs are referenced but not fully implemented
-GET /api/performance/goals
-POST /api/performance/goals
-PUT /api/performance/goals/:id
+// ✅ FULLY IMPLEMENTED AND FIXED
+GET /api/performance/reviews?status=null&period=current&page=1&limit=100
+POST /api/performance/reviews
 GET /api/performance/reviews/:id
 PUT /api/performance/reviews/:id
+GET /api/performance/goals?status=null&period=current&page=1&limit=100
+POST /api/performance/goals
+PUT /api/performance/goals/:id
+GET /api/performance/team (Manager/Admin)
+GET /api/performance/dashboard
+POST /api/performance/feedback/generate (AI Smart Feedback)
 ```
-**Status**: ❌ **PARTIALLY IMPLEMENTED** - Routes exist but some controllers missing
+**Status**: ✅ **FULLY IMPLEMENTED** - All routes, controllers, and validation fixed
+
+**Role-Based Access:**
+- **👤 Employee**: View own reviews/goals, create goals
+- **👨‍💼 Manager**: All employee features + team performance, create reviews
+- **👑 Admin**: All features + analytics, system-wide performance data
+
+**Frontend Components:**
+- `PerformancePage.jsx` - Main page wrapper
+- `PerformanceDashboard.jsx` - Role-based dashboard with tabs
+- `ReviewList.jsx` - Performance reviews management
+- `GoalsList.jsx` - Goals management with progress tracking
+- `TeamPerformance.jsx` - Manager team overview
+- `PerformanceAnalytics.jsx` - Admin analytics view
+
+**Recent Fixes Applied:**
+- ✅ Fixed validation to handle `status=null` parameter
+- ✅ Updated default limit from 20 to 100 records
+- ✅ Proper role-based data filtering in controllers
 
 #### **3. Reports APIs**
 ```javascript

@@ -203,9 +203,9 @@ const ReviewList = () => {
       {/* Reviews List */}
       <div className="grid grid-cols-1 gap-4">
         {performanceReviews?.length > 0 ? (
-          performanceReviews.map((review) => (
-            <Card 
-              key={review.id} 
+          performanceReviews.map((review, index) => (
+            <Card
+              key={`review-${review.id || index}`}
               className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-gray-200"
             >
               <CardContent className="p-6">
@@ -214,7 +214,7 @@ const ReviewList = () => {
                     <div className="flex items-center gap-3 mb-2">
                       <FileText className="h-5 w-5 text-blue-600" />
                       <h3 className="text-lg font-semibold text-gray-900">
-                        {review.reviewPeriod || 'Performance Review'}
+                        {review.review_period || review.reviewPeriod || 'Performance Review'}
                       </h3>
                       <Badge className={getStatusBadgeColor(review.status)}>
                         {review.status?.replace('_', ' ').toUpperCase()}
@@ -225,24 +225,24 @@ const ReviewList = () => {
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-500" />
                         <span className="text-sm text-gray-600">
-                          {review.employeeName || 'Employee'}
+                          {review.employee_name || 'Employee'}
                         </span>
                       </div>
                       
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-500" />
                         <span className="text-sm text-gray-600">
-                          {review.reviewDate ? new Date(review.reviewDate).toLocaleDateString() : 'No date'}
+                          {review.review_period || review.reviewPeriod || 'No period'}
                         </span>
                       </div>
                       
-                      {review.overallRating && (
+                      {(review.overall_rating || review.overallRating) && (
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-600">Rating:</span>
                           <div className="flex items-center gap-1">
-                            {getRatingStars(review.overallRating)}
+                            {getRatingStars(parseFloat(review.overall_rating || review.overallRating))}
                             <span className="text-sm font-medium text-gray-700 ml-1">
-                              {review.overallRating.toFixed(1)}
+                              {parseFloat(review.overall_rating || review.overallRating).toFixed(1)}
                             </span>
                           </div>
                         </div>

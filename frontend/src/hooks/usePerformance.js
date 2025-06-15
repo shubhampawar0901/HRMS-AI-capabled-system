@@ -9,19 +9,14 @@ import { useAuth } from '@/hooks/useAuth';
 export const usePerformance = () => {
   const { user, isAdmin, isManager, isEmployee } = useAuth();
 
-  // Debug user data and get employeeId safely
+  // Get employeeId safely for role-based access
   const employeeId = useMemo(() => {
-    console.log('🔍 usePerformance - User object:', user);
-
-    if (!user) {
-      console.log('❌ No user object');
-      return null;
-    }
+    if (!user) return null;
 
     // Try multiple ways to get employeeId for backward compatibility
     const id = user.employeeId || user.employee?.id || null;
-    console.log('🔍 usePerformance - Employee ID:', id);
 
+    // Only warn for employee/manager roles that actually need employeeId
     if (!id && (user.role === 'employee' || user.role === 'manager')) {
       console.warn('⚠️ Employee ID is missing for employee/manager user. User may need to logout and login again.');
     }
@@ -40,7 +35,7 @@ export const usePerformance = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 100,
     total: 0,
     pages: 0
   });
@@ -84,7 +79,9 @@ export const usePerformance = () => {
       }
     } catch (err) {
       console.error('Fetch performance reviews error:', err);
-      setError(err.message || 'Failed to fetch performance reviews');
+      // Handle both Error objects and API error objects
+      const errorMessage = err.message || err.error?.message || 'Failed to fetch performance reviews';
+      setError(errorMessage);
       setPerformanceReviews([]);
     } finally {
       setLoading(false);
@@ -172,7 +169,9 @@ export const usePerformance = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
+      console.log('🎯 Fetching goals for user:', user?.role, 'employeeId:', user?.employeeId);
+
       const queryParams = {
         ...filters,
         ...params,
@@ -181,7 +180,9 @@ export const usePerformance = () => {
       };
 
       const response = await performanceService.getGoals(queryParams);
-      
+
+      console.log('🎯 Goals API response:', response);
+
       if (response.success) {
         setGoals(response.data.goals || []);
         setPagination(prev => ({
@@ -193,12 +194,14 @@ export const usePerformance = () => {
       }
     } catch (err) {
       console.error('Fetch goals error:', err);
-      setError(err.message || 'Failed to fetch goals');
+      // Handle both Error objects and API error objects
+      const errorMessage = err.message || err.error?.message || 'Failed to fetch goals';
+      setError(errorMessage);
       setGoals([]);
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination.page, pagination.limit]);
+  }, [filters, pagination.page, pagination.limit, user]);
 
   // Create goal
   const createGoal = useCallback(async (goalData) => {
@@ -331,10 +334,14 @@ export const usePerformance = () => {
   useEffect(() => {
     if (!user || !hasPerformanceAccess) return;
 
+    console.log('🔄 usePerformance - Auto-fetching data for role:', user.role);
+
     if (isEmployee) {
+      console.log('👤 Fetching employee data...');
       fetchPerformanceReviews();
       fetchGoals();
     } else if (isManager || isAdmin) {
+      console.log('👥 Fetching manager/admin data...');
       fetchPerformanceReviews();
       fetchGoals();
       fetchTeamPerformance();

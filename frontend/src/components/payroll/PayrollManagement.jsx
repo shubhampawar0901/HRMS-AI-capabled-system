@@ -4,32 +4,36 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
-import { 
-  Plus, 
-  Settings, 
+import {
+  Plus,
+  Settings,
   CheckCircle,
   DollarSign,
   Search,
   Filter,
   AlertCircle,
   Users,
-  Calendar
+  Calendar,
+  RefreshCw,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import usePayroll from '@/hooks/usePayroll';
 import LoadingSpinner from '@/components/layout/LoadingSpinner';
-import { 
-  formatCurrency, 
-  formatPayrollPeriod, 
-  getPayrollStatusColor, 
+import { employeeService } from '@/services/employeeService';
+import {
+  formatCurrency,
+  formatPayrollPeriod,
+  getPayrollStatusColor,
   getPayrollStatusText,
   getMonthOptions,
   getYearOptions,
@@ -54,19 +58,43 @@ const PayrollManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [generateForm, setGenerateForm] = useState({
-    employeeId: '',
+    employeeId: null,
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear()
   });
   const [processing, setProcessing] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
 
-  // Mock employees data - in real app, this would come from employee service
-  const employees = [
-    { id: 1, name: 'John Doe', department: 'IT', employeeCode: 'EMP001' },
-    { id: 2, name: 'Jane Smith', department: 'HR', employeeCode: 'EMP002' },
-    { id: 3, name: 'Mike Johnson', department: 'Finance', employeeCode: 'EMP003' }
-  ];
+  // Fetch employees for payroll generation
+  React.useEffect(() => {
+    const fetchEmployees = async () => {
+      setLoadingEmployees(true);
+      try {
+        const response = await employeeService.getEmployees({ limit: 100, status: 'active' });
+        if (response.success) {
+          const employeeList = response.data.employees || [];
+          // Transform to match expected format
+          const transformedEmployees = employeeList.map(emp => ({
+            id: emp.id,
+            name: `${emp.first_name} ${emp.last_name}`,
+            department: emp.department_name || 'Unknown',
+            employeeCode: emp.employee_code
+          }));
+          setEmployees(transformedEmployees);
+        }
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+      } finally {
+        setLoadingEmployees(false);
+      }
+    };
+
+    if (isAdmin) {
+      fetchEmployees();
+    }
+  }, [isAdmin]);
 
   // Filter data based on search term
   const filteredData = payrollRecords?.filter(item => {
@@ -97,7 +125,7 @@ const PayrollManagement = () => {
       if (success) {
         setShowGenerateForm(false);
         setGenerateForm({
-          employeeId: '',
+          employeeId: null,
           month: new Date().getMonth() + 1,
           year: new Date().getFullYear()
         });
@@ -164,66 +192,84 @@ const PayrollManagement = () => {
 
   return (
     <div className="space-y-6">
+      {/* Error Alert */}
+      {error && (
+        <Alert className="border-red-200 bg-red-50 animate-in slide-in-from-top-2 duration-300">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-700 flex items-center justify-between">
+            <span>{error}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.location.reload()}
+              className="text-red-600 hover:text-red-700 hover:bg-red-100 transition-all duration-200"
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       {/* Summary Stats */}
       {summaryStats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="group hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] bg-gradient-to-br from-blue-50/50 to-blue-100/50 border-blue-200/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-700">Total Records</CardTitle>
-              <Users className="h-4 w-4 text-blue-600" />
+              <CardTitle className="text-sm font-medium text-blue-700 group-hover:text-blue-800 transition-colors duration-200">Total Records</CardTitle>
+              <Users className="h-4 w-4 text-blue-600 group-hover:text-blue-700 transition-colors duration-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-900">{summaryStats.totalRecords}</div>
-              <p className="text-xs text-blue-600 mt-1">Payroll records</p>
+              <div className="text-2xl font-bold text-blue-900 group-hover:text-blue-950 transition-colors duration-200">{summaryStats.totalRecords}</div>
+              <p className="text-xs text-blue-600/80 mt-1">Payroll records</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+          <Card className="group hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] bg-gradient-to-br from-amber-50/50 to-amber-100/50 border-amber-200/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-yellow-700">Draft</CardTitle>
-              <Calendar className="h-4 w-4 text-yellow-600" />
+              <CardTitle className="text-sm font-medium text-amber-700 group-hover:text-amber-800 transition-colors duration-200">Draft</CardTitle>
+              <Calendar className="h-4 w-4 text-amber-600 group-hover:text-amber-700 transition-colors duration-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-900">{summaryStats.draftCount}</div>
-              <p className="text-xs text-yellow-600 mt-1">Pending processing</p>
+              <div className="text-2xl font-bold text-amber-900 group-hover:text-amber-950 transition-colors duration-200">{summaryStats.draftCount}</div>
+              <p className="text-xs text-amber-600/80 mt-1">Pending processing</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="group hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] bg-gradient-to-br from-emerald-50/50 to-emerald-100/50 border-emerald-200/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-700">Processed</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CardTitle className="text-sm font-medium text-emerald-700 group-hover:text-emerald-800 transition-colors duration-200">Processed</CardTitle>
+              <CheckCircle className="h-4 w-4 text-emerald-600 group-hover:text-emerald-700 transition-colors duration-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-900">{summaryStats.processedCount}</div>
-              <p className="text-xs text-green-600 mt-1">Ready for payment</p>
+              <div className="text-2xl font-bold text-emerald-900 group-hover:text-emerald-950 transition-colors duration-200">{summaryStats.processedCount}</div>
+              <p className="text-xs text-emerald-600/80 mt-1">Ready for payment</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <Card className="group hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] bg-gradient-to-br from-violet-50/50 to-violet-100/50 border-violet-200/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700">Total Amount</CardTitle>
-              <DollarSign className="h-4 w-4 text-purple-600" />
+              <CardTitle className="text-sm font-medium text-violet-700 group-hover:text-violet-800 transition-colors duration-200">Total Amount</CardTitle>
+              <DollarSign className="h-4 w-4 text-violet-600 group-hover:text-violet-700 transition-colors duration-200" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-900">{formatCurrency(summaryStats.totalAmount)}</div>
-              <p className="text-xs text-purple-600 mt-1">Net payroll</p>
+              <div className="text-2xl font-bold text-violet-900 group-hover:text-violet-950 transition-colors duration-200">{formatCurrency(summaryStats.totalAmount)}</div>
+              <p className="text-xs text-violet-600/80 mt-1">Net payroll</p>
             </CardContent>
           </Card>
         </div>
       )}
 
       {/* Actions and Filters */}
-      <Card className="border-gray-200">
+      <Card className="border-gray-200/60 shadow-sm hover:shadow-md transition-all duration-300 ease-in-out backdrop-blur-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <Settings className="h-5 w-5" />
+              <Settings className="h-5 w-5 text-gray-600" />
               Payroll Management
             </CardTitle>
             <Button
               onClick={() => setShowGenerateForm(!showGenerateForm)}
-              className="bg-blue-600 hover:bg-blue-700 transition-colors duration-300"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] border-0"
             >
               <Plus className="h-4 w-4 mr-2" />
               Generate Payroll
@@ -233,22 +279,32 @@ const PayrollManagement = () => {
         <CardContent>
           {/* Generate Payroll Form */}
           {showGenerateForm && (
-            <div className="mb-6 p-4 border border-blue-200 rounded-lg bg-blue-50">
-              <h4 className="font-semibold text-blue-800 mb-4">Generate New Payroll</h4>
+            <div className="mb-6 p-6 border border-blue-200/60 rounded-xl bg-gradient-to-br from-blue-50/50 to-blue-100/30 backdrop-blur-sm animate-in slide-in-from-top-2 duration-300">
+              <h4 className="font-semibold text-blue-800 mb-4 flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Generate New Payroll
+              </h4>
               <form onSubmit={handleGeneratePayroll} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Select 
-                  value={generateForm.employeeId.toString()} 
+                <Select
+                  value={generateForm.employeeId?.toString() || ''}
                   onValueChange={(value) => setGenerateForm(prev => ({ ...prev, employeeId: parseInt(value) }))}
+                  disabled={loadingEmployees}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Employee" />
+                    <SelectValue placeholder={loadingEmployees ? "Loading employees..." : "Select Employee"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {employees.map(emp => (
-                      <SelectItem key={emp.id} value={emp.id.toString()}>
-                        {emp.name} ({emp.employeeCode})
-                      </SelectItem>
-                    ))}
+                    {loadingEmployees ? (
+                      <SelectItem value="loading" disabled>Loading employees...</SelectItem>
+                    ) : employees.length > 0 ? (
+                      employees.map(emp => (
+                        <SelectItem key={emp.id} value={emp.id.toString()}>
+                          {emp.name} ({emp.employeeCode})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-employees" disabled>No employees found</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
 
@@ -284,10 +340,10 @@ const PayrollManagement = () => {
                   </SelectContent>
                 </Select>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={!generateForm.employeeId || generating}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-sm hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] border-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {generating ? <LoadingSpinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
                   Generate
@@ -351,9 +407,10 @@ const PayrollManagement = () => {
       </Card>
 
       {/* Payroll Records Table */}
-      <Card className="border-gray-200">
+      <Card className="border-gray-200/60 shadow-sm hover:shadow-md transition-all duration-300 ease-in-out backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-800">
+          <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-gray-600" />
             Payroll Records
             <span className="text-sm font-normal text-gray-500 ml-2">
               ({filteredData.length} {filteredData.length === 1 ? 'record' : 'records'})
@@ -383,14 +440,14 @@ const PayrollManagement = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredData.map((payroll) => (
-                    <TableRow key={payroll.id} className="hover:bg-gray-50 transition-colors duration-200">
-                      <TableCell className="font-medium">
+                    <TableRow key={payroll.id} className="hover:bg-gradient-to-r hover:from-gray-50/50 hover:to-gray-100/30 transition-all duration-300 ease-in-out hover:shadow-sm">
+                      <TableCell className="font-medium text-gray-900">
                         {payroll.employeeName || payroll.employee?.name || 'Unknown'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-gray-700">
                         {formatPayrollPeriod(payroll.month, payroll.year)}
                       </TableCell>
-                      <TableCell className="font-medium text-green-600">
+                      <TableCell className="font-medium text-emerald-600">
                         {formatCurrency(payroll.grossSalary)}
                       </TableCell>
                       <TableCell className="font-bold text-blue-600">
@@ -409,7 +466,7 @@ const PayrollManagement = () => {
                               size="sm"
                               onClick={() => handleProcessPayroll(payroll.id)}
                               disabled={processing === payroll.id}
-                              className="hover:bg-green-50 hover:border-green-300 transition-all duration-300"
+                              className="hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all duration-300 ease-in-out hover:scale-[1.05] hover:shadow-sm border-gray-200"
                             >
                               {processing === payroll.id ? (
                                 <LoadingSpinner size="sm" />

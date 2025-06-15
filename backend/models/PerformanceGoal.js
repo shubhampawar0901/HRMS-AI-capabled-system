@@ -95,23 +95,20 @@ class PerformanceGoal {
     `;
     const params = [employeeId];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND pg.status = ?';
       params.push(options.status);
     }
 
     query += ' ORDER BY pg.target_date ASC';
 
-    if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
-    }
+    // Handle pagination - use string interpolation to avoid parameter issues
+    const limit = parseInt(options.limit) || 100; // Default limit
+    const page = parseInt(options.page) || 1;
+    const offset = (page - 1) * limit;
 
-    if (options.page && options.limit) {
-      const offset = (options.page - 1) * options.limit;
-      query += ' OFFSET ?';
-      params.push(offset);
-    }
+    query += ` LIMIT ${limit} OFFSET ${offset}`;
 
     const rows = await executeQuery(query, params);
     return rows.map(row => new PerformanceGoal(row));
@@ -131,23 +128,20 @@ class PerformanceGoal {
     `;
     const params = [];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND pg.status = ?';
       params.push(options.status);
     }
 
     query += ' ORDER BY pg.target_date ASC';
 
-    if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
-    }
+    // Handle pagination - use string interpolation to avoid parameter issues
+    const limit = parseInt(options.limit) || 100; // Default limit
+    const page = parseInt(options.page) || 1;
+    const offset = (page - 1) * limit;
 
-    if (options.page && options.limit) {
-      const offset = (options.page - 1) * options.limit;
-      query += ' OFFSET ?';
-      params.push(offset);
-    }
+    query += ` LIMIT ${limit} OFFSET ${offset}`;
 
     const rows = await executeQuery(query, params);
     return rows.map(row => new PerformanceGoal(row));
@@ -157,7 +151,8 @@ class PerformanceGoal {
     let query = 'SELECT COUNT(*) as total FROM performance_goals WHERE 1=1';
     const params = [];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND status = ?';
       params.push(options.status);
     }
@@ -177,23 +172,20 @@ class PerformanceGoal {
     `;
     const params = [managerId];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND pg.status = ?';
       params.push(options.status);
     }
 
     query += ' ORDER BY pg.target_date ASC';
 
-    if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
-    }
+    // Handle pagination - use string interpolation to avoid parameter issues
+    const limit = parseInt(options.limit) || 100; // Default limit
+    const page = parseInt(options.page) || 1;
+    const offset = (page - 1) * limit;
 
-    if (options.page && options.limit) {
-      const offset = (options.page - 1) * options.limit;
-      query += ' OFFSET ?';
-      params.push(offset);
-    }
+    query += ` LIMIT ${limit} OFFSET ${offset}`;
 
     const rows = await executeQuery(query, params);
     return rows.map(row => new PerformanceGoal(row));
@@ -207,7 +199,8 @@ class PerformanceGoal {
     `;
     const params = [managerId];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND pg.status = ?';
       params.push(options.status);
     }
@@ -220,7 +213,8 @@ class PerformanceGoal {
     let query = 'SELECT COUNT(*) as total FROM performance_goals WHERE employee_id = ?';
     const params = [employeeId];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND status = ?';
       params.push(options.status);
     }

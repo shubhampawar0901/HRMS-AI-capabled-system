@@ -39,7 +39,7 @@ export const usePayroll = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 100,
     total: 0,
     pages: 0
   });

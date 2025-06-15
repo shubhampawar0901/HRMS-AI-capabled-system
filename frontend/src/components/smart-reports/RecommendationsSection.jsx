@@ -14,16 +14,81 @@ import {
  * Recommendations Section Component
  * Displays AI-generated recommendations with priority levels and action tracking
  */
-const RecommendationsSection = ({ 
-  recommendations = [], 
+const RecommendationsSection = ({
+  recommendations = [],
   title = "Recommendations",
   collapsible = false,
   defaultExpanded = true,
   onActionTaken,
-  className = '' 
+  className = ''
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [completedActions, setCompletedActions] = useState(new Set());
+
+  /**
+   * Categorize recommendations based on content keywords
+   */
+  const categorizeRecommendation = (recommendation) => {
+    const lowerRec = recommendation.toLowerCase();
+
+    if (lowerRec.includes('urgent') || lowerRec.includes('immediate') || lowerRec.includes('critical')) {
+      return 'high';
+    }
+
+    if (lowerRec.includes('consider') || lowerRec.includes('explore') || lowerRec.includes('opportunity')) {
+      return 'medium';
+    }
+
+    if (lowerRec.includes('maintain') || lowerRec.includes('continue') || lowerRec.includes('monitor')) {
+      return 'low';
+    }
+
+    return 'medium'; // default
+  };
+
+  /**
+   * Get recommendation configuration based on priority
+   */
+  const getRecommendationConfig = (priority) => {
+    switch (priority) {
+      case 'high':
+        return {
+          icon: ExclamationCircleIcon,
+          iconColor: 'text-red-600',
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          priorityLabel: 'High Priority',
+          priorityColor: 'text-red-700 bg-red-100'
+        };
+      case 'medium':
+        return {
+          icon: InformationCircleIcon,
+          iconColor: 'text-yellow-600',
+          bgColor: 'bg-yellow-50',
+          borderColor: 'border-yellow-200',
+          priorityLabel: 'Medium Priority',
+          priorityColor: 'text-yellow-700 bg-yellow-100'
+        };
+      case 'low':
+        return {
+          icon: StarIcon,
+          iconColor: 'text-green-600',
+          bgColor: 'bg-green-50',
+          borderColor: 'border-green-200',
+          priorityLabel: 'Low Priority',
+          priorityColor: 'text-green-700 bg-green-100'
+        };
+      default:
+        return {
+          icon: InformationCircleIcon,
+          iconColor: 'text-blue-600',
+          bgColor: 'bg-blue-50',
+          borderColor: 'border-blue-200',
+          priorityLabel: 'Standard',
+          priorityColor: 'text-blue-700 bg-blue-100'
+        };
+    }
+  };
 
 
 
@@ -191,10 +256,11 @@ const RecommendationsSection = ({
  * Recommendations Summary Component
  * Provides a quick overview of recommendations by priority
  */
-export const RecommendationsSummary = ({ 
+export const RecommendationsSummary = ({
   recommendations = [],
-  className = '' 
+  className = ''
 }) => {
+  // Use the exported function
   const categorizedRecs = recommendations.reduce((acc, rec) => {
     const priority = categorizeRecommendation(rec);
     acc[priority] = (acc[priority] || 0) + 1;
@@ -259,6 +325,7 @@ export const ActionPlan = ({
   recommendations = [],
   className = '' 
 }) => {
+  // Use the exported functions
   const prioritizedRecs = recommendations
     .map((rec, index) => ({
       text: rec,
@@ -309,26 +376,28 @@ export const ActionPlan = ({
   );
 };
 
-// Helper function moved outside for reuse
-const categorizeRecommendation = (recommendation) => {
+
+
+// Helper functions for external use
+export const categorizeRecommendation = (recommendation) => {
   const lowerRec = recommendation.toLowerCase();
-  
+
   if (lowerRec.includes('urgent') || lowerRec.includes('immediate') || lowerRec.includes('critical')) {
     return 'high';
   }
-  
+
   if (lowerRec.includes('consider') || lowerRec.includes('explore') || lowerRec.includes('opportunity')) {
     return 'medium';
   }
-  
+
   if (lowerRec.includes('maintain') || lowerRec.includes('continue') || lowerRec.includes('monitor')) {
     return 'low';
   }
-  
+
   return 'medium'; // default
 };
 
-const getRecommendationConfig = (priority) => {
+export const getRecommendationConfig = (priority) => {
   switch (priority) {
     case 'high':
       return {

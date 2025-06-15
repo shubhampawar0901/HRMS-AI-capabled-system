@@ -5,9 +5,17 @@ import { apiRequest } from '@/api/interceptors';
 class PerformanceService {
   // Get performance reviews
   async getPerformanceReviews(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
+    // Filter out null, undefined, and empty string values
+    const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
+      if (value !== null && value !== undefined && value !== '' && value !== 'null') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const queryParams = new URLSearchParams(cleanParams).toString();
     const url = queryParams ? `${API_ENDPOINTS.PERFORMANCE.REVIEWS}?${queryParams}` : API_ENDPOINTS.PERFORMANCE.REVIEWS;
-    
+
     return apiRequest(
       () => axiosInstance.get(url),
       'performance-reviews'
@@ -40,9 +48,17 @@ class PerformanceService {
 
   // Get goals
   async getGoals(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
+    // Filter out null, undefined, and empty string values
+    const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
+      if (value !== null && value !== undefined && value !== '' && value !== 'null') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const queryParams = new URLSearchParams(cleanParams).toString();
     const url = queryParams ? `${API_ENDPOINTS.PERFORMANCE.GOALS}?${queryParams}` : API_ENDPOINTS.PERFORMANCE.GOALS;
-    
+
     return apiRequest(
       () => axiosInstance.get(url),
       'performance-goals'

@@ -280,4 +280,4 @@ export const useMultipleReportsPolling = (reportIds, smartReportsService) => {
   };
 };
 
-export default usePolling;
+

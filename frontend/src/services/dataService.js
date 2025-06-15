@@ -332,4 +332,3 @@ class DataService {
 
 // Create and export singleton instance
 export const dataService = new DataService();
-export default dataService;
