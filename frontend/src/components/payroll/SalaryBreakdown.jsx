@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  DollarSign, 
-  TrendingUp, 
+import {
+  DollarSign,
+  TrendingUp,
   PieChart,
   User,
+  UserCheck,
   Building,
   Calculator
 } from 'lucide-react';
@@ -127,14 +128,18 @@ const SalaryBreakdown = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Select value={selectedEmployeeId?.toString()} onValueChange={(value) => handleEmployeeSelect(parseInt(value))}>
-              <SelectTrigger className="w-full md:w-1/3 transition-all duration-300 focus:ring-2 focus:ring-blue-500">
-                <SelectValue placeholder="Choose an employee" />
+            <Select value={selectedEmployeeId?.toString() || ''} onValueChange={(value) => handleEmployeeSelect(parseInt(value))}>
+              <SelectTrigger className="w-full md:w-1/2 transition-all duration-300 focus:ring-2 focus:ring-blue-500 shadow-sm">
+                <SelectValue placeholder="Select an employee to view salary structure..." />
               </SelectTrigger>
               <SelectContent>
                 {employees.map(employee => (
                   <SelectItem key={employee.id} value={employee.id.toString()}>
-                    {employee.name} - {employee.department}
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium">{employee.name}</span>
+                      <span className="text-sm text-gray-500">• {employee.department}</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

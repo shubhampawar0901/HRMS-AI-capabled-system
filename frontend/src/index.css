@@ -173,22 +173,24 @@
   /* HRMS Card System */
   .hrms-card {
     @apply bg-card rounded-lg border border-border p-6 performance-optimized;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
     transition: all var(--duration-normal) var(--ease-in-out);
   }
 
   .hrms-card:hover {
-    box-shadow: 0 8px 25px -8px rgb(0 0 0 / 0.15), 0 4px 12px -4px rgb(0 0 0 / 0.1);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+    transform: translateY(-1px);
   }
 
   .hrms-card-interactive {
     @apply hrms-card cursor-pointer;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
     transition: all var(--duration-normal) var(--ease-out);
   }
 
   .hrms-card-interactive:hover {
     transform: scale(1.02) translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
   }
 
   .hrms-card-interactive:active {

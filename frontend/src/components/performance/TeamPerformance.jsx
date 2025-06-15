@@ -240,9 +240,9 @@ const TeamPerformance = () => {
       <div className="grid grid-cols-1 gap-4">
         {teamPerformance?.length > 0 ? (
           teamPerformance.map((member) => (
-            <Card 
-              key={member.employeeId} 
-              className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-gray-200"
+            <Card
+              key={member.employeeId}
+              className="shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-gray-200"
             >
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
