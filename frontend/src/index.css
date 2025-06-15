@@ -173,22 +173,24 @@
   /* HRMS Card System */
   .hrms-card {
     @apply bg-card rounded-lg border border-border p-6 performance-optimized;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
     transition: all var(--duration-normal) var(--ease-in-out);
   }
 
   .hrms-card:hover {
-    box-shadow: 0 8px 25px -8px rgb(0 0 0 / 0.15), 0 4px 12px -4px rgb(0 0 0 / 0.1);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+    transform: translateY(-1px);
   }
 
   .hrms-card-interactive {
     @apply hrms-card cursor-pointer;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
     transition: all var(--duration-normal) var(--ease-out);
   }
 
   .hrms-card-interactive:hover {
     transform: scale(1.02) translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
   }
 
   .hrms-card-interactive:active {
@@ -282,6 +284,74 @@
 
   .hrms-input:hover {
     @apply border-ring/50;
+  }
+
+  /* Enhanced Form Inputs with Blue Focus */
+  .hrms-input-shadow {
+    @apply w-full px-3 py-2 bg-background border border-gray-300 rounded-md text-sm;
+    @apply shadow-sm hover:shadow-lg;
+    @apply transition-all duration-300 ease-in-out;
+    @apply focus:outline-none;
+  }
+
+  .hrms-input-shadow:hover {
+    @apply border-gray-400;
+  }
+
+  .hrms-input-shadow:focus {
+    @apply border-blue-500;
+    box-shadow: 0 0 0 1px rgb(59 130 246 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+
+  /* Enhanced Select Components with Blue Focus */
+  .hrms-select-shadow {
+    @apply shadow-sm hover:shadow-lg;
+    @apply transition-all duration-300 ease-in-out;
+    @apply focus:outline-none;
+    @apply border border-gray-300 hover:border-gray-400;
+  }
+
+  .hrms-select-shadow:focus,
+  .hrms-select-shadow[data-state="open"] {
+    @apply border-blue-500 !important;
+    box-shadow: 0 0 0 1px rgb(59 130 246 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+  }
+
+  /* Override any conflicting focus styles */
+  .hrms-select-shadow[data-state="open"]:focus {
+    @apply border-blue-500 !important;
+    box-shadow: 0 0 0 1px rgb(59 130 246 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+    outline: none !important;
+  }
+
+  /* Remove any default focus ring */
+  .hrms-select-shadow:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 1px rgb(59 130 246 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+  }
+
+  /* Left align select value text */
+  .hrms-select-shadow [data-radix-select-value] {
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Ensure select trigger content is left aligned */
+  .hrms-select-shadow .select-trigger-content {
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Enhanced Textarea with Blue Focus */
+  .hrms-textarea-shadow {
+    @apply shadow-sm hover:shadow-lg;
+    @apply transition-all duration-300 ease-in-out;
+    @apply focus:outline-none;
+  }
+
+  .hrms-textarea-shadow:focus {
+    @apply border-blue-500;
+    box-shadow: 0 0 0 1px rgb(59 130 246 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.1);
   }
 
   /* Navigation System */

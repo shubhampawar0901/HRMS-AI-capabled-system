@@ -173,6 +173,28 @@ class AISmartFeedback {
     return rows[0].total;
   }
 
+  static async update(id, updateData) {
+    const query = `
+      UPDATE ai_smart_feedback
+      SET generated_feedback = ?,
+          performance_data = ?,
+          suggestions = ?,
+          confidence = ?,
+          updated_at = NOW()
+      WHERE id = ?
+    `;
+
+    await executeQuery(query, [
+      updateData.generatedFeedback || null,
+      JSON.stringify(updateData.performanceData || {}),
+      JSON.stringify(updateData.suggestions || []),
+      updateData.confidence || 0.0,
+      id
+    ]);
+
+    return await AISmartFeedback.findById(id);
+  }
+
   toJSON() {
     const obj = { ...this };
     if (typeof obj.performanceData === 'string') {

@@ -10,6 +10,7 @@ import {
   Brain,
   Sparkles,
   MessageCircle,
+  MessageSquare,
   X,
   ChevronDown,
   ChevronRight,
@@ -115,6 +116,13 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
       expandable: true,
       menuKey: 'aiFeatures',
       subItems: [
+        {
+          name: 'Smart Feedback',
+          href: '/ai-features/smart-feedback',
+          icon: MessageSquare,
+          roles: ['manager'],
+          description: 'AI-powered employee feedback generation'
+        },
         {
           name: 'Anomaly Detection',
           href: '/ai-features/anomaly-detection',

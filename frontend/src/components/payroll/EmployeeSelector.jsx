@@ -76,12 +76,12 @@ const EmployeeSelector = ({ onEmployeeSelect, selectedEmployee, className = '' }
   }, [onEmployeeSelect]);
 
   const renderEmployeeCard = (employee) => (
-    <Card 
+    <Card
       key={employee.id}
-      className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 ${
-        selectedEmployee?.id === employee.id 
-          ? 'border-blue-500 bg-blue-50' 
-          : 'border-gray-200 hover:border-blue-300'
+      className={`cursor-pointer transition-all duration-300 hover:scale-105 border-2 shadow-md ${
+        selectedEmployee?.id === employee.id
+          ? 'border-blue-500 bg-blue-50 shadow-lg'
+          : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
       }`}
       onClick={() => handleEmployeeSelect(employee)}
     >
@@ -119,31 +119,58 @@ const EmployeeSelector = ({ onEmployeeSelect, selectedEmployee, className = '' }
           Select Employee
         </CardTitle>
         <p className="text-sm text-gray-600">
-          Choose an employee to view their payroll information
+          {selectedEmployee
+            ? `Selected: ${selectedEmployee.first_name} ${selectedEmployee.last_name}`
+            : "Choose an employee to view their payroll information"
+          }
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Selected Employee Display */}
         {selectedEmployee && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-4 shadow-md">
             <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold text-blue-900">
-                  {selectedEmployee.first_name} {selectedEmployee.last_name}
-                </h4>
-                <p className="text-sm text-blue-700">
-                  {selectedEmployee.employee_code} • {selectedEmployee.department_name}
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                  <UserCheck className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-blue-900 text-lg">
+                    {selectedEmployee.first_name} {selectedEmployee.last_name}
+                  </h4>
+                  <p className="text-sm text-blue-700">
+                    {selectedEmployee.employee_code} • {selectedEmployee.department_name || 'N/A'}
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    {selectedEmployee.email}
+                  </p>
+                </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={clearSelection}
-                className="text-blue-600 border-blue-300 hover:bg-blue-100"
-              >
-                Change
-              </Button>
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                  ✓ Selected
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearSelection}
+                  className="text-blue-600 border-blue-300 hover:bg-blue-100 transition-all duration-300"
+                >
+                  Change
+                </Button>
+              </div>
             </div>
+          </div>
+        )}
+
+        {/* No Selection Placeholder */}
+        {!selectedEmployee && (
+          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <h4 className="font-medium text-gray-700 mb-1">No Employee Selected</h4>
+            <p className="text-sm text-gray-500">
+              Please select an employee from the list below to view their payroll information
+            </p>
           </div>
         )}
 
@@ -160,9 +187,9 @@ const EmployeeSelector = ({ onEmployeeSelect, selectedEmployee, className = '' }
           </div>
           
           <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger>
+            <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
               <Building className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="All Departments" />
+              <SelectValue placeholder="Filter by department..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Departments</SelectItem>

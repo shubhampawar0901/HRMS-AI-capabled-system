@@ -287,7 +287,7 @@ const AttendanceHistory = () => {
                 const isEarly = isEarlyCheckOut(record.checkOutTime);
 
                 return (
-                  <Card key={record.id} className="hrms-card hover:shadow-md transition-shadow">
+                  <Card key={record.id} className="hrms-card transition-shadow">
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
