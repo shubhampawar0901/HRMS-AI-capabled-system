@@ -12,6 +12,11 @@ class AIAttritionPrediction {
     this.modelVersion = data.model_version;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
+
+    // Include joined fields if available
+    this.employee_name = data.employee_name;
+    this.employee_code = data.employee_code;
+    this.department_name = data.department_name;
   }
 
   // Static methods for database operations
@@ -67,7 +72,7 @@ class AIAttritionPrediction {
 
   static async getHighRiskEmployees(riskThreshold = 0.7) {
     const query = `
-      SELECT ap.*, 
+      SELECT ap.*,
              CONCAT(e.first_name, ' ', e.last_name) as employee_name,
              e.employee_code,
              d.name as department_name
@@ -76,15 +81,64 @@ class AIAttritionPrediction {
       LEFT JOIN departments d ON e.department_id = d.id
       WHERE ap.risk_score >= ?
         AND ap.prediction_date = (
-          SELECT MAX(prediction_date) 
-          FROM ai_attrition_predictions ap2 
+          SELECT MAX(prediction_date)
+          FROM ai_attrition_predictions ap2
           WHERE ap2.employee_id = ap.employee_id
         )
       ORDER BY ap.risk_score DESC
     `;
-    
+
     const rows = await executeQuery(query, [riskThreshold]);
     return rows.map(row => new AIAttritionPrediction(row));
+  }
+
+  static async getAllPredictions(options = {}) {
+    try {
+      // Start with a simple query to test the connection
+      let query = `
+        SELECT ap.*,
+               CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+               e.employee_code,
+               d.name as department_name
+        FROM ai_attrition_predictions ap
+        JOIN employees e ON ap.employee_id = e.id
+        LEFT JOIN departments d ON e.department_id = d.id
+        WHERE 1=1
+      `;
+
+      const params = [];
+
+      // Add risk threshold filter if provided
+      if (options.riskThreshold && options.riskThreshold > 0) {
+        query += ' AND ap.risk_score >= ?';
+        params.push(parseFloat(options.riskThreshold));
+      }
+
+      // Add department filter if provided
+      if (options.departmentId) {
+        query += ' AND e.department_id = ?';
+        params.push(parseInt(options.departmentId));
+      }
+
+      // Add sorting
+      query += ' ORDER BY ap.risk_score DESC';
+
+      // Add pagination - use string interpolation to avoid parameter binding issues
+      const limit = parseInt(options.limit) || 50;
+      const offset = parseInt(options.offset) || 0;
+
+      query += ` LIMIT ${limit}`;
+      if (offset > 0) {
+        query += ` OFFSET ${offset}`;
+      }
+
+      const rows = await executeQuery(query, params);
+
+      return rows.map(row => new AIAttritionPrediction(row));
+    } catch (error) {
+      console.error('❌ Error in getAllPredictions:', error);
+      throw error;
+    }
   }
 
   toJSON() {

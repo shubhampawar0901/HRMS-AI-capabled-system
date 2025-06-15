@@ -16,7 +16,8 @@ import {
   ChevronRight,
   ChevronLeft,
   AlertTriangle,
-  BarChart3
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -122,6 +123,14 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
           icon: MessageSquare,
           roles: ['manager'],
           description: 'AI-powered employee feedback generation'
+        },
+        {
+          name: 'Attrition Predictor',
+          href: '/ai-features/attrition',
+          icon: TrendingUp,
+          roles: ['admin'],
+          description: 'AI-powered employee attrition risk analysis',
+          badge: 'NEW'
         },
         {
           name: 'Anomaly Detection',
@@ -274,7 +283,14 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                                 }
                               >
                                 <SubIcon className="h-4 w-4 flex-shrink-0 mr-2" />
-                                <span className="truncate">{subItem.name}</span>
+                                <div className="flex items-center justify-between flex-1 min-w-0">
+                                  <span className="truncate">{subItem.name}</span>
+                                  {subItem.badge && (
+                                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                      {subItem.badge}
+                                    </span>
+                                  )}
+                                </div>
                               </NavLink>
                             );
                           })}
