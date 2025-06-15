@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "@heroicons/react": "^2.2.0",
-    "@pinecone-database/pinecone": "^6.1.1"
-  }
-}
