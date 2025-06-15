@@ -290,30 +290,50 @@ const PayrollManagement = () => {
                   onValueChange={(value) => setGenerateForm(prev => ({ ...prev, employeeId: parseInt(value) }))}
                   disabled={loadingEmployees}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder={loadingEmployees ? "Loading employees..." : "Select Employee"} />
+                  <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                    <SelectValue placeholder={loadingEmployees ? "Loading employees..." : "Choose an employee for payroll generation..."} />
                   </SelectTrigger>
                   <SelectContent>
                     {loadingEmployees ? (
-                      <SelectItem value="loading" disabled>Loading employees...</SelectItem>
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                          Loading employees...
+                        </div>
+                      </SelectItem>
                     ) : employees.length > 0 ? (
                       employees.map(emp => (
                         <SelectItem key={emp.id} value={emp.id.toString()}>
-                          {emp.name} ({emp.employeeCode})
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-medium text-blue-600">
+                                {emp.name?.charAt(0)?.toUpperCase() || 'E'}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="font-medium">{emp.name}</div>
+                              <div className="text-xs text-gray-500">Code: {emp.employeeCode}</div>
+                            </div>
+                          </div>
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-employees" disabled>No employees found</SelectItem>
+                      <SelectItem value="no-employees" disabled>
+                        <div className="flex items-center gap-2 text-gray-500">
+                          <span>⚠️</span>
+                          No employees found
+                        </div>
+                      </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
 
-                <Select 
-                  value={generateForm.month.toString()} 
+                <Select
+                  value={generateForm.month.toString()}
                   onValueChange={(value) => setGenerateForm(prev => ({ ...prev, month: parseInt(value) }))}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Month" />
+                  <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                    <SelectValue placeholder="Choose month..." />
                   </SelectTrigger>
                   <SelectContent>
                     {getMonthOptions().map(month => (
@@ -324,12 +344,12 @@ const PayrollManagement = () => {
                   </SelectContent>
                 </Select>
 
-                <Select 
-                  value={generateForm.year.toString()} 
+                <Select
+                  value={generateForm.year.toString()}
                   onValueChange={(value) => setGenerateForm(prev => ({ ...prev, year: parseInt(value) }))}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Year" />
+                  <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                    <SelectValue placeholder="Choose year..." />
                   </SelectTrigger>
                   <SelectContent>
                     {getYearOptions().map(year => (
@@ -365,8 +385,8 @@ const PayrollManagement = () => {
             </div>
 
             <Select value={filters.year?.toString()} onValueChange={(value) => handleFilterChange('year', parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Year" />
+              <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                <SelectValue placeholder="Filter by year..." />
               </SelectTrigger>
               <SelectContent>
                 {getYearOptions().map(year => (
@@ -378,8 +398,8 @@ const PayrollManagement = () => {
             </Select>
 
             <Select value={filters.month?.toString() || 'all'} onValueChange={(value) => handleFilterChange('month', value === 'all' ? null : parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Month" />
+              <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                <SelectValue placeholder="Filter by month..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Months</SelectItem>
@@ -392,8 +412,8 @@ const PayrollManagement = () => {
             </Select>
 
             <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value === 'all' ? null : value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Status" />
+              <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                <SelectValue placeholder="Filter by status..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>

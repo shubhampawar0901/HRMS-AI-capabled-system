@@ -84,23 +84,28 @@ const LeavePage = () => {
           </div>
         )}
 
-        {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-            <CardContent className="p-6">
-              {isAdmin ? (
-                // Admin sees only management view
-                <TabsList className="grid w-full grid-cols-1 gap-2 bg-gray-100 p-1 rounded-lg">
-                  <TabsTrigger
-                    value="management"
-                    className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Leave Management</span>
-                  </TabsTrigger>
-                </TabsList>
-              ) : (
-                // Employees and Managers see their respective tabs
+        {/* Main Content */}
+        {isAdmin ? (
+          // Admin Content - Direct component without tabs
+          <div className="space-y-6">
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-bold flex items-center gap-2 text-gray-900">
+                  <BarChart3 className="h-5 w-5" />
+                  Leave Dashboard
+                </CardTitle>
+                <p className="text-gray-600">
+                  Monitor and manage all employee leave applications
+                </p>
+              </CardHeader>
+            </Card>
+            <AdminLeaveManagement />
+          </div>
+        ) : (
+          // Employee/Manager Content with Tabs
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+              <CardContent className="p-6">
                 <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 bg-gray-100 p-1 rounded-lg">
                   <TabsTrigger
                     value="overview"
@@ -136,41 +141,29 @@ const LeavePage = () => {
                     </TabsTrigger>
                   )}
                 </TabsList>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Tab Contents */}
-          {isAdmin ? (
-            // Admin Content
-            <TabsContent value="management" className="space-y-6">
-              <AdminLeaveManagement />
+            {/* Tab Contents */}
+            <TabsContent value="overview" className="space-y-6">
+              <LeaveBalance />
             </TabsContent>
-          ) : (
-            // Employee/Manager Content
-            <>
-              <TabsContent value="overview" className="space-y-6">
-                <LeaveBalance />
+
+            <TabsContent value="history" className="space-y-6">
+              <LeaveHistory />
+            </TabsContent>
+
+            <TabsContent value="calendar" className="space-y-6">
+              <LeaveCalendar />
+            </TabsContent>
+
+            {isManager && (
+              <TabsContent value="approvals" className="space-y-6">
+                <LeaveApprovals />
               </TabsContent>
-
-              <TabsContent value="history" className="space-y-6">
-                <LeaveHistory />
-              </TabsContent>
-
-              <TabsContent value="calendar" className="space-y-6">
-                <LeaveCalendar />
-              </TabsContent>
-
-              {isManager && (
-                <TabsContent value="approvals" className="space-y-6">
-                  <LeaveApprovals />
-                </TabsContent>
-              )}
-            </>
-          )}
-
-
-        </Tabs>
+            )}
+          </Tabs>
+        )}
       </div>
     </div>
   );

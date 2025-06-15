@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '@/hooks/useLeave';
+import { useEmployees } from '@/hooks/useEmployees';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,12 @@ const AdminLeaveManagement = () => {
     loadLeaveTypes
   } = useLeave();
 
+  const {
+    employees,
+    isLoading: employeesLoading,
+    fetchEmployees
+  } = useEmployees();
+
   const [filters, setFilters] = useState({
     status: 'all',
     leaveType: 'all',
@@ -57,8 +64,9 @@ const AdminLeaveManagement = () => {
   // Load data on component mount
   useEffect(() => {
     loadLeaveTypes();
+    fetchEmployees();
     loadTeamApplications(filters);
-  }, [loadLeaveTypes, loadTeamApplications]);
+  }, [loadLeaveTypes, fetchEmployees, loadTeamApplications]);
 
   // Reload data when filters change
   useEffect(() => {
@@ -139,6 +147,25 @@ const AdminLeaveManagement = () => {
     return diffDays;
   };
 
+  // Helper function to get employee name by ID
+  const getEmployeeName = (employeeId) => {
+    if (!employees || employees.length === 0) {
+      return `Employee ${employeeId}`;
+    }
+
+    const employee = employees.find(emp => emp.id === employeeId);
+    if (employee) {
+      return `${employee.firstName} ${employee.lastName}`.trim();
+    }
+    return `Employee ${employeeId}`;
+  };
+
+  // Helper function to get leave type name by ID
+  const getLeaveTypeName = (leaveTypeId) => {
+    const leaveType = leaveTypes.find(type => type.id === leaveTypeId);
+    return leaveType ? leaveType.name : 'Unknown Leave Type';
+  };
+
   if (error) {
     return (
       <Card className="w-full shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
@@ -169,21 +196,6 @@ const AdminLeaveManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <Card className="shadow-lg border-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <Users className="h-6 w-6" />
-            Leave Management Dashboard
-            <Badge variant="outline" className="ml-2 border-white/30 text-white bg-white/10">
-              Admin View
-            </Badge>
-          </CardTitle>
-          <p className="text-purple-100">
-            Manage all employee leave applications, approvals, and track organizational leave patterns
-          </p>
-        </CardHeader>
-      </Card>
 
       {/* Filters and Search */}
       <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
@@ -262,7 +274,7 @@ const AdminLeaveManagement = () => {
               <h3 className="text-lg font-semibold text-gray-900">Loading Leave Applications</h3>
               <p className="text-gray-600">Please wait while we fetch the data...</p>
             </div>
-          ) : teamApplications?.applications?.length > 0 ? (
+          ) : teamApplications?.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -279,7 +291,7 @@ const AdminLeaveManagement = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {teamApplications.applications.map((application) => (
+                  {teamApplications.map((application) => (
                     <TableRow
                       key={application.id}
                       className="hover:bg-gray-50 transition-colors duration-200"
@@ -288,22 +300,17 @@ const AdminLeaveManagement = () => {
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                             <span className="text-xs font-semibold text-purple-600">
-                              {application.employeeName?.charAt(0) || 'U'}
+                              {getEmployeeName(application.employeeId).charAt(0).toUpperCase()}
                             </span>
                           </div>
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {application.employeeName || 'Unknown Employee'}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              ID: {application.employeeId}
-                            </div>
+                          <div className="font-medium text-gray-900">
+                            {getEmployeeName(application.employeeId)}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50">
-                          {application.leaveTypeName || application.leaveType}
+                          {getLeaveTypeName(application.leaveTypeId)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -442,8 +449,8 @@ const AdminLeaveManagement = () => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-medium text-gray-900 mb-2">Application Details</h4>
                 <div className="space-y-1 text-sm text-gray-600">
-                  <div><strong>Employee:</strong> {selectedApplication.employeeName}</div>
-                  <div><strong>Leave Type:</strong> {selectedApplication.leaveTypeName || selectedApplication.leaveType}</div>
+                  <div><strong>Employee:</strong> {getEmployeeName(selectedApplication.employeeId)}</div>
+                  <div><strong>Leave Type:</strong> {getLeaveTypeName(selectedApplication.leaveTypeId)}</div>
                   <div><strong>Duration:</strong> {formatDate(selectedApplication.startDate)} to {formatDate(selectedApplication.endDate)}</div>
                   <div><strong>Days:</strong> {selectedApplication.totalDays || calculateDuration(selectedApplication.startDate, selectedApplication.endDate)}</div>
                 </div>

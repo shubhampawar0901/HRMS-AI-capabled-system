@@ -44,6 +44,7 @@ import GoalsPage from '@/pages/performance/GoalsPage';
 import AIFeaturesPage from '@/pages/ai-features/AIFeaturesPage';
 import AttritionPage from '@/pages/ai-features/AttritionPage';
 import AnomalyDetectionPage from '@/pages/ai-features/AnomalyDetectionPage';
+import SmartFeedbackPage from '@/pages/ai-features/SmartFeedbackPage';
 
 // Chatbot Page
 import ChatbotPage from '@/pages/ChatbotPage';
@@ -159,6 +160,16 @@ const AppRoutes = () => {
           }
         />
 
+        {/* AI Features - Smart Feedback (Manager Only) */}
+        <Route
+          path="ai-features/smart-feedback"
+          element={
+            <ProtectedRoute requiredRoles={['manager']}>
+              <SmartFeedbackPage />
+            </ProtectedRoute>
+          }
+        />
+
         {/* AI Features - Anomaly Detection (Admin/Manager Only) */}
         <Route
           path="ai-features/anomaly-detection"
@@ -170,8 +181,8 @@ const AppRoutes = () => {
         />
 
         {/* Future AI Features Routes - Extensible Structure */}
-        
-     
+
+
 
         {/* Smart Reports - Moved to AI Features */}
         <Route

@@ -98,7 +98,23 @@ router.post('/smart-feedback',
   AIController.generateSmartFeedback
 );
 
-router.get('/smart-feedback/:employeeId',
+// Update specific feedback by feedback ID
+router.put('/smart-feedback/update/:id',
+  authenticateToken,
+  authorize('admin', 'manager'),
+  [
+    param('id').isInt().withMessage('Feedback ID must be valid'),
+    body('generatedFeedback').optional().isString().withMessage('Generated feedback must be a string'),
+    body('performanceData').optional().isObject().withMessage('Performance data must be an object'),
+    body('suggestions').optional().isArray().withMessage('Suggestions must be an array'),
+    body('confidence').optional().isFloat({ min: 0, max: 1 }).withMessage('Confidence must be between 0 and 1')
+  ],
+  validateRequest,
+  AIController.updateSmartFeedback
+);
+
+// Get feedback history by employee ID
+router.get('/smart-feedback/history/:employeeId',
   authenticateToken,
   authorize('admin', 'manager'),
   [

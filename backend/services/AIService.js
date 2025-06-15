@@ -1,5 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const RAGService = require('./RAGService');
+const fs = require('fs').promises;
+const pdfParse = require('pdf-parse');
 const {
   Employee,
   Attendance,
@@ -22,6 +24,11 @@ class AIService {
     // Advanced model for complex analysis (Gemini 2.0 Flash Exp)
     this.advancedModel = this.genAI.getGenerativeModel({
       model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp'
+    });
+
+    // Gemini 2.0 Pro model for resume parsing
+    this.resumeParserModel = this.genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp' // Using the most advanced available model
     });
 
     // Default to advanced model for backward compatibility
@@ -49,89 +56,173 @@ class AIService {
   async parseResume(file) {
     try {
       const startTime = Date.now();
-      
+
       // Extract text from file (simplified - would use actual PDF/DOC parser)
       const extractedText = await this.extractTextFromFile(file);
-      
-      // Use Gemini to parse resume data
+
+      // Use Gemini 2.0 Pro to parse resume data with employee form-specific fields
       const prompt = `
-        Parse the following resume text and extract structured information in JSON format:
-        
+        Parse the following resume text and extract structured information in JSON format.
+        Extract ONLY the information that is clearly present in the resume text.
+
         Resume Text:
         ${extractedText}
-        
-        Please extract and return ONLY a valid JSON object with these fields:
+
+        Please extract and return ONLY a valid JSON object with these exact fields.
+        IMPORTANT: Use null for any field where the information is not clearly available in the resume:
+
         {
-          "personalInfo": {
-            "name": "",
-            "email": "",
-            "phone": "",
-            "address": ""
-          },
-          "experience": [
-            {
-              "company": "",
-              "position": "",
-              "duration": "",
-              "description": ""
-            }
-          ],
-          "education": [
-            {
-              "institution": "",
-              "degree": "",
-              "year": "",
-              "field": ""
-            }
-          ],
+          "firstName": null,
+          "lastName": null,
+          "email": null,
+          "phone": null,
+          "address": null,
+          "position": null,
+          "emergencyContact": null,
+          "emergencyPhone": null,
+          "experience": [],
+          "education": [],
           "skills": [],
-          "summary": ""
+          "summary": null
         }
+
+        Instructions:
+        - firstName: Extract only the first name from the resume
+        - lastName: Extract only the last name from the resume
+        - email: Extract email address if clearly mentioned
+        - phone: Extract primary phone/mobile number if available
+        - address: Extract current address if mentioned
+        - position: Extract the most recent or current job title
+        - emergencyContact: Extract emergency contact name if mentioned
+        - emergencyPhone: Extract emergency contact phone if mentioned
+        - experience: Array of work experience with company, position, duration
+        - education: Array of educational qualifications
+        - skills: Array of technical/professional skills
+        - summary: Brief professional summary if available
+
+        CRITICAL: Return null (not empty string) for any field where information is not found.
+        Do not make assumptions or generate placeholder data.
+        Return only valid JSON without any markdown formatting.
       `;
 
-      const result = await this.model.generateContent(prompt);
+      const result = await this.resumeParserModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       // Parse JSON response
       let parsedData;
       try {
         parsedData = JSON.parse(text.replace(/```json|```/g, '').trim());
       } catch (parseError) {
-        // Fallback parsing if JSON is malformed
+        console.warn('JSON parsing failed, using fallback parser:', parseError);
         parsedData = this.fallbackResumeParser(extractedText);
       }
 
+      // Calculate confidence based on how many fields were extracted
+      const confidence = this.calculateParsingConfidence(parsedData);
+
       const processingTime = Date.now() - startTime;
+
+      // Clean up uploaded file after processing
+      try {
+        await fs.unlink(file.path);
+        console.log('Cleaned up uploaded file:', file.path);
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup uploaded file:', cleanupError.message);
+      }
 
       return {
         parsedData,
         extractedText,
-        confidence: 0.85,
+        confidence,
         processingTime
       };
     } catch (error) {
       console.error('Resume parsing error:', error);
+
+      // Clean up file even if parsing failed
+      try {
+        await fs.unlink(file.path);
+        console.log('Cleaned up uploaded file after error:', file.path);
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup uploaded file after error:', cleanupError.message);
+      }
+
       throw new Error('Failed to parse resume');
     }
   }
 
   async extractTextFromFile(file) {
-    // Simplified text extraction - in real implementation would use:
-    // - pdf-parse for PDFs
-    // - mammoth for Word docs
-    // - OCR for images
-    return `Sample extracted text from ${file.originalname}`;
+    try {
+      console.log('Extracting text from file:', file.originalname, 'at path:', file.path);
+
+      // Check if file exists
+      const fileBuffer = await fs.readFile(file.path);
+
+      // Extract text based on file type
+      if (file.mimetype === 'application/pdf') {
+        const pdfData = await pdfParse(fileBuffer);
+        console.log('PDF text extracted, length:', pdfData.text.length);
+        return pdfData.text;
+      } else if (file.mimetype === 'application/msword' ||
+                 file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        // For Word documents, we'll use a simple fallback for now
+        // In production, you'd use mammoth.js or similar
+        console.log('Word document detected, using fallback text extraction');
+        return `Word document content from ${file.originalname}. Please convert to PDF for better text extraction.`;
+      } else {
+        console.log('Unsupported file type:', file.mimetype);
+        return `Unsupported file type: ${file.mimetype}. Please upload a PDF file for best results.`;
+      }
+    } catch (error) {
+      console.error('Text extraction error:', error);
+      // Return a fallback that includes the error info for debugging
+      return `Error extracting text from ${file.originalname}: ${error.message}. Please try uploading a different file.`;
+    }
   }
 
   fallbackResumeParser(text) {
+    // Extract basic information using regex patterns
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
+    const phoneRegex = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
+
+    const email = text.match(emailRegex)?.[0] || null;
+    const phone = text.match(phoneRegex)?.[0] || null;
+
     return {
-      personalInfo: { name: "Unknown", email: "", phone: "", address: "" },
+      firstName: null,
+      lastName: null,
+      email: email,
+      phone: phone,
+      address: null,
+      position: null,
+      emergencyContact: null,
+      emergencyPhone: null,
       experience: [],
       education: [],
       skills: [],
-      summary: text.substring(0, 200)
+      summary: text.length > 200 ? text.substring(0, 200) : null
     };
+  }
+
+  // Calculate confidence score based on extracted data
+  calculateParsingConfidence(parsedData) {
+    let score = 0;
+    let maxScore = 0;
+
+    // Core personal information (higher weight)
+    if (parsedData.firstName) { score += 20; }
+    if (parsedData.lastName) { score += 20; }
+    if (parsedData.email) { score += 25; }
+    if (parsedData.phone) { score += 20; }
+    maxScore += 85;
+
+    // Additional information (lower weight)
+    if (parsedData.address) { score += 5; }
+    if (parsedData.position) { score += 10; }
+    maxScore += 15;
+
+    return Math.min(score / maxScore, 1.0);
   }
 
   // ==========================================

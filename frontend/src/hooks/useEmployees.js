@@ -87,17 +87,11 @@ export const useEmployees = (initialFilters = {}) => {
 
       const response = await employeeService.getAllEmployees();
 
-      // After handleApiSuccess, the structure is: { data: originalResponse, status, message }
-      if (response.data && response.data.success) {
-        const employees = response.data.data.employees || [];
-        console.log('✅ API Response Success:', {
-          totalEmployees: employees.length,
-          employees: employees.slice(0, 2), // Log first 2 employees
-          responseStructure: response.data
-        });
+      // The response structure is: { success: true, data: { employees: [...], pagination: {...} }, message: "..." }
+      if (response && response.success) {
+        const employees = response.data.employees || [];
         setAllEmployees(employees);
       } else {
-        console.log('❌ API Response Failed:', response);
         setError(response.message || 'Failed to fetch employees');
         setAllEmployees([]);
       }
@@ -192,9 +186,9 @@ export const useEmployee = (id) => {
 
       const response = await employeeService.getEmployee(id);
 
-      // After handleApiSuccess, the structure is: { data: originalResponse, status, message }
-      if (response.data && response.data.success) {
-        setEmployee(response.data.data);
+      // The response structure is: { success: true, data: {...}, message: "..." }
+      if (response && response.success) {
+        setEmployee(response.data);
       } else {
         setError(response.message || 'Failed to fetch employee');
         setEmployee(null);
@@ -233,10 +227,10 @@ export const useEmployeeMutations = () => {
 
       const response = await employeeService.addEmployee(employeeData);
 
-      // After handleApiSuccess, the structure is: { data: originalResponse, status, message }
-      if (response.data && response.data.success) {
+      // After handleApiSuccess, the structure is: { success, message, data }
+      if (response && response.success) {
         setSuccess('Employee added successfully');
-        return { success: true, data: response.data.data };
+        return { success: true, data: response.data };
       } else {
         setError(response.message || 'Failed to add employee');
         return { success: false, message: response.message };
@@ -258,10 +252,10 @@ export const useEmployeeMutations = () => {
 
       const response = await employeeService.updateEmployee(id, employeeData);
 
-      // After handleApiSuccess, the structure is: { data: originalResponse, status, message }
-      if (response.data && response.data.success) {
+      // After handleApiSuccess, the structure is: { success, message, data }
+      if (response && response.success) {
         setSuccess('Employee updated successfully');
-        return { success: true, data: response.data.data };
+        return { success: true, data: response.data };
       } else {
         setError(response.message || 'Failed to update employee');
         return { success: false, message: response.message };
@@ -283,8 +277,8 @@ export const useEmployeeMutations = () => {
 
       const response = await employeeService.deleteEmployee(id);
 
-      // After handleApiSuccess, the structure is: { data: originalResponse, status, message }
-      if (response.data && response.data.success) {
+      // After handleApiSuccess, the structure is: { success, message, data }
+      if (response && response.success) {
         setSuccess('Employee deleted successfully');
         return { success: true };
       } else {
@@ -309,10 +303,10 @@ export const useEmployeeMutations = () => {
       // Note: This endpoint needs to be implemented in the backend
       const response = await employeeService.uploadDocument(employeeId, formData);
 
-      // After handleApiSuccess, the structure is: { data: originalResponse, status, message }
-      if (response.data && response.data.success) {
+      // After handleApiSuccess, the structure is: { success, message, data }
+      if (response && response.success) {
         setSuccess('Document uploaded successfully');
-        return { success: true, data: response.data.data };
+        return { success: true, data: response.data };
       } else {
         setError(response.message || 'Failed to upload document');
         return { success: false, message: response.message };
@@ -355,9 +349,9 @@ export const useDepartments = () => {
 
       const response = await employeeService.getDepartments();
 
-      // After handleApiSuccess, the structure is: { data: originalResponse, status, message }
-      if (response.data && response.data.success) {
-        setDepartments(response.data.data || []);
+      // The response structure is: { success: true, data: [...], message: "..." }
+      if (response && response.success) {
+        setDepartments(response.data || []);
       } else {
         setError(response.message || 'Failed to fetch departments');
         setDepartments([]);

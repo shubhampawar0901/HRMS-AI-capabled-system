@@ -83,6 +83,28 @@ reports/
 # AI model cache
 
 # =============================================
+# DOCUMENT PROCESSING AND AI INTEGRATION
+# =============================================
+# Generated PDF files (should be uploaded to S3, not committed)
+*.pdf
+HR_Policy_Document_2024.pdf
+
+# Temporary integration scripts (one-time use)
+complete-s3-integration.js
+integrate-hr-policy-s3.js
+integrate-hr-policy-public.js
+integrate-local-hr-policy.js
+convert-to-pdf.js
+convert-md-to-pdf.js
+
+# Temporary text files and documents
+comprehensive-hr-policy-2024.txt
+*.txt
+
+# Test scripts in scripts folder
+scripts/test.js
+
+# =============================================
 # TEST FILES AND TESTING ARTIFACTS (DO NOT COMMIT)
 # =============================================
 # API Testing logs and results
