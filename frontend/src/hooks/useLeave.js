@@ -52,16 +52,16 @@ export function useLeave() {
 
       const response = await leaveService.getLeaveRequests(cleanParams);
 
-      if (response.data.success) {
+      if (response && response.success) {
         dispatch({
           type: LEAVE_ACTIONS.SET_APPLICATIONS,
           payload: {
-            applications: response.data.data.applications || [],
-            pagination: response.data.data.pagination || state.pagination
+            applications: response.data.applications || [],
+            pagination: response.data.pagination || state.pagination
           }
         });
       } else {
-        throw new Error(response.data.message || 'Failed to load applications');
+        throw new Error(response.message || 'Failed to load applications');
       }
     } catch (error) {
       handleApiError(error, 'Failed to load leave applications');
@@ -83,18 +83,18 @@ export function useLeave() {
 
       const response = await leaveService.applyLeave(leaveData);
 
-      if (response.data.success) {
+      if (response && response.success) {
         dispatch({
           type: LEAVE_ACTIONS.ADD_APPLICATION,
-          payload: response.data.data.application
+          payload: response.data.application
         });
 
         // Refresh applications list
         await loadApplications();
 
-        return response.data.data.application;
+        return response.data.application;
       } else {
-        throw new Error(response.data.message || 'Failed to submit leave application');
+        throw new Error(response.message || 'Failed to submit leave application');
       }
     } catch (error) {
       handleApiError(error, 'Failed to submit leave application');
@@ -112,15 +112,15 @@ export function useLeave() {
 
       const response = await leaveService.cancelLeave(applicationId);
 
-      if (response.data.success) {
+      if (response && response.success) {
         dispatch({
           type: LEAVE_ACTIONS.UPDATE_APPLICATION,
-          payload: response.data.data.application
+          payload: response.data.application
         });
 
-        return response.data.data.application;
+        return response.data.application;
       } else {
-        throw new Error(response.data.message || 'Failed to cancel leave application');
+        throw new Error(response.message || 'Failed to cancel leave application');
       }
     } catch (error) {
       handleApiError(error, 'Failed to cancel leave application');
@@ -146,14 +146,14 @@ export function useLeave() {
       const response = await leaveService.getLeaveBalance(year);
 
       // The apiRequest wrapper transforms the response structure
-      // response.data contains the full backend response
-      if (response.data.success) {
+      // response contains the full backend response
+      if (response && response.success) {
         dispatch({
           type: LEAVE_ACTIONS.SET_BALANCE,
-          payload: response.data.data || []
+          payload: response.data || []
         });
       } else {
-        throw new Error(response.data.message || 'Failed to load leave balance');
+        throw new Error(response.message || 'Failed to load leave balance');
       }
     } catch (error) {
       handleApiError(error, 'Failed to load leave balance');
@@ -179,13 +179,13 @@ export function useLeave() {
 
       const response = await leaveService.getLeaveTypes();
 
-      if (response.data.success) {
+      if (response && response.success) {
         dispatch({
           type: LEAVE_ACTIONS.SET_LEAVE_TYPES,
-          payload: response.data.data || []
+          payload: response.data || []
         });
       } else {
-        throw new Error(response.data.message || 'Failed to load leave types');
+        throw new Error(response.message || 'Failed to load leave types');
       }
     } catch (error) {
       handleApiError(error, 'Failed to load leave types');
@@ -206,13 +206,13 @@ export function useLeave() {
 
       const response = await leaveService.getLeaveCalendar(params);
 
-      if (response.data.success) {
+      if (response && response.success) {
         dispatch({
           type: LEAVE_ACTIONS.SET_CALENDAR,
-          payload: response.data.data || []
+          payload: response.data || []
         });
       } else {
-        throw new Error(response.data.message || 'Failed to load leave calendar');
+        throw new Error(response.message || 'Failed to load leave calendar');
       }
     } catch (error) {
       handleApiError(error, 'Failed to load leave calendar');
@@ -248,16 +248,16 @@ export function useLeave() {
 
       const response = await leaveService.getTeamLeaveRequests(cleanParams);
 
-      if (response.data.success) {
+      if (response && response.success) {
         dispatch({
           type: LEAVE_ACTIONS.SET_TEAM_APPLICATIONS,
           payload: {
-            applications: response.data.data.applications || [],
-            pagination: response.data.data.pagination || state.pagination
+            applications: response.data.applications || [],
+            pagination: response.data.pagination || state.pagination
           }
         });
       } else {
-        throw new Error(response.data.message || 'Failed to load team applications');
+        throw new Error(response.message || 'Failed to load team applications');
       }
     } catch (error) {
       handleApiError(error, 'Failed to load team leave applications');
@@ -286,15 +286,15 @@ export function useLeave() {
         comments
       });
 
-      if (response.data.success) {
+      if (response && response.success) {
         dispatch({
           type: LEAVE_ACTIONS.UPDATE_TEAM_APPLICATION,
-          payload: response.data.data.application
+          payload: response.data.application
         });
 
-        return response.data.data.application;
+        return response.data.application;
       } else {
-        throw new Error(response.data.message || `Failed to ${action} leave application`);
+        throw new Error(response.message || `Failed to ${action} leave application`);
       }
     } catch (error) {
       handleApiError(error, `Failed to ${action} leave application`);

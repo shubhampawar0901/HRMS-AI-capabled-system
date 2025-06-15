@@ -27,19 +27,12 @@ const Header = ({ onMenuClick, sidebarOpen }) => {
             variant="ghost"
             size="sm"
             onClick={onMenuClick}
-            className="lg:hidden"
+            className="hover:bg-gray-100 transition-colors"
           >
             <Menu className="h-5 w-5" />
           </Button>
 
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">HR</span>
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 hidden sm:block">
-              HRMS
-            </h1>
-          </div>
+
         </div>
 
         {/* Right side - User menu */}
