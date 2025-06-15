@@ -10,17 +10,20 @@ import {
   Brain,
   Sparkles,
   MessageCircle,
+  MessageSquare,
   X,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   AlertTriangle,
-  BarChart3
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const Sidebar = ({ isOpen, onClose }) => {
+const Sidebar = ({ isOpen, onClose, onToggle }) => {
   const { user } = useAuthContext();
 
   // State for expandable menu items (persisted in localStorage)
@@ -115,6 +118,21 @@ const Sidebar = ({ isOpen, onClose }) => {
       menuKey: 'aiFeatures',
       subItems: [
         {
+          name: 'Smart Feedback',
+          href: '/ai-features/smart-feedback',
+          icon: MessageSquare,
+          roles: ['manager'],
+          description: 'AI-powered employee feedback generation'
+        },
+        {
+          name: 'Attrition Predictor',
+          href: '/ai-features/attrition',
+          icon: TrendingUp,
+          roles: ['admin'],
+          description: 'AI-powered employee attrition risk analysis',
+          badge: 'NEW'
+        },
+        {
           name: 'Anomaly Detection',
           href: '/ai-features/anomaly-detection',
           icon: AlertTriangle,
@@ -147,23 +165,44 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
-            {isOpen && (
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
+              {!isOpen && (
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-sm">HR</span>
                 </div>
-                <span className="font-bold text-foreground">HRMS</span>
-              </div>
-            )}
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="lg:hidden"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+              )}
+              {isOpen && (
+                <>
+                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-sm">HR</span>
+                  </div>
+                  <span className="font-bold text-foreground">HRMS</span>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-1">
+              {/* Toggle button for desktop */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggle}
+                className="hidden lg:flex hover:bg-accent"
+                title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                <ChevronLeft className={`h-4 w-4 transition-transform duration-200 ${isOpen ? '' : 'rotate-180'}`} />
+              </Button>
+
+              {/* Close button for mobile */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="lg:hidden"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -244,7 +283,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                                 }
                               >
                                 <SubIcon className="h-4 w-4 flex-shrink-0 mr-2" />
-                                <span className="truncate">{subItem.name}</span>
+                                <div className="flex items-center justify-between flex-1 min-w-0">
+                                  <span className="truncate">{subItem.name}</span>
+                                  {subItem.badge && (
+                                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                      {subItem.badge}
+                                    </span>
+                                  )}
+                                </div>
                               </NavLink>
                             );
                           })}

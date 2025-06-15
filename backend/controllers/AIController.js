@@ -40,18 +40,24 @@ class AIController {
       }
 
       const aiService = AIController.getAIService();
+
+      // Store original file info before processing (since file gets deleted during processing)
+      const originalFileName = req.file.originalname;
+      const originalFilePath = req.file.path;
+
       const result = await aiService.parseResume(req.file);
-      
+
       // Save to database
       const parserRecord = await AIResumeParser.create({
         employeeId: req.body.employeeId || null,
-        fileName: req.file.originalname,
-        filePath: req.file.path,
+        fileName: originalFileName,
+        filePath: originalFilePath, // Store original path for reference
         parsedData: result.parsedData,
         extractedText: result.extractedText,
         confidence: result.confidence,
         processingTime: result.processingTime,
-        status: 'processed'
+        status: 'processed',
+        errorMessage: null  // Explicitly set to null instead of undefined
       });
 
       return sendCreated(res, {
@@ -81,10 +87,92 @@ class AIController {
   
   static async getAttritionPredictions(req, res) {
     try {
-      const { riskThreshold = 0.7 } = req.query;
-      const predictions = await AIAttritionPrediction.getHighRiskEmployees(riskThreshold);
-      return sendSuccess(res, predictions, 'Attrition predictions retrieved');
+      const {
+        riskThreshold = 0.0,
+        departmentId,
+        limit = 50,
+        offset = 0
+      } = req.query;
+
+      // Convert riskThreshold to number and validate
+      const threshold = parseFloat(riskThreshold);
+
+      const options = {
+        riskThreshold: threshold > 0 ? threshold : 0,
+        departmentId: departmentId ? parseInt(departmentId) : null,
+        limit: parseInt(limit),
+        offset: parseInt(offset)
+      };
+
+      const predictions = await AIAttritionPrediction.getAllPredictions(options);
+
+      // Transform predictions for frontend
+      const transformedPredictions = predictions.map((prediction, index) => {
+        // Handle both model instances and raw database rows
+        const predictionObj = prediction.toJSON ? prediction.toJSON() : prediction;
+
+
+
+        // Parse JSON fields if they're strings
+        let factors = predictionObj.factors || [];
+        let recommendations = predictionObj.recommendations || [];
+
+        if (typeof factors === 'string') {
+          try {
+            factors = JSON.parse(factors);
+          } catch (e) {
+            factors = [];
+          }
+        }
+
+        if (typeof recommendations === 'string') {
+          try {
+            recommendations = JSON.parse(recommendations);
+          } catch (e) {
+            recommendations = [];
+          }
+        }
+
+        return {
+          id: predictionObj.id,
+          employeeId: predictionObj.employee_id || predictionObj.employeeId,
+          employeeName: predictionObj.employee_name || 'Unknown',
+          employeeCode: predictionObj.employee_code || '',
+          department: predictionObj.department_name || 'Unknown',
+          riskScore: parseFloat(predictionObj.risk_score || predictionObj.riskScore),
+          riskPercentage: Math.round(parseFloat(predictionObj.risk_score || predictionObj.riskScore) * 100),
+          riskLevel: predictionObj.risk_level || predictionObj.riskLevel,
+          factors: factors,
+          recommendations: recommendations,
+          predictionDate: predictionObj.prediction_date || predictionObj.predictionDate,
+          modelVersion: predictionObj.model_version || predictionObj.modelVersion,
+          createdAt: predictionObj.created_at || predictionObj.createdAt
+        };
+      });
+
+      // Calculate summary statistics
+      const summary = {
+        total: transformedPredictions.length,
+        critical: transformedPredictions.filter(p => p.riskLevel === 'critical').length,
+        high: transformedPredictions.filter(p => p.riskLevel === 'high').length,
+        medium: transformedPredictions.filter(p => p.riskLevel === 'medium').length,
+        low: transformedPredictions.filter(p => p.riskLevel === 'low').length,
+        averageRisk: transformedPredictions.length > 0
+          ? Math.round(transformedPredictions.reduce((sum, p) => sum + p.riskPercentage, 0) / transformedPredictions.length)
+          : 0
+      };
+
+      return sendSuccess(res, {
+        predictions: transformedPredictions,
+        summary,
+        pagination: {
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+          total: transformedPredictions.length
+        }
+      }, 'Attrition predictions retrieved successfully');
     } catch (error) {
+      console.error('Get attrition predictions error:', error);
       return sendError(res, error.message, 500);
     }
   }
@@ -158,13 +246,84 @@ class AIController {
     try {
       const { employeeId } = req.params;
       const { feedbackType, limit = 10 } = req.query;
-      
+
       const feedback = await AISmartFeedback.findByEmployee(employeeId, {
         feedbackType,
         limit: parseInt(limit)
       });
 
       return sendSuccess(res, feedback, 'Feedback history retrieved');
+    } catch (error) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  static async updateSmartFeedback(req, res) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const { sendEmail = false } = req.body; // ✅ NEW: Optional email flag
+      const userId = req.user.id;
+
+      // Check if feedback exists
+      const existingFeedback = await AISmartFeedback.findById(id);
+      if (!existingFeedback) {
+        return sendError(res, 'Feedback not found', 404);
+      }
+
+      // Update feedback
+      const updatedFeedback = await AISmartFeedback.update(id, updateData);
+
+      // ✅ NEW: Send email if requested
+      if (sendEmail) {
+        try {
+          // Get employee details
+          const Employee = require('../models/Employee');
+          const employee = await Employee.findById(existingFeedback.employeeId);
+
+          // Get manager details
+          const manager = await Employee.findByUserId(userId);
+
+          if (employee && manager) {
+            const EmailService = require('../services/EmailService');
+            const emailService = new EmailService();
+
+            const emailResult = await emailService.sendFeedbackEmail(
+              employee.email,
+              `${employee.firstName} ${employee.lastName}`,
+              {
+                feedbackType: existingFeedback.feedbackType,
+                generatedFeedback: updateData.generatedFeedback || existingFeedback.generatedFeedback,
+                suggestions: updateData.suggestions || existingFeedback.suggestions
+              },
+              `${manager.firstName} ${manager.lastName}`
+            );
+
+            console.log('📧 Feedback email sent:', emailResult);
+            return sendSuccess(res, {
+              feedback: updatedFeedback,
+              emailSent: true,
+              emailResult: emailResult
+            }, 'Feedback updated and email sent successfully');
+          } else {
+            console.warn('⚠️ Could not find employee or manager details for email');
+            return sendSuccess(res, {
+              feedback: updatedFeedback,
+              emailSent: false,
+              warning: 'Feedback updated but email could not be sent - missing employee/manager details'
+            }, 'Feedback updated but email failed');
+          }
+        } catch (emailError) {
+          console.error('❌ Email sending failed:', emailError);
+          return sendSuccess(res, {
+            feedback: updatedFeedback,
+            emailSent: false,
+            error: emailError.message
+          }, 'Feedback updated but email failed to send');
+        }
+      }
+
+      return sendSuccess(res, updatedFeedback, 'Feedback updated successfully');
     } catch (error) {
       return sendError(res, error.message, 500);
     }

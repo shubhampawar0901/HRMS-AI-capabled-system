@@ -92,7 +92,7 @@ const validateAIAccess = asyncHandler(async (req, res, next) => {
   // Define AI feature access levels
   const aiFeatureAccess = {
     'chatbot': ['admin', 'manager', 'employee'],
-    'attrition_predictor': ['admin'],
+    'attrition_predictor': ['admin', 'manager'],
     'smart_feedback': ['admin', 'manager'],
     'anomaly_detection': ['admin'],
     'resume_parser': ['admin'],

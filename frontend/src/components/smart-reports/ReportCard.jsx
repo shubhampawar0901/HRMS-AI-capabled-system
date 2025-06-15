@@ -116,8 +116,8 @@ const ReportCard = ({
 
   return (
     <div className={`
-      bg-white rounded-lg shadow-sm border border-gray-200 
-      hover:shadow-md hover:scale-[1.02] 
+      bg-white rounded-lg shadow-md border border-gray-200
+      hover:shadow-lg hover:scale-[1.02]
       transition-all duration-300 ease-in-out
       ${className}
     `}>

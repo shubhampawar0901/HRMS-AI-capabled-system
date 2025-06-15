@@ -24,6 +24,9 @@ export const useEmployeeForm = (employeeId = null) => {
   const [errors, setErrors] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [availableManagers, setAvailableManagers] = useState([]);
+  const [aiPopulatedFields, setAiPopulatedFields] = useState(new Set());
+  const [resumeParseSuccess, setResumeParseSuccess] = useState(false);
+  const [resumeParseMessage, setResumeParseMessage] = useState('');
 
   const { employee: currentEmployee, isLoading: loadingEmployee } = useEmployee(employeeId);
   const { departments } = useDepartments();
@@ -200,6 +203,89 @@ export const useEmployeeForm = (employeeId = null) => {
            formData.hireDate;
   }, [errors, formData]);
 
+  // Handle resume parse success
+  const handleResumeParseSuccess = useCallback((parsedData, confidence) => {
+    const fieldsToUpdate = {};
+    const updatedFields = new Set();
+
+    // Only populate fields that have actual data (not null/empty)
+    if (parsedData.firstName && parsedData.firstName.trim()) {
+      fieldsToUpdate.firstName = parsedData.firstName.trim();
+      updatedFields.add('firstName');
+    }
+
+    if (parsedData.lastName && parsedData.lastName.trim()) {
+      fieldsToUpdate.lastName = parsedData.lastName.trim();
+      updatedFields.add('lastName');
+    }
+
+    if (parsedData.email && parsedData.email.trim()) {
+      fieldsToUpdate.email = parsedData.email.trim();
+      updatedFields.add('email');
+    }
+
+    if (parsedData.phone && parsedData.phone.trim()) {
+      fieldsToUpdate.phone = parsedData.phone.trim();
+      updatedFields.add('phone');
+    }
+
+    if (parsedData.address && parsedData.address.trim()) {
+      fieldsToUpdate.address = parsedData.address.trim();
+      updatedFields.add('address');
+    }
+
+    if (parsedData.position && parsedData.position.trim()) {
+      fieldsToUpdate.position = parsedData.position.trim();
+      updatedFields.add('position');
+    }
+
+    if (parsedData.emergencyContact && parsedData.emergencyContact.trim()) {
+      fieldsToUpdate.emergencyContact = parsedData.emergencyContact.trim();
+      updatedFields.add('emergencyContact');
+    }
+
+    if (parsedData.emergencyPhone && parsedData.emergencyPhone.trim()) {
+      fieldsToUpdate.emergencyPhone = parsedData.emergencyPhone.trim();
+      updatedFields.add('emergencyPhone');
+    }
+
+    // Update form data with extracted fields
+    if (Object.keys(fieldsToUpdate).length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        ...fieldsToUpdate
+      }));
+
+      setAiPopulatedFields(updatedFields);
+      setIsDirty(true);
+
+      // Show success notification
+      setResumeParseSuccess(true);
+      setResumeParseMessage(`AI resume parsed successfully! ${Object.keys(fieldsToUpdate).length} fields have been auto-populated.`);
+
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => {
+        setResumeParseSuccess(false);
+        setResumeParseMessage('');
+      }, 5000);
+
+      console.log('Resume parsed successfully:', {
+        fieldsUpdated: Array.from(updatedFields),
+        confidence: confidence,
+        extractedData: fieldsToUpdate
+      });
+    } else {
+      // Show info message if no fields were populated
+      setResumeParseSuccess(false);
+      setResumeParseMessage('No extractable information found in the resume. Please fill the form manually.');
+
+      // Auto-hide message after 3 seconds
+      setTimeout(() => {
+        setResumeParseMessage('');
+      }, 3000);
+    }
+  }, []);
+
   // Update available managers when departments change
   useEffect(() => {
     loadManagers();
@@ -229,9 +315,15 @@ export const useEmployeeForm = (employeeId = null) => {
     handleSubmit,
     validateForm,
     resetForm,
-    
+    handleResumeParseSuccess,
+
     // Utilities
-    isEditing: !!employeeId
+    isEditing: !!employeeId,
+    aiPopulatedFields,
+
+    // Resume parse notifications
+    resumeParseSuccess,
+    resumeParseMessage
   };
 };
 

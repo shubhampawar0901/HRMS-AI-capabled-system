@@ -51,9 +51,9 @@ class AIService {
   async parseResume(file) {
     const formData = new FormData();
     formData.append('resume', file);
-    
+
     return apiRequest(
-      () => axiosInstance.post(API_ENDPOINTS.AI.RESUME_PARSER, formData, {
+      () => axiosInstance.post(API_ENDPOINTS.AI.PARSE_RESUME, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       }),
       'ai-resume-parser'

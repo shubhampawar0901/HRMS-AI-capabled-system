@@ -71,8 +71,8 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onView, showActions = true }
   };
 
   return (
-    <Card 
-      className="hrms-card hover:shadow-lg transition-all duration-300 cursor-pointer group hover:scale-[1.02] border border-gray-200"
+    <Card
+      className="hrms-card transition-all duration-300 cursor-pointer group hover:scale-[1.02] border border-gray-200"
       onClick={handleCardClick}
     >
       <CardHeader className="pb-3">

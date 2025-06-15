@@ -44,7 +44,7 @@ npm install
 npm start
 ```
 
-The application will open at `http://localhost:3000`
+The application will open at `http://localhost:3004`
 
 ### 3. Build for Production
 ```bash

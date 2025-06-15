@@ -13,6 +13,16 @@ export const canAccessChatbot = (userRole) => {
 };
 
 /**
+ * Check if user can access smart feedback functionality
+ * Only managers are allowed to access smart feedback
+ * @param {string} userRole - The user's role ('admin', 'manager', 'employee')
+ * @returns {boolean} - True if user can access smart feedback
+ */
+export const canAccessSmartFeedback = (userRole) => {
+  return userRole === 'manager';
+};
+
+/**
  * Check if user has any of the specified roles
  * @param {string} userRole - The user's role
  * @param {string|string[]} allowedRoles - Role or array of roles to check against
@@ -36,6 +46,16 @@ export const getChatbotAccessDeniedMessage = () => ({
   title: 'Access Denied',
   message: 'AI Chatbot is only available for employees.',
   description: 'Please contact your administrator if you believe this is an error.'
+});
+
+/**
+ * Get access denied message for smart feedback
+ * @returns {object} - Error message object
+ */
+export const getSmartFeedbackAccessDeniedMessage = () => ({
+  title: 'Access Denied',
+  message: 'Smart Feedback is only available for managers.',
+  description: 'This AI-powered feature helps managers generate constructive feedback for their team members.'
 });
 
 /**

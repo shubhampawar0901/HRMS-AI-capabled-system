@@ -4,7 +4,7 @@
  * All endpoints verified against actual backend implementation
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5003/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5004/api';
 
 export const API_ENDPOINTS = {
   // ==========================================
@@ -118,9 +118,9 @@ export const API_ENDPOINTS = {
     GOAL_BY_ID: (id) => `/performance/goals/${id}`,         // GET/PUT - Individual goal
     GOAL_PROGRESS: (id) => `/performance/goals/${id}/progress`,  // PUT - Update goal progress
 
-    // AI Smart Feedback
+    // AI Smart Feedback (Alternative Performance API)
     GENERATE_FEEDBACK: '/performance/feedback/generate',    // POST - Generate AI feedback
-    FEEDBACK: '/performance/feedback',                      // GET - Get AI feedback
+    FEEDBACK_HISTORY: '/performance/feedback',              // GET - Get AI feedback history
 
     // Team Performance (Manager)
     TEAM: '/performance/team',               // GET - Get team performance (manager)
@@ -150,8 +150,9 @@ export const API_ENDPOINTS = {
     CHATBOT_QUERY: '/ai/chatbot/query',      // POST - AI chatbot query
     CHATBOT_HISTORY: (sessionId) => `/ai/chatbot/history/${sessionId}`,  // GET - Chat history
 
-    // Smart Feedback (Manager - via Performance API)
-    SMART_FEEDBACK: '/ai/smart-feedback'     // POST - Generate smart feedback
+    // Smart Feedback (Manager/Admin)
+    SMART_FEEDBACK_GENERATE: '/ai/smart-feedback',           // POST - Generate smart feedback
+    SMART_FEEDBACK_HISTORY: (employeeId) => `/ai/smart-feedback/${employeeId}`  // GET - Get feedback history
   },
 
   // ==========================================

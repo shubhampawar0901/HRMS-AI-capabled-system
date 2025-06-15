@@ -46,7 +46,7 @@ export const usePayroll = () => {
 
   // Filters state
   const [filters, setFilters] = useState({
-    month: new Date().getMonth() + 1,
+    month: null, // Start with null to show all months by default
     year: new Date().getFullYear(),
     employeeId: null,
     departmentId: null,
@@ -63,7 +63,7 @@ export const usePayroll = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const queryParams = {
         ...filters,
         ...params,
@@ -71,9 +71,12 @@ export const usePayroll = () => {
         limit: pagination.limit
       };
 
+      console.log('🔍 fetchPayrollRecords called with queryParams:', queryParams);
       const response = await payrollService.getPayrollRecords(queryParams);
-      
+      console.log('📄 fetchPayrollRecords response:', response);
+
       if (response.success) {
+        console.log('✅ Setting payroll records:', response.data.records?.length || 0, 'records');
         setPayrollRecords(response.data.records || []);
         setPagination(prev => ({
           ...prev,
@@ -83,7 +86,7 @@ export const usePayroll = () => {
         throw new Error(response.message || 'Failed to fetch payroll records');
       }
     } catch (err) {
-      console.error('Fetch payroll records error:', err);
+      console.error('❌ Fetch payroll records error:', err);
       setError(err.message || 'Failed to fetch payroll records');
       setPayrollRecords([]);
     } finally {
@@ -109,16 +112,15 @@ export const usePayroll = () => {
       if (isAdmin && params.employeeId) {
         // Admin fetching specific employee's payslips
         const response = await payrollService.getEmployeePayrollByAdmin(params.employeeId, queryParams);
-        const apiData = response.data || response;
 
-        if (apiData.success) {
-          setPayslips(apiData.data.payslips || []);
+        if (response.success) {
+          setPayslips(response.data.payslips || []);
           setPagination(prev => ({
             ...prev,
-            ...apiData.data.pagination
+            ...response.data.pagination
           }));
         } else {
-          throw new Error(apiData.message || 'Failed to fetch payslips');
+          throw new Error(response.message || 'Failed to fetch payslips');
         }
         return;
       }
@@ -130,16 +132,15 @@ export const usePayroll = () => {
 
       // Fetch current user's payslips
       const response = await payrollService.getEmployeePayroll(employeeId, queryParams);
-      const apiData = response.data || response;
 
-      if (apiData.success) {
-        setPayslips(apiData.data.payslips || []);
+      if (response.success) {
+        setPayslips(response.data.payslips || []);
         setPagination(prev => ({
           ...prev,
-          ...apiData.data.pagination
+          ...response.data.pagination
         }));
       } else {
-        throw new Error(apiData.message || 'Failed to fetch payslips');
+        throw new Error(response.message || 'Failed to fetch payslips');
       }
     } catch (err) {
       console.error('Fetch payslips error:', err);
@@ -322,10 +323,15 @@ export const usePayroll = () => {
 
   // Update filters
   const updateFilters = useCallback((newFilters) => {
-    setFilters(prev => ({
-      ...prev,
-      ...newFilters
-    }));
+    console.log('🔍 updateFilters called with:', newFilters);
+    setFilters(prev => {
+      const updated = {
+        ...prev,
+        ...newFilters
+      };
+      console.log('🔍 Updated filters:', updated);
+      return updated;
+    });
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
   }, []);
 
@@ -357,17 +363,16 @@ export const usePayroll = () => {
       };
 
       const response = await payrollService.getEmployeePayrollByAdmin(targetEmployeeId, queryParams);
-      const apiData = response.data || response;
 
-      if (apiData.success) {
-        setPayslips(apiData.data.payslips || []);
+      if (response.success) {
+        setPayslips(response.data.payslips || []);
         setPagination(prev => ({
           ...prev,
-          ...apiData.data.pagination
+          ...response.data.pagination
         }));
-        return apiData.data;
+        return response.data;
       } else {
-        throw new Error(apiData.message || 'Failed to fetch employee payroll');
+        throw new Error(response.message || 'Failed to fetch employee payroll');
       }
     } catch (err) {
       console.error('Fetch employee payroll by admin error:', err);
@@ -396,17 +401,16 @@ export const usePayroll = () => {
       };
 
       const response = await payrollService.getAllEmployeesPayroll(queryParams);
-      const apiData = response.data || response;
 
-      if (apiData.success) {
-        setPayrollRecords(apiData.data.records || []);
+      if (response.success) {
+        setPayrollRecords(response.data.records || []);
         setPagination(prev => ({
           ...prev,
-          ...apiData.data.pagination
+          ...response.data.pagination
         }));
-        return apiData.data;
+        return response.data;
       } else {
-        throw new Error(apiData.message || 'Failed to fetch all employees payroll');
+        throw new Error(response.message || 'Failed to fetch all employees payroll');
       }
     } catch (err) {
       console.error('Fetch all employees payroll error:', err);
@@ -448,6 +452,37 @@ export const usePayroll = () => {
       // Don't auto-fetch salary structure for admin as they don't have one
     }
   }, [user, hasPayrollAccess, isEmployee, isAdmin, isManager, fetchEmployeePayslips, fetchSalaryStructure, fetchPayrollRecords]);
+
+  // Refetch data when filters change (for admins)
+  useEffect(() => {
+    if (!user || !isAdmin || !hasPayrollAccess) return;
+
+    // Always refetch when filters change (year is required, month can be null for "all months")
+    if (filters.year) {
+      fetchPayrollRecords();
+    }
+  }, [filters, isAdmin, hasPayrollAccess, user, fetchPayrollRecords]);
+
+  // Refetch payslips when filters change (for employees/managers)
+  useEffect(() => {
+    if (!user || !hasPayrollAccess || isAdmin) return;
+
+    // Always refetch when filters change (year is required, month can be null for "all months")
+    if (filters.year) {
+      fetchEmployeePayslips();
+    }
+  }, [filters.year, filters.month, isAdmin, hasPayrollAccess, user, fetchEmployeePayslips]);
+
+  // Refetch data when pagination changes
+  useEffect(() => {
+    if (!user || !hasPayrollAccess) return;
+
+    if (isAdmin) {
+      fetchPayrollRecords();
+    } else {
+      fetchEmployeePayslips();
+    }
+  }, [pagination.page, pagination.limit, user, hasPayrollAccess, isAdmin, fetchPayrollRecords, fetchEmployeePayslips]);
 
   return {
     // State

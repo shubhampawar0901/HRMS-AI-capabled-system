@@ -146,6 +146,10 @@ const PayrollManagement = () => {
   };
 
   const handleFilterChange = (key, value) => {
+    console.log('🔍 Filter change:', key, '=', value);
+    if (key === 'month' && value === null) {
+      console.log('🔍 "All Months" selected');
+    }
     updateFilters({ [key]: value });
   };
 
@@ -212,7 +216,7 @@ const PayrollManagement = () => {
       )}
       {/* Summary Stats */}
       {summaryStats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card className="group hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] bg-gradient-to-br from-blue-50/50 to-blue-100/50 border-blue-200/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-blue-700 group-hover:text-blue-800 transition-colors duration-200">Total Records</CardTitle>
@@ -245,31 +249,20 @@ const PayrollManagement = () => {
               <p className="text-xs text-emerald-600/80 mt-1">Ready for payment</p>
             </CardContent>
           </Card>
-
-          <Card className="group hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] bg-gradient-to-br from-violet-50/50 to-violet-100/50 border-violet-200/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-violet-700 group-hover:text-violet-800 transition-colors duration-200">Total Amount</CardTitle>
-              <DollarSign className="h-4 w-4 text-violet-600 group-hover:text-violet-700 transition-colors duration-200" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-violet-900 group-hover:text-violet-950 transition-colors duration-200">{formatCurrency(summaryStats.totalAmount)}</div>
-              <p className="text-xs text-violet-600/80 mt-1">Net payroll</p>
-            </CardContent>
-          </Card>
         </div>
       )}
 
       {/* Actions and Filters */}
       <Card className="border-gray-200/60 shadow-sm hover:shadow-md transition-all duration-300 ease-in-out backdrop-blur-sm">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
               <Settings className="h-5 w-5 text-gray-600" />
               Payroll Management
             </CardTitle>
             <Button
               onClick={() => setShowGenerateForm(!showGenerateForm)}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] border-0"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] border-0 w-full sm:w-auto"
             >
               <Plus className="h-4 w-4 mr-2" />
               Generate Payroll
@@ -284,36 +277,56 @@ const PayrollManagement = () => {
                 <Plus className="h-4 w-4" />
                 Generate New Payroll
               </h4>
-              <form onSubmit={handleGeneratePayroll} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <form onSubmit={handleGeneratePayroll} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Select
                   value={generateForm.employeeId?.toString() || ''}
                   onValueChange={(value) => setGenerateForm(prev => ({ ...prev, employeeId: parseInt(value) }))}
                   disabled={loadingEmployees}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder={loadingEmployees ? "Loading employees..." : "Select Employee"} />
+                  <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                    <SelectValue placeholder={loadingEmployees ? "Loading employees..." : "Choose an employee for payroll generation..."} />
                   </SelectTrigger>
                   <SelectContent>
                     {loadingEmployees ? (
-                      <SelectItem value="loading" disabled>Loading employees...</SelectItem>
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                          Loading employees...
+                        </div>
+                      </SelectItem>
                     ) : employees.length > 0 ? (
                       employees.map(emp => (
                         <SelectItem key={emp.id} value={emp.id.toString()}>
-                          {emp.name} ({emp.employeeCode})
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-medium text-blue-600">
+                                {emp.name?.charAt(0)?.toUpperCase() || 'E'}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="font-medium">{emp.name}</div>
+                              <div className="text-xs text-gray-500">Code: {emp.employeeCode}</div>
+                            </div>
+                          </div>
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-employees" disabled>No employees found</SelectItem>
+                      <SelectItem value="no-employees" disabled>
+                        <div className="flex items-center gap-2 text-gray-500">
+                          <span>⚠️</span>
+                          No employees found
+                        </div>
+                      </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
 
-                <Select 
-                  value={generateForm.month.toString()} 
+                <Select
+                  value={generateForm.month.toString()}
                   onValueChange={(value) => setGenerateForm(prev => ({ ...prev, month: parseInt(value) }))}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Month" />
+                  <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                    <SelectValue placeholder="Choose month..." />
                   </SelectTrigger>
                   <SelectContent>
                     {getMonthOptions().map(month => (
@@ -324,12 +337,12 @@ const PayrollManagement = () => {
                   </SelectContent>
                 </Select>
 
-                <Select 
-                  value={generateForm.year.toString()} 
+                <Select
+                  value={generateForm.year.toString()}
                   onValueChange={(value) => setGenerateForm(prev => ({ ...prev, year: parseInt(value) }))}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Year" />
+                  <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                    <SelectValue placeholder="Choose year..." />
                   </SelectTrigger>
                   <SelectContent>
                     {getYearOptions().map(year => (
@@ -353,7 +366,7 @@ const PayrollManagement = () => {
           )}
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -365,8 +378,8 @@ const PayrollManagement = () => {
             </div>
 
             <Select value={filters.year?.toString()} onValueChange={(value) => handleFilterChange('year', parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Year" />
+              <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                <SelectValue placeholder="Filter by year..." />
               </SelectTrigger>
               <SelectContent>
                 {getYearOptions().map(year => (
@@ -378,8 +391,8 @@ const PayrollManagement = () => {
             </Select>
 
             <Select value={filters.month?.toString() || 'all'} onValueChange={(value) => handleFilterChange('month', value === 'all' ? null : parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Month" />
+              <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                <SelectValue placeholder="Filter by month..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Months</SelectItem>
@@ -392,8 +405,8 @@ const PayrollManagement = () => {
             </Select>
 
             <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value === 'all' ? null : value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Status" />
+              <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
+                <SelectValue placeholder="Filter by status..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
@@ -409,10 +422,12 @@ const PayrollManagement = () => {
       {/* Payroll Records Table */}
       <Card className="border-gray-200/60 shadow-sm hover:shadow-md transition-all duration-300 ease-in-out backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-gray-600" />
-            Payroll Records
-            <span className="text-sm font-normal text-gray-500 ml-2">
+          <CardTitle className="text-lg font-semibold text-gray-800 flex flex-col sm:flex-row sm:items-center gap-2">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-gray-600" />
+              Payroll Records
+            </div>
+            <span className="text-sm font-normal text-gray-500">
               ({filteredData.length} {filteredData.length === 1 ? 'record' : 'records'})
             </span>
           </CardTitle>
@@ -426,16 +441,16 @@ const PayrollManagement = () => {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-semibold">Employee</TableHead>
-                    <TableHead className="font-semibold">Period</TableHead>
-                    <TableHead className="font-semibold">Gross Salary</TableHead>
-                    <TableHead className="font-semibold">Net Salary</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="font-semibold text-center">Actions</TableHead>
+                    <TableHead className="font-semibold min-w-[150px]">Employee</TableHead>
+                    <TableHead className="font-semibold min-w-[120px]">Period</TableHead>
+                    <TableHead className="font-semibold min-w-[120px]">Gross Salary</TableHead>
+                    <TableHead className="font-semibold min-w-[120px]">Net Salary</TableHead>
+                    <TableHead className="font-semibold min-w-[100px]">Status</TableHead>
+                    <TableHead className="font-semibold text-center min-w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
