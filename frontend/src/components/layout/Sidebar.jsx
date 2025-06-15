@@ -148,7 +148,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
         },
         {
           name: 'Smart Reports',
-          href: '/ai-features/smart-reports',
+          href: getSmartReportsHref(user?.role),
           icon: BarChart3,
           roles: ['admin', 'manager'],
           description: 'AI-powered intelligent reporting'

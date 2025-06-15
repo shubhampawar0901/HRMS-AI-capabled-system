@@ -35,19 +35,15 @@ const ManagerSmartReports = () => {
    * Handle successful report generation
    */
   const handleReportGenerated = (report) => {
-    // Add to generating reports list for status polling
-    if (report.status === 'generating') {
-      setGeneratingReports(prev => [...prev, report.id]);
-    }
-    
-    // Refresh the reports list
-    setRefreshTrigger(prev => prev + 1);
-    
-    // Switch to list view to see the new report
-    setActiveTab('list');
-    
-    // Show success notification
     console.log('Report generated successfully:', report);
+
+    // Since we're using synchronous generation, the report should be completed
+    // Set the generated report as selected and view it immediately
+    setSelectedReport(report);
+    setActiveTab('view');
+
+    // Refresh the reports list in background
+    setRefreshTrigger(prev => prev + 1);
   };
 
   /**

@@ -69,6 +69,64 @@ class SmartReportsController {
   }
 
   // ==========================================
+  // SYNCHRONOUS REPORT GENERATION
+  // ==========================================
+  static async generateSmartReportSync(req, res) {
+    try {
+      const { reportType, targetId, reportName, dateRange } = req.body;
+      const { role, userId, employeeId } = req.user;
+
+      // Validate required fields
+      if (!reportType || !targetId) {
+        return sendError(res, 'Report type and target ID are required', 400);
+      }
+
+      // Check permissions
+      if (role !== 'admin' && role !== 'manager') {
+        return sendError(res, 'Access denied', 403);
+      }
+
+      // For employee reports, check if manager can access this employee
+      if (reportType === 'employee' && role === 'manager') {
+        const employee = await Employee.findById(targetId);
+        if (!employee) {
+          return sendError(res, 'Employee not found.', 404);
+        }
+        if (employee.managerId !== employeeId) {
+          return sendError(res, 'Managers can only generate reports for their team members.', 403);
+        }
+      }
+
+      // Generate report synchronously
+      const aiService = new AIService();
+      const reportData = await aiService.generateSmartReport(reportType, {
+        targetId,
+        dateRange,
+        reportName,
+        userId
+      });
+
+      // Create completed report in database
+      const completedReport = await AISmartReport.create({
+        reportType,
+        targetId,
+        reportName: reportData.reportName,
+        aiSummary: reportData.aiSummary,
+        insights: reportData.insights,
+        recommendations: reportData.recommendations,
+        dataSnapshot: reportData.dataSnapshot,
+        generatedBy: userId,
+        status: 'completed'
+      });
+
+      return sendCreated(res, completedReport, 'Smart report generated successfully');
+    } catch (error) {
+      console.error('Generate smart report sync error:', error);
+      return sendError(res, 'Failed to generate smart report', 500);
+    }
+  }
+
+  // ==========================================
   // ASYNC REPORT GENERATION
   // ==========================================
   static async generateReportAsync(reportId, reportType, parameters) {

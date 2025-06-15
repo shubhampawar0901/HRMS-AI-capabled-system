@@ -53,6 +53,9 @@ import ChatbotPage from '@/pages/ChatbotPage';
 // Smart Reports Pages (moved to AI Features)
 import SmartReportsPage from '@/pages/ai-features/SmartReportsPage';
 
+// Admin Smart Reports
+import AdminSmartReports from '@/pages/admin/SmartReports';
+
 
 
 const AppRoutes = () => {
@@ -195,7 +198,27 @@ const AppRoutes = () => {
 
 
 
-        {/* Smart Reports - Moved to AI Features */}
+        {/* Smart Reports - Admin */}
+        <Route
+          path="admin/smart-reports"
+          element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AdminSmartReports />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Smart Reports - Manager */}
+        <Route
+          path="manager/smart-reports"
+          element={
+            <ProtectedRoute requiredRoles={['manager']}>
+              <AdminSmartReports />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Smart Reports - Analytics Dashboard (Legacy) */}
         <Route
           path="ai-features/smart-reports"
           element={
