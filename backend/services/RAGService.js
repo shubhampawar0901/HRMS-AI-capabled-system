@@ -3,30 +3,53 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 class RAGService {
   constructor() {
-    this.pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY,
-    });
-    
-    this.indexName = process.env.PINECONE_INDEX_NAME;
-    this.index = null;
-    
-    // Initialize Google AI for embeddings
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    this.embeddingModel = this.genAI.getGenerativeModel({ 
-      model: 'text-embedding-004' 
-    });
-    
-    this.initializeIndex();
+    // Check if Pinecone is configured
+    this.isPineconeConfigured = !!(process.env.PINECONE_API_KEY && process.env.PINECONE_INDEX_NAME);
+
+    if (this.isPineconeConfigured) {
+      try {
+        this.pinecone = new Pinecone({
+          apiKey: process.env.PINECONE_API_KEY,
+        });
+
+        this.indexName = process.env.PINECONE_INDEX_NAME;
+        this.index = null;
+
+        // Initialize Google AI for embeddings
+        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        this.embeddingModel = this.genAI.getGenerativeModel({
+          model: 'text-embedding-004'
+        });
+
+        this.initializeIndex();
+      } catch (error) {
+        console.warn('⚠️ Pinecone initialization failed, RAG features will be disabled:', error.message);
+        this.isPineconeConfigured = false;
+      }
+    } else {
+      console.warn('⚠️ Pinecone not configured, RAG features will be disabled. Add PINECONE_API_KEY and PINECONE_INDEX_NAME to .env file.');
+    }
   }
 
   async initializeIndex() {
+    if (!this.isPineconeConfigured) {
+      console.log('⚠️ Skipping Pinecone index initialization - not configured');
+      return;
+    }
+
     try {
       this.index = this.pinecone.index(this.indexName);
       console.log(`✅ Connected to Pinecone index: ${this.indexName}`);
     } catch (error) {
       console.error('❌ Failed to connect to Pinecone:', error);
-      throw new Error('Pinecone initialization failed');
+      this.isPineconeConfigured = false;
+      console.warn('⚠️ Disabling RAG features due to Pinecone connection failure');
     }
+  }
+
+  // Check if RAG service is available
+  isAvailable() {
+    return this.isPineconeConfigured;
   }
 
   // ==========================================
@@ -124,13 +147,22 @@ class RAGService {
 
   async searchSimilarChunks(query, options = {}) {
     try {
+      if (!this.isPineconeConfigured) {
+        console.warn('⚠️ RAG search not available - Pinecone not configured');
+        return [];
+      }
+
       if (!this.index) {
         await this.initializeIndex();
       }
 
+      if (!this.isPineconeConfigured) {
+        return [];
+      }
+
       // Generate embedding for the query
       const queryEmbedding = await this.generateEmbedding(query);
-      
+
       // Search parameters
       const searchParams = {
         vector: queryEmbedding,
@@ -146,7 +178,7 @@ class RAGService {
 
       // Perform the search
       const searchResults = await this.index.query(searchParams);
-      
+
       // Format results
       const formattedResults = searchResults.matches.map(match => ({
         id: match.id,
@@ -163,7 +195,8 @@ class RAGService {
       return formattedResults;
     } catch (error) {
       console.error('Error searching similar chunks:', error);
-      throw new Error('Failed to search similar chunks');
+      console.warn('⚠️ Falling back to empty results due to RAG search error');
+      return [];
     }
   }
 

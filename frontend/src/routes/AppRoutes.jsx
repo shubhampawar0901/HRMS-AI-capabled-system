@@ -43,13 +43,13 @@ import GoalsPage from '@/pages/performance/GoalsPage';
 // AI Features Pages
 import AIFeaturesPage from '@/pages/ai-features/AIFeaturesPage';
 import AttritionPage from '@/pages/ai-features/AttritionPage';
+import AnomalyDetectionPage from '@/pages/ai-features/AnomalyDetectionPage';
 
 // Chatbot Page
 import ChatbotPage from '@/pages/ChatbotPage';
 
-// Smart Reports Pages
-import AdminSmartReports from '@/pages/admin/SmartReports';
-import ManagerSmartReports from '@/pages/manager/SmartReports';
+// Smart Reports Pages (moved to AI Features)
+import SmartReportsPage from '@/pages/ai-features/SmartReportsPage';
 
 
 
@@ -150,25 +150,29 @@ const AppRoutes = () => {
         <Route path="ai-features" element={<AIFeaturesPage />} />
         <Route path="ai-features/attrition" element={<AttritionPage />} />
 
-        {/* Smart Reports - Role-based Routes */}
+        {/* AI Features - Anomaly Detection (Admin/Manager Only) */}
         <Route
-          path="admin/smart-reports"
+          path="ai-features/anomaly-detection"
           element={
-            <ProtectedRoute requiredRoles={['admin']}>
-              <AdminSmartReports />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="manager/smart-reports"
-          element={
-            <ProtectedRoute requiredRoles={['manager']}>
-              <ManagerSmartReports />
+            <ProtectedRoute requiredRoles={['admin', 'manager']}>
+              <AnomalyDetectionPage />
             </ProtectedRoute>
           }
         />
 
+        {/* Future AI Features Routes - Extensible Structure */}
+        
+     
 
+        {/* Smart Reports - Moved to AI Features */}
+        <Route
+          path="ai-features/smart-reports"
+          element={
+            <ProtectedRoute requiredRoles={['admin', 'manager']}>
+              <SmartReportsPage />
+            </ProtectedRoute>
+          }
+        />
 
       </Route>
 

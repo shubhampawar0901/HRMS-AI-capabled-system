@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { RotateCcw } from "lucide-react";
-import ReactMarkdown from 'react-markdown';
+// import ReactMarkdown from 'react-markdown'; // Temporarily commented out
 import AnimatedAvatar from './AnimatedAvatar';
 
 const MessageBubble = ({ message, onRetry }) => {
@@ -44,19 +44,10 @@ const MessageBubble = ({ message, onRetry }) => {
             <span className="font-medium">{message.content}</span>
           ) : (
             <div className="prose prose-sm max-w-none">
-              <ReactMarkdown
-                components={{
-                  p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed text-gray-800">{children}</p>,
-                  strong: ({ children }) => <strong className="font-semibold text-blue-700">{children}</strong>,
-                  em: ({ children }) => <em className="italic text-purple-600">{children}</em>,
-                  ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1 text-gray-700">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-700">{children}</ol>,
-                  li: ({ children }) => <li className="mb-1">{children}</li>,
-                  code: ({ children }) => <code className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-mono">{children}</code>,
-                }}
-              >
+              {/* Temporarily using simple text instead of ReactMarkdown */}
+              <p className="mb-2 last:mb-0 leading-relaxed text-gray-800">
                 {message.content}
-              </ReactMarkdown>
+              </p>
             </div>
           )}
         </div>

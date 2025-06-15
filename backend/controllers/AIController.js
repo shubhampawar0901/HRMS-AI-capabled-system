@@ -184,6 +184,69 @@ class AIController {
     }
   }
 
+  static async getAttendanceAnomalyStats(req, res) {
+    try {
+      const { period = 'month', employeeId } = req.query;
+      const { role } = req.user;
+
+      console.log(`📊 Getting anomaly stats for ${role} user, employeeId: ${employeeId}, period: ${period}`);
+
+      // For admin users, get system-wide statistics
+      // For managers, get their team statistics (if implemented)
+      // employeeId parameter is optional for filtering
+
+      // Get actual statistics from database
+      const AIAttendanceAnomaly = require('../models/AIAttendanceAnomaly');
+
+      // Calculate date range based on period
+      const now = new Date();
+      let startDate;
+
+      switch (period) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'quarter':
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        case 'year':
+          startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+          break;
+        default: // month
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+
+      // Get anomaly counts (mock data for now - replace with actual queries)
+      const stats = {
+        totalActive: 0,
+        newThisWeek: 0,
+        resolvedThisMonth: 0,
+        highPriority: 0,
+        trends: {
+          weeklyChange: 0,
+          monthlyChange: 0,
+          severityDistribution: {
+            high: 0,
+            medium: 0,
+            low: 0
+          }
+        },
+        period: period,
+        dateRange: {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: now.toISOString().split('T')[0]
+        }
+      };
+
+      console.log(`✅ Anomaly stats calculated for period: ${period}`);
+
+      return sendSuccess(res, stats, 'Attendance anomaly statistics retrieved');
+    } catch (error) {
+      console.error('Get anomaly stats error:', error);
+      return sendError(res, error.message, 500);
+    }
+  }
+
   static async detectAnomalies(req, res) {
     try {
       const { employeeId, dateRange } = req.body;

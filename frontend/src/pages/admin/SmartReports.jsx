@@ -5,7 +5,7 @@ import {
   ChartBarIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import ReportGenerationForm from '@/components/smart-reports/ReportGenerationForm';
 import ReportsList from '@/components/smart-reports/ReportsList';
 import ReportViewer from '@/components/smart-reports/ReportViewer';
@@ -17,7 +17,7 @@ import { smartReportsService } from '@/services/smartReportsService';
  * Full access to all smart reports functionality for administrators
  */
 const AdminSmartReports = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [activeTab, setActiveTab] = useState('list');
   const [selectedReport, setSelectedReport] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);

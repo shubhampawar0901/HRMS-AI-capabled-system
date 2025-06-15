@@ -303,12 +303,54 @@ class AIService {
   
   async detectAttendanceAnomalies(employeeId, dateRange) {
     try {
+      let anomalies = [];
+
+      // If employeeId is null (admin analyzing all employees), get all employees
+      if (employeeId === null || employeeId === undefined) {
+        console.log('🔍 Admin user - analyzing all employees for anomalies');
+
+        // Get all active employees
+        const Employee = require('../models/Employee');
+        const allEmployees = await Employee.findAll({ status: 'active' });
+
+        console.log(`📊 Found ${allEmployees.length} active employees to analyze`);
+
+        // Analyze each employee
+        for (const employee of allEmployees) {
+          const employeeAnomalies = await this.detectEmployeeAnomalies(employee.id, dateRange);
+          anomalies = anomalies.concat(employeeAnomalies);
+        }
+
+        console.log(`🎯 Total anomalies detected across all employees: ${anomalies.length}`);
+      } else {
+        // Analyze specific employee
+        console.log(`🔍 Analyzing specific employee: ${employeeId}`);
+        anomalies = await this.detectEmployeeAnomalies(employeeId, dateRange);
+      }
+
+      return anomalies;
+    } catch (error) {
+      console.error('Anomaly detection error:', error);
+      throw new Error('Failed to detect anomalies');
+    }
+  }
+
+  async detectEmployeeAnomalies(employeeId, dateRange) {
+    try {
       const attendanceData = await Attendance.findByEmployee(employeeId, {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate
       });
 
+      console.log(`📊 Employee ${employeeId}: Found ${attendanceData.length} attendance records`);
+
       const anomalies = [];
+
+      // Skip analysis if no attendance data
+      if (attendanceData.length === 0) {
+        console.log(`⚠️ Employee ${employeeId}: No attendance data found for the period`);
+        return anomalies;
+      }
 
       // Detect patterns
       const latePattern = this.detectLatePattern(attendanceData);
@@ -339,10 +381,23 @@ class AIService {
         });
       }
 
+      if (absencePattern.isAnomaly) {
+        anomalies.push({
+          employeeId,
+          type: 'absence_pattern',
+          date: new Date(),
+          data: absencePattern.data,
+          severity: absencePattern.severity,
+          description: absencePattern.description,
+          recommendations: absencePattern.recommendations
+        });
+      }
+
+      console.log(`🎯 Employee ${employeeId}: Detected ${anomalies.length} anomalies`);
       return anomalies;
     } catch (error) {
-      console.error('Anomaly detection error:', error);
-      throw new Error('Failed to detect anomalies');
+      console.error(`Anomaly detection error for employee ${employeeId}:`, error);
+      return []; // Return empty array instead of throwing to continue with other employees
     }
   }
 

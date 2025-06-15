@@ -123,7 +123,7 @@ const LeaveApprovals = () => {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Applications</h3>
-              <p className="text-gray-600 mb-4">{error}</p>
+              <p className="text-gray-600 mb-4">{typeof error === 'string' ? error : error?.message || 'An unexpected error occurred'}</p>
               <Button 
                 onClick={() => {
                   clearError();

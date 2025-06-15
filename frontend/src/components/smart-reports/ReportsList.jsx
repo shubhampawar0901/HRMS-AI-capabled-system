@@ -247,7 +247,7 @@ const ReportsList = ({
           </svg>
         </div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Reports</h3>
-        <p className="text-sm text-gray-500 mb-4">{error}</p>
+        <p className="text-sm text-gray-500 mb-4">{typeof error === 'string' ? error : error?.message || 'An unexpected error occurred'}</p>
         <button
           onClick={refreshReports}
           className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
