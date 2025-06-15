@@ -44,7 +44,7 @@ const AdminLeaveManagement = () => {
   const {
     employees,
     isLoading: employeesLoading,
-    loadEmployees
+    fetchEmployees
   } = useEmployees();
 
   const [filters, setFilters] = useState({
@@ -64,9 +64,9 @@ const AdminLeaveManagement = () => {
   // Load data on component mount
   useEffect(() => {
     loadLeaveTypes();
-    loadEmployees();
+    fetchEmployees();
     loadTeamApplications(filters);
-  }, [loadLeaveTypes, loadEmployees, loadTeamApplications]);
+  }, [loadLeaveTypes, fetchEmployees, loadTeamApplications]);
 
   // Reload data when filters change
   useEffect(() => {
