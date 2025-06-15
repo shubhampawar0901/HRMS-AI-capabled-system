@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,7 +10,11 @@ import {
   Brain,
   Sparkles,
   MessageCircle,
-  X
+  X,
+  ChevronDown,
+  ChevronRight,
+  AlertTriangle,
+  BarChart3
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -18,6 +22,29 @@ import { cn } from '@/lib/utils';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user } = useAuthContext();
+
+  // State for expandable menu items (persisted in localStorage)
+  const [expandedMenus, setExpandedMenus] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sidebar-expanded-menus');
+      return saved ? JSON.parse(saved) : { aiFeatures: false };
+    } catch {
+      return { aiFeatures: false };
+    }
+  });
+
+  // Save expanded state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebar-expanded-menus', JSON.stringify(expandedMenus));
+  }, [expandedMenus]);
+
+  // Toggle menu expansion
+  const toggleMenu = (menuKey) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [menuKey]: !prev[menuKey]
+    }));
+  };
 
   /**
    * Get Smart Reports href based on user role
@@ -70,16 +97,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: Target,
       roles: ['admin', 'manager', 'employee']
     },
-    {
-      name: 'Smart Reports',
-      href: getSmartReportsHref(user?.role),
-      icon: Sparkles,
-      roles: ['admin', 'manager'],
-      badge: 'AI',
-      description: user?.role === 'admin'
-        ? 'AI-powered performance analytics'
-        : 'Team performance insights'
-    },
+
     {
       name: 'AI Chatbot',
       href: '/ai-chatbot',
@@ -90,9 +108,27 @@ const Sidebar = ({ isOpen, onClose }) => {
     },
     {
       name: 'AI Features',
-      href: '/ai-features',
       icon: Brain,
-      roles: ['admin', 'manager', 'employee']
+      roles: ['admin', 'manager'],
+      badge: 'AI',
+      expandable: true,
+      menuKey: 'aiFeatures',
+      subItems: [
+        {
+          name: 'Anomaly Detection',
+          href: '/ai-features/anomaly-detection',
+          icon: AlertTriangle,
+          roles: ['admin', 'manager'],
+          description: 'AI-powered attendance anomaly detection'
+        },
+        {
+          name: 'Smart Reports',
+          href: '/ai-features/smart-reports',
+          icon: BarChart3,
+          roles: ['admin', 'manager'],
+          description: 'AI-powered intelligent reporting'
+        }
+      ]
     }
   ];
 
@@ -134,6 +170,91 @@ const Sidebar = ({ isOpen, onClose }) => {
           <nav className="flex-1 p-4 space-y-2">
             {filteredNavigation.map((item) => {
               const Icon = item.icon;
+
+              // Handle expandable menu items
+              if (item.expandable) {
+                const isExpanded = expandedMenus[item.menuKey];
+                const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
+
+                return (
+                  <div key={item.name}>
+                    {/* Main expandable menu item */}
+                    <button
+                      onClick={() => {
+                        if (isOpen) {
+                          toggleMenu(item.menuKey);
+                        }
+                      }}
+                      className={cn(
+                        "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:bg-accent hover:text-accent-foreground group",
+                        "text-muted-foreground hover:text-foreground",
+                        !isOpen && "lg:justify-center"
+                      )}
+                    >
+                      <Icon className={cn(
+                        "h-5 w-5 flex-shrink-0",
+                        isOpen ? "mr-3" : "lg:mr-0"
+                      )} />
+                      {isOpen && (
+                        <div className="flex items-center justify-between flex-1 min-w-0">
+                          <span className="truncate">{item.name}</span>
+                          <div className="flex items-center space-x-2">
+                            {item.badge && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                                {item.badge}
+                              </span>
+                            )}
+                            <ChevronIcon className="h-4 w-4 transition-transform duration-300" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tooltip for collapsed sidebar */}
+                      {!isOpen && (
+                        <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 hidden lg:block">
+                          {item.name}
+                        </div>
+                      )}
+                    </button>
+
+                    {/* Submenu items */}
+                    {isOpen && isExpanded && item.subItems && (
+                      <div className="ml-6 mt-1 space-y-1">
+                        {item.subItems
+                          .filter(subItem => subItem.roles.includes(user?.role || 'employee'))
+                          .map((subItem) => {
+                            const SubIcon = subItem.icon;
+                            return (
+                              <NavLink
+                                key={subItem.name}
+                                to={subItem.href}
+                                onClick={() => {
+                                  // Close sidebar on mobile when navigating
+                                  if (window.innerWidth < 1024) {
+                                    onClose();
+                                  }
+                                }}
+                                className={({ isActive }) =>
+                                  cn(
+                                    "flex items-center px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground group",
+                                    isActive
+                                      ? "bg-primary text-primary-foreground"
+                                      : "text-muted-foreground hover:text-foreground"
+                                  )
+                                }
+                              >
+                                <SubIcon className="h-4 w-4 flex-shrink-0 mr-2" />
+                                <span className="truncate">{subItem.name}</span>
+                              </NavLink>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // Handle regular menu items
               return (
                 <NavLink
                   key={item.name}
@@ -147,8 +268,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                   className={({ isActive }) =>
                     cn(
                       "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground group",
-                      isActive 
-                        ? "bg-primary text-primary-foreground" 
+                      isActive
+                        ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground",
                       !isOpen && "lg:justify-center"
                     )
@@ -168,7 +289,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       )}
                     </div>
                   )}
-                  
+
                   {/* Tooltip for collapsed sidebar */}
                   {!isOpen && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 hidden lg:block">

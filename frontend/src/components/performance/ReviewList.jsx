@@ -122,7 +122,7 @@ const ReviewList = () => {
         <CardContent className="pt-6">
           <div className="text-center">
             <div className="text-red-600 mb-2">⚠️ Error Loading Reviews</div>
-            <p className="text-red-700">{error}</p>
+            <p className="text-red-700">{typeof error === 'string' ? error : error?.message || 'An unexpected error occurred'}</p>
           </div>
         </CardContent>
       </Card>
