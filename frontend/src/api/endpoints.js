@@ -144,6 +144,7 @@ export const API_ENDPOINTS = {
 
     // Attendance Anomalies (Admin/Manager)
     ATTENDANCE_ANOMALIES: '/ai/attendance-anomalies',       // GET - Get attendance anomalies
+    DETECT_ANOMALIES: '/ai/detect-anomalies',               // POST - Detect new anomalies
 
     // AI Chatbot (Employee - Limited Access)
     CHATBOT_QUERY: '/ai/chatbot/query',      // POST - AI chatbot query

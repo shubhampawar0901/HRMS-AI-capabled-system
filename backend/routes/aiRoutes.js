@@ -124,11 +124,25 @@ router.get('/attendance-anomalies',
   AIController.getAttendanceAnomalies
 );
 
+router.get('/attendance-anomalies/stats',
+  authenticateToken,
+  authorize('admin', 'manager'),
+  [
+    query('period').optional().isIn(['week', 'month', 'quarter', 'year']).withMessage('Invalid period'),
+    query('employeeId').optional().isInt().withMessage('Employee ID must be valid')
+  ],
+  validateRequest,
+  AIController.getAttendanceAnomalyStats
+);
+
 router.post('/detect-anomalies',
   authenticateToken,
   authorize('admin', 'manager'),
   [
-    body('employeeId').optional().isInt().withMessage('Employee ID must be valid'),
+    body('employeeId').optional().custom((value) => {
+      if (value === null || value === undefined) return true;
+      return Number.isInteger(Number(value)) && Number(value) > 0;
+    }).withMessage('Employee ID must be valid'),
     body('dateRange').isObject().withMessage('Date range is required'),
     body('dateRange.startDate').isISO8601().withMessage('Start date must be valid'),
     body('dateRange.endDate').isISO8601().withMessage('End date must be valid')

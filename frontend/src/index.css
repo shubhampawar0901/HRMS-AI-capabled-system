@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* AI Features Premium Theme */
+@import './styles/ai-theme.css';
+
 /* Custom animation delays for chatbot */
 @layer utilities {
   .animation-delay-200 {
