@@ -170,11 +170,11 @@ const AppRoutes = () => {
           }
         />
 
-        {/* AI Features - Anomaly Detection (Admin/Manager Only) */}
+        {/* AI Features - Anomaly Detection (Admin Only) */}
         <Route
           path="ai-features/anomaly-detection"
           element={
-            <ProtectedRoute requiredRoles={['admin', 'manager']}>
+            <ProtectedRoute requiredRoles={['admin']}>
               <AnomalyDetectionPage />
             </ProtectedRoute>
           }

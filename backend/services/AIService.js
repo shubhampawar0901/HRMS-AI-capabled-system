@@ -443,53 +443,247 @@ class AIService {
         return anomalies;
       }
 
-      // Detect patterns
-      const latePattern = this.detectLatePattern(attendanceData);
-      const irregularHours = this.detectIrregularHours(attendanceData);
-      const absencePattern = this.detectAbsencePattern(attendanceData);
+      // Use AI-powered anomaly detection instead of hardcoded rules
+      const aiAnomalies = await this.detectAnomaliesWithAI(employeeId, attendanceData);
 
-      if (latePattern.isAnomaly) {
+      // Convert AI results to our format
+      for (const aiAnomaly of aiAnomalies) {
         anomalies.push({
           employeeId,
-          type: 'late_pattern',
+          type: aiAnomaly.type,
           date: new Date(),
-          data: latePattern.data,
-          severity: latePattern.severity,
-          description: latePattern.description,
-          recommendations: latePattern.recommendations
+          data: aiAnomaly.data,
+          severity: aiAnomaly.severity,
+          description: aiAnomaly.description,
+          recommendations: aiAnomaly.recommendations
         });
       }
 
-      if (irregularHours.isAnomaly) {
-        anomalies.push({
-          employeeId,
-          type: 'irregular_hours',
-          date: new Date(),
-          data: irregularHours.data,
-          severity: irregularHours.severity,
-          description: irregularHours.description,
-          recommendations: irregularHours.recommendations
-        });
-      }
-
-      if (absencePattern.isAnomaly) {
-        anomalies.push({
-          employeeId,
-          type: 'absence_pattern',
-          date: new Date(),
-          data: absencePattern.data,
-          severity: absencePattern.severity,
-          description: absencePattern.description,
-          recommendations: absencePattern.recommendations
-        });
-      }
-
-      console.log(`🎯 Employee ${employeeId}: Detected ${anomalies.length} anomalies`);
+      console.log(`🎯 Employee ${employeeId}: AI detected ${anomalies.length} anomalies`);
       return anomalies;
     } catch (error) {
       console.error(`Anomaly detection error for employee ${employeeId}:`, error);
-      return []; // Return empty array instead of throwing to continue with other employees
+
+      // Fallback to rule-based detection if AI fails
+      console.log(`🔄 Falling back to rule-based detection for employee ${employeeId}`);
+      const attendanceData = await Attendance.findByEmployee(employeeId, {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
+      });
+      return await this.detectEmployeeAnomaliesFallback(employeeId, attendanceData);
     }
+  }
+
+  async detectAnomaliesWithAI(employeeId, attendanceData) {
+    try {
+      // Prepare attendance data for AI analysis
+      const analysisData = {
+        employeeId,
+        totalRecords: attendanceData.length,
+        dateRange: {
+          start: attendanceData[0]?.date,
+          end: attendanceData[attendanceData.length - 1]?.date
+        },
+        patterns: {
+          statusDistribution: this.calculateStatusDistribution(attendanceData),
+          hoursAnalysis: this.calculateHoursAnalysis(attendanceData),
+          timePatterns: this.calculateTimePatterns(attendanceData),
+          weeklyTrends: this.calculateWeeklyTrends(attendanceData)
+        },
+        rawData: attendanceData.map(record => ({
+          date: record.date,
+          status: record.status,
+          checkInTime: record.checkInTime,
+          checkOutTime: record.checkOutTime,
+          totalHours: record.totalHours,
+          location: record.location
+        }))
+      };
+
+      // Create AI prompt for anomaly detection
+      const prompt = `
+        You are an advanced HR analytics AI specializing in attendance anomaly detection.
+        Analyze the following employee attendance data and identify any anomalous patterns that require attention.
+
+        Employee Attendance Data:
+        ${JSON.stringify(analysisData, null, 2)}
+
+        Instructions:
+        1. Look for patterns that deviate significantly from normal attendance behavior
+        2. Consider context like gradual changes vs sudden shifts
+        3. Identify different types of anomalies (late patterns, irregular hours, absence patterns, location anomalies)
+        4. Assess severity based on impact and frequency
+        5. Provide actionable recommendations
+
+        Return a JSON array of anomalies in this exact format:
+        [
+          {
+            "type": "late_pattern|irregular_hours|absence_pattern|location_anomaly|early_departure",
+            "severity": "low|medium|high",
+            "confidence": 0.0-1.0,
+            "description": "Clear description of the anomaly",
+            "data": {
+              "metric": "specific_value",
+              "threshold": "what_constitutes_normal",
+              "deviation": "how_much_it_deviates"
+            },
+            "recommendations": ["actionable_recommendation_1", "actionable_recommendation_2"]
+          }
+        ]
+
+        Only return anomalies with confidence > 0.7. If no significant anomalies found, return empty array [].
+      `;
+
+      console.log(`🤖 Sending attendance data to Gemini for AI analysis...`);
+
+      const result = await this.fastModel.generateContent(prompt);
+      const response = result.response;
+      const text = response.text();
+
+      console.log(`✅ Received AI analysis response`);
+
+      // Parse AI response
+      let aiAnomalies;
+      try {
+        // Clean the response text
+        const cleanedText = text.replace(/```json|```/g, '').trim();
+        aiAnomalies = JSON.parse(cleanedText);
+
+        if (!Array.isArray(aiAnomalies)) {
+          throw new Error('AI response is not an array');
+        }
+
+        console.log(`🎯 AI identified ${aiAnomalies.length} potential anomalies`);
+
+        // Filter by confidence threshold
+        const highConfidenceAnomalies = aiAnomalies.filter(anomaly =>
+          anomaly.confidence && anomaly.confidence > 0.7
+        );
+
+        console.log(`✅ ${highConfidenceAnomalies.length} high-confidence anomalies after filtering`);
+
+        return highConfidenceAnomalies;
+
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', parseError);
+        console.log('Raw AI response:', text);
+        throw new Error('Invalid AI response format');
+      }
+
+    } catch (error) {
+      console.error('AI anomaly detection failed:', error);
+      throw error;
+    }
+  }
+
+  // Helper methods for AI analysis
+  calculateStatusDistribution(attendanceData) {
+    const distribution = {};
+    attendanceData.forEach(record => {
+      distribution[record.status] = (distribution[record.status] || 0) + 1;
+    });
+    return distribution;
+  }
+
+  calculateHoursAnalysis(attendanceData) {
+    const hours = attendanceData.map(a => parseFloat(a.totalHours) || 0).filter(h => h > 0);
+    if (hours.length === 0) return { avgHours: 0, stdDev: 0, variance: 0 };
+
+    const avgHours = hours.reduce((sum, h) => sum + h, 0) / hours.length;
+    const variance = hours.reduce((sum, h) => sum + Math.pow(h - avgHours, 2), 0) / hours.length;
+    const stdDev = Math.sqrt(variance);
+
+    return { avgHours, stdDev, variance, minHours: Math.min(...hours), maxHours: Math.max(...hours) };
+  }
+
+  calculateTimePatterns(attendanceData) {
+    const checkInTimes = [];
+    const checkOutTimes = [];
+
+    attendanceData.forEach(record => {
+      if (record.checkInTime) {
+        const time = new Date(`1970-01-01T${record.checkInTime}`);
+        checkInTimes.push(time.getHours() + time.getMinutes() / 60);
+      }
+      if (record.checkOutTime) {
+        const time = new Date(`1970-01-01T${record.checkOutTime}`);
+        checkOutTimes.push(time.getHours() + time.getMinutes() / 60);
+      }
+    });
+
+    return {
+      avgCheckInTime: checkInTimes.length > 0 ? checkInTimes.reduce((sum, t) => sum + t, 0) / checkInTimes.length : 0,
+      avgCheckOutTime: checkOutTimes.length > 0 ? checkOutTimes.reduce((sum, t) => sum + t, 0) / checkOutTimes.length : 0,
+      checkInVariance: this.calculateVariance(checkInTimes),
+      checkOutVariance: this.calculateVariance(checkOutTimes)
+    };
+  }
+
+  calculateWeeklyTrends(attendanceData) {
+    const weeklyData = {};
+    attendanceData.forEach(record => {
+      const date = new Date(record.date);
+      const weekDay = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      if (!weeklyData[weekDay]) weeklyData[weekDay] = [];
+      weeklyData[weekDay].push(record);
+    });
+
+    return weeklyData;
+  }
+
+  calculateVariance(numbers) {
+    if (numbers.length === 0) return 0;
+    const avg = numbers.reduce((sum, n) => sum + n, 0) / numbers.length;
+    return numbers.reduce((sum, n) => sum + Math.pow(n - avg, 2), 0) / numbers.length;
+  }
+
+  // Fallback rule-based detection (original logic)
+  async detectEmployeeAnomaliesFallback(employeeId, attendanceData) {
+    const anomalies = [];
+
+    // Detect patterns using original rule-based logic
+    const latePattern = this.detectLatePattern(attendanceData);
+    const irregularHours = this.detectIrregularHours(attendanceData);
+    const absencePattern = this.detectAbsencePattern(attendanceData);
+
+    if (latePattern.isAnomaly) {
+      anomalies.push({
+        employeeId,
+        type: 'late_pattern',
+        date: new Date(),
+        data: latePattern.data,
+        severity: latePattern.severity,
+        description: latePattern.description,
+        recommendations: latePattern.recommendations
+      });
+    }
+
+    if (irregularHours.isAnomaly) {
+      anomalies.push({
+        employeeId,
+        type: 'irregular_hours',
+        date: new Date(),
+        data: irregularHours.data,
+        severity: irregularHours.severity,
+        description: irregularHours.description,
+        recommendations: irregularHours.recommendations
+      });
+    }
+
+    if (absencePattern.isAnomaly) {
+      anomalies.push({
+        employeeId,
+        type: 'absence_pattern',
+        date: new Date(),
+        data: absencePattern.data,
+        severity: absencePattern.severity,
+        description: absencePattern.description,
+        recommendations: absencePattern.recommendations
+      });
+    }
+
+    console.log(`🔄 Fallback detection found ${anomalies.length} anomalies for employee ${employeeId}`);
+    return anomalies;
   }
 
   // ==========================================
@@ -1319,7 +1513,19 @@ class AIService {
   }
 
   detectIrregularHours(attendanceData) {
-    const hours = attendanceData.map(a => a.totalHours || 0);
+    const hours = attendanceData.map(a => parseFloat(a.totalHours) || 0).filter(h => h > 0);
+
+    // Need at least 3 records to calculate meaningful variance
+    if (hours.length < 3) {
+      return {
+        isAnomaly: false,
+        data: { avgHours: 0, stdDev: 0, variance: 0 },
+        severity: 'low',
+        description: 'Insufficient data for irregular hours analysis',
+        recommendations: []
+      };
+    }
+
     const avgHours = hours.reduce((sum, h) => sum + h, 0) / hours.length;
     const variance = hours.reduce((sum, h) => sum + Math.pow(h - avgHours, 2), 0) / hours.length;
     const stdDev = Math.sqrt(variance);
