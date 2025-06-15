@@ -1,10 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+
 import { useAuth } from '@/hooks/useAuth';
 import { canAccessChatbot, getChatbotAccessDeniedMessage } from '@/utils/roleUtils';
 import ChatInterface from '@/components/chat/ChatInterface';
+import AnimatedAvatar from '@/components/chat/AnimatedAvatar';
 
 const ChatbotPage = () => {
   const { user } = useAuth();
@@ -28,29 +28,36 @@ const ChatbotPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-3 md:p-6 h-[calc(100vh-4rem)]">
-      <Card className="h-full flex flex-col">
-        <CardHeader className="pb-3 md:pb-4">
-          <CardTitle className="flex items-center gap-2 md:gap-3">
-            <Avatar className="w-8 h-8 md:w-10 md:h-10">
-              <AvatarImage src="/shubh-avatar.png" alt="Shubh" />
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                SH
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-lg md:text-xl font-semibold truncate">Shubh - Your HR Assistant</h1>
-              <p className="text-xs md:text-sm text-muted-foreground truncate">
-                Hello {user?.name || 'there'}, I'm here to help with your HR queries
-              </p>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <Separator />
-        <CardContent className="flex-1 p-0">
-          <ChatInterface />
-        </CardContent>
-      </Card>
+    <div className="h-[calc(100vh-8rem)] bg-gradient-to-br from-blue-50/40 via-white to-purple-50/40 overflow-hidden -m-6">
+      <div className="h-full p-3 md:p-6">
+        <Card className="h-full flex flex-col bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden">
+          {/* Fixed Header */}
+          <CardHeader className="pb-2 pt-3 bg-gradient-to-r from-blue-100/60 to-purple-100/60 border-b border-gray-200/50 shrink-0">
+            <CardTitle className="flex items-center gap-3 md:gap-4">
+              <AnimatedAvatar size="default" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-xl md:text-2xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
+                    Shubh
+                  </h1>
+                  <div className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full shadow-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="font-medium">Online</span>
+                  </div>
+                </div>
+                <p className="text-sm md:text-base text-gray-600 truncate">
+                  Your AI HR Assistant • Hello {user?.name || 'there'}! 👋
+                </p>
+              </div>
+            </CardTitle>
+          </CardHeader>
+
+          {/* Scrollable Chat Content */}
+          <CardContent className="flex-1 p-0 overflow-hidden">
+            <ChatInterface />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

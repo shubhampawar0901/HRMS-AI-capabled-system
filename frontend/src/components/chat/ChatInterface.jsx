@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+
 import WelcomeScreen from './WelcomeScreen';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
@@ -76,40 +76,41 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Message Area */}
+    <div className="h-full flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
+      {/* Scrollable Message Area */}
       <ScrollArea
-        className="flex-1 p-4"
+        className="flex-1 overflow-y-auto"
         role="log"
         aria-label="Chat conversation"
         aria-live="polite"
       >
-        {messages.length === 0 ? (
-          <WelcomeScreen onQuickAction={handleSendMessage} />
-        ) : (
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                onRetry={message.isError && message.retryMessage ? () => handleRetryMessage(message.retryMessage) : null}
-              />
-            ))}
-            {isTyping && <TypingIndicator />}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+        <div className="p-3 md:p-4">
+          {messages.length === 0 ? (
+            <WelcomeScreen onQuickAction={handleSendMessage} />
+          ) : (
+            <div className="space-y-3 md:space-y-4 max-w-4xl mx-auto">
+              {messages.map((message) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  onRetry={message.isError && message.retryMessage ? () => handleRetryMessage(message.retryMessage) : null}
+                />
+              ))}
+              {isTyping && <TypingIndicator />}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
       </ScrollArea>
 
-      {/* Separator */}
-      <Separator />
-
-      {/* Input Area */}
-      <div className="p-4">
-        <ChatInput 
-          onSendMessage={handleSendMessage} 
-          disabled={isTyping}
-        />
+      {/* Fixed Input Area at Bottom */}
+      <div className="border-t border-gray-200/50 bg-white/80 backdrop-blur-sm shrink-0">
+        <div className="max-w-4xl mx-auto">
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            disabled={isTyping}
+          />
+        </div>
       </div>
     </div>
   );

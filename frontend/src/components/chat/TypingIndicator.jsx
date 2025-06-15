@@ -1,20 +1,15 @@
 import React from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AnimatedAvatar from './AnimatedAvatar';
 
 const TypingIndicator = () => {
   return (
-    <div className="flex gap-2 md:gap-3 mb-4 animate-in fade-in duration-300">
-      {/* Bot Avatar */}
-      <Avatar className="w-6 h-6 md:w-8 md:h-8 shrink-0 mt-1">
-        <AvatarImage src="/shubh-avatar.png" alt="Shubh" />
-        <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-          SH
-        </AvatarFallback>
-      </Avatar>
+    <div className="flex gap-2 md:gap-3 mb-4 animate-in fade-in duration-500">
+      {/* Bot Avatar with typing animation */}
+      <AnimatedAvatar size="sm" className="shrink-0 mt-1" isTyping={true} />
 
       {/* Typing Dots Container */}
-      <div className="bg-muted rounded-lg px-3 py-2 md:px-4 md:py-2">
-        <div className="flex items-center gap-1">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl px-4 py-3 md:px-5 md:py-4 shadow-lg border border-gray-200/30">
+        <div className="flex items-center gap-2">
           <div className="typing-dot"></div>
           <div className="typing-dot"></div>
           <div className="typing-dot"></div>
@@ -24,11 +19,11 @@ const TypingIndicator = () => {
       {/* CSS for typing animation */}
       <style jsx>{`
         .typing-dot {
-          width: 6px;
-          height: 6px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
-          background-color: hsl(var(--muted-foreground));
-          opacity: 0.5;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          opacity: 0.7;
           animation: typing-bounce 1.4s infinite ease-in-out;
         }
 
@@ -47,18 +42,18 @@ const TypingIndicator = () => {
         @keyframes typing-bounce {
           0%, 80%, 100% {
             transform: scale(0.8);
-            opacity: 0.5;
+            opacity: 0.4;
           }
           40% {
-            transform: scale(1);
+            transform: scale(1.2);
             opacity: 1;
           }
         }
 
         @media (min-width: 768px) {
           .typing-dot {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
           }
         }
       `}</style>

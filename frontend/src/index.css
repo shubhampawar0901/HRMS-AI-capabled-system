@@ -4,6 +4,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom animation delays for chatbot */
+@layer utilities {
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+}
+
 @layer base {
   :root {
     /* ShadCN UI Base Colors */

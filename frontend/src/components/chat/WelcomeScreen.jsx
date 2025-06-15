@@ -1,129 +1,117 @@
 import React from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Calendar, 
-  Clock, 
-  FileText, 
-  Target, 
+import {
+  Calendar,
+  Clock,
+  FileText,
   DollarSign,
-  MessageCircle 
+  Target,
+  HelpCircle
 } from "lucide-react";
+import AnimatedAvatar from './AnimatedAvatar';
 
 const WelcomeScreen = ({ onQuickAction }) => {
   const quickActions = [
     {
-      text: "What is my leave balance?",
+      text: "What is my current leave balance?",
+      label: "Leave Balance",
       icon: Calendar,
-      color: "text-blue-600"
+      gradient: "from-blue-500 to-blue-600"
     },
     {
-      text: "Show my attendance record",
+      text: "Show my attendance summary",
+      label: "Attendance",
       icon: Clock,
-      color: "text-green-600"
+      gradient: "from-green-500 to-green-600"
     },
     {
-      text: "Company policies",
-      icon: FileText,
-      color: "text-purple-600"
-    },
-    {
-      text: "My performance review",
-      icon: Target,
-      color: "text-orange-600"
-    },
-    {
-      text: "Payroll information",
+      text: "Show my latest payslip details",
+      label: "Payroll",
       icon: DollarSign,
-      color: "text-emerald-600"
+      gradient: "from-purple-500 to-purple-600"
+    },
+    {
+      text: "What are my performance review details?",
+      label: "Performance",
+      icon: Target,
+      gradient: "from-orange-500 to-orange-600"
+    },
+    {
+      text: "Tell me about company leave policies",
+      label: "Policies",
+      icon: FileText,
+      gradient: "from-indigo-500 to-indigo-600"
+    },
+    {
+      text: "How can you help me with HR queries?",
+      label: "Help",
+      icon: HelpCircle,
+      gradient: "from-pink-500 to-pink-600"
     }
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-4 md:p-8 text-center animate-in fade-in duration-500">
-      {/* Bot Introduction */}
-      <div className="mb-8">
-        <Avatar className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4">
-          <AvatarImage src="/shubh-avatar.png" alt="Shubh" />
-          <AvatarFallback className="bg-primary text-primary-foreground text-lg md:text-xl">
-            SH
-          </AvatarFallback>
-        </Avatar>
-        
-        <h2 className="text-2xl md:text-3xl font-bold mb-2">
-          👋 Hi! I'm Shubh
-        </h2>
-        <p className="text-lg md:text-xl text-muted-foreground mb-4">
-          Your HR Assistant
-        </p>
-        <p className="text-sm md:text-base text-muted-foreground max-w-md mx-auto">
-          I'm here to help you with HR-related questions and tasks. 
-          You can ask me anything about your employment, policies, or benefits.
-        </p>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-full p-4 text-center relative overflow-hidden">
+      {/* Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/40 via-purple-50/30 to-pink-50/40 pointer-events-none" />
 
-      {/* Capabilities */}
-      <Card className="w-full max-w-2xl mb-8">
-        <CardContent className="p-4 md:p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            I can help you with:
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              <span>Leave balances and applications</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-green-600" />
-              <span>Attendance records</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-purple-600" />
-              <span>Company policies</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-orange-600" />
-              <span>Performance reviews</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-emerald-600" />
-              <span>Payroll information</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MessageCircle className="w-4 h-4 text-pink-600" />
-              <span>General HR queries</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Content Container */}
+      <div className="relative z-10 w-full max-w-2xl mx-auto">
+        {/* Avatar */}
+        <div className="mb-6">
+          <AnimatedAvatar size="xl" className="mx-auto" />
+        </div>
 
-      {/* Quick Actions */}
-      <div className="w-full max-w-2xl">
-        <h3 className="text-lg font-semibold mb-4">Quick actions to get started:</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Welcome Message */}
+        <Card className="mb-6 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              Hello! I'm Shubh 👋
+            </h2>
+            <p className="text-gray-700 leading-relaxed text-lg mb-4">
+              Your intelligent HR assistant. I can help you with leave balances, company policies,
+              attendance queries, payroll information, and much more.
+            </p>
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">Try asking me:</span> "What's my leave balance?" or "Show me company policies"
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
           {quickActions.map((action, index) => {
-            const Icon = action.icon;
+            const IconComponent = action.icon;
             return (
-              <Button
+              <Card
                 key={index}
-                variant="outline"
-                className="h-auto p-3 md:p-4 text-left justify-start hover:bg-accent/50 transition-all duration-200 hover:scale-105"
+                className="group cursor-pointer border-0 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-white/70 backdrop-blur-sm"
                 onClick={() => onQuickAction(action.text)}
               >
-                <Icon className={`w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 ${action.color}`} />
-                <span className="text-sm md:text-base">{action.text}</span>
-              </Button>
+                <CardContent className="p-4 flex flex-col items-center gap-3">
+                  <div className={`p-3 rounded-full bg-gradient-to-r ${action.gradient} shadow-lg group-hover:shadow-xl transition-all duration-300`}>
+                    <IconComponent className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">
+                    {action.label}
+                  </span>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
-      </div>
 
-      {/* Call to Action */}
-      <p className="text-muted-foreground mt-8 text-sm md:text-base">
-        What would you like to know today?
-      </p>
+        {/* Additional Help Text */}
+        <div className="text-center">
+          <p className="text-sm text-gray-500 mb-2">
+            💬 You can also type your questions directly in the chat box below
+          </p>
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span>Ready to assist you</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
