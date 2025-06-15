@@ -1,52 +1,70 @@
 # 👥 AGENT 2 - EMPLOYEE MANAGEMENT SERVICE DEVELOPMENT
 
+## 🚨 **CRITICAL: USE DEVELOP BRANCH & NEW ARCHITECTURE**
+
+### **🔄 MANDATORY FIRST STEPS:**
+```bash
+# 1. Switch to develop branch and get latest code
+git checkout develop
+git pull origin develop
+
+# 2. Check the new architecture (NO SEQUELIZE, NO SHARED FOLDER)
+ls backend/  # You should see: models/, controllers/, routes/, middleware/, utils/, services/
+```
+
 ## 📋 **YOUR ASSIGNMENT**
 - **Agent ID**: Agent 2
 - **Service**: Employee Management Service
-- **Workspace Folder**: `backend/services/employee-service/`
-- **Git Branch**: `feature/employee-service-implementation`
-- **Development Phase**: Phase 1 (Foundation)
+- **Architecture**: **PLAIN SQL** (No Sequelize) + **Global Folder Structure**
+- **Your Files**: `EmployeeController.js`, `employeeRoutes.js`, `EmployeeService.js`
 - **Priority**: HIGH (Critical Foundation Service)
-- **Dependencies**: Agent 1 (Auth Service) must be completed first
 
-## 🚨 **CRITICAL RULES - MUST FOLLOW EXACTLY**
+## 🏗️ **NEW ARCHITECTURE (CRITICAL CHANGES)**
+
+### **✅ CORRECTED STRUCTURE:**
+```
+backend/
+├── models/                     # 🔥 GLOBAL MODELS (Plain SQL) - READ ONLY
+│   ├── Employee.js            # ← ALREADY CREATED (use this)
+│   ├── Department.js          # ← ALREADY CREATED (use this)
+│   └── User.js                # ← ALREADY CREATED (use this)
+├── controllers/               # 🔥 GLOBAL CONTROLLERS
+│   └── EmployeeController.js  # ← YOUR CONTROLLER (already exists - update it)
+├── routes/                    # 🔥 GLOBAL ROUTES
+│   └── employeeRoutes.js      # ← YOUR ROUTES (already exists - update it)
+├── middleware/                # 🔥 GLOBAL MIDDLEWARE - READ ONLY
+├── utils/                     # 🔥 GLOBAL UTILITIES - READ ONLY
+└── services/                  # 🔥 BUSINESS LOGIC ONLY
+    └── EmployeeService.js     # ← YOUR SERVICE (already exists - update it)
+```
 
 ### **🚫 ABSOLUTE PROHIBITIONS:**
 ```bash
 # NEVER RUN THESE COMMANDS:
 git commit -m "..."          # ❌ FORBIDDEN
-git push origin ...          # ❌ FORBIDDEN  
+git push origin ...          # ❌ FORBIDDEN
 git merge ...                # ❌ FORBIDDEN
 git rebase ...               # ❌ FORBIDDEN
-git checkout [other-branch]  # ❌ FORBIDDEN
-git pull origin main         # ❌ FORBIDDEN
 ```
 
-### **✅ ALLOWED GIT OPERATIONS:**
-```bash
-git status                   # ✅ Check file status
-git add .                    # ✅ Stage your changes
-git diff                     # ✅ View changes
-git branch                   # ✅ Check current branch
-git log --oneline -10        # ✅ View recent commits
-```
-
-### **📁 WORKSPACE BOUNDARIES:**
-- ✅ **WORK ONLY** in: `backend/services/employee-service/`
-- ❌ **NEVER TOUCH**: 
-  - `backend/shared/` folder
+### **📁 YOUR EXACT WORKSPACE:**
+- ✅ **WORK ONLY ON**:
+  - `backend/controllers/EmployeeController.js` (UPDATE EXISTING)
+  - `backend/routes/employeeRoutes.js` (UPDATE EXISTING)
+  - `backend/services/EmployeeService.js` (UPDATE EXISTING)
+- ❌ **NEVER TOUCH**:
+  - `backend/models/` (read-only, already created with Plain SQL)
+  - `backend/middleware/` (read-only, already created)
   - `backend/config/` folder
   - `backend/app.js`
-  - Other service folders
-  - Package.json files
-  - .env files
+  - Other agents' files
 
 ## 📚 **MANDATORY READING**
 Before starting, read these documents:
-1. `planning/Workflow/backend.md`
-2. `planning/Backend_Agent_Tasks.md` (Agent 2 section)
-3. `planning/API_Integration_Guide.md`
-4. `planning/01_Database_Schema_Design.md` (employees, departments tables)
+1. `backend/ARCHITECTURE.md` (NEW - explains corrected structure)
+2. `planning/Workflow/backend.md`
+3. `planning/Backend_Agent_Tasks.md` (Agent 2 section)
+4. `backend/database/schema.sql` (employees, departments tables)
 
 ## 🎯 **YOUR SPECIFIC TASKS**
 
@@ -63,69 +81,102 @@ GET    /api/departments            # Get departments list
 POST   /api/departments            # Create department (Admin only)
 ```
 
-### **Required File Structure:**
+### **🚨 CRITICAL: FILES ALREADY EXIST - UPDATE THEM**
+The files are already created with basic structure. **DO NOT CREATE NEW FILES**. Update existing ones:
+
 ```
-backend/services/employee-service/
-├── index.js                    # Service entry point
-├── routes.js                   # Route definitions
+backend/
 ├── controllers/
-│   ├── EmployeeController.js   # Employee CRUD operations
-│   ├── DepartmentController.js # Department management
-│   └── DocumentController.js   # Document handling
-├── services/
-│   ├── EmployeeService.js      # Employee business logic
-│   ├── DepartmentService.js    # Department business logic
-│   └── DocumentService.js     # Document processing
+│   └── EmployeeController.js   # ← UPDATE THIS (already has methods)
+├── routes/
+│   └── employeeRoutes.js      # ← UPDATE THIS (already has routes)
+└── services/
+    └── EmployeeService.js     # ← UPDATE THIS (already has methods)
+```
+
+### **🔍 EXISTING FILES TO USE (READ-ONLY):**
+```
+backend/
 ├── models/
-│   ├── Employee.js             # Employee database model
-│   ├── Department.js           # Department database model
-│   └── Document.js             # Document database model
+│   ├── Employee.js            # ← USE THIS (Plain SQL model - already complete)
+│   ├── Department.js          # ← USE THIS (Plain SQL model - already complete)
+│   └── User.js                # ← USE THIS (for user account creation)
 ├── middleware/
-│   └── validation.js           # Input validation
-└── tests/
-    ├── employee.test.js        # Unit tests
-    └── integration/
-        └── employee.integration.test.js
+│   └── authMiddleware.js      # ← USE THIS (authentication)
+└── utils/
+    └── responseHelper.js      # ← USE THIS (sendSuccess, sendError, sendCreated)
 ```
 
-### **Key Implementation Requirements:**
+### **🔥 IMPLEMENTATION REQUIREMENTS (PLAIN SQL):**
 
-#### **1. EmployeeController.js - Core Methods:**
+#### **1. UPDATE EmployeeController.js:**
+The file already exists with methods. **Update and complete them**:
 ```javascript
+const { Employee, Department, User } = require('../models');
+const { sendSuccess, sendError, sendCreated } = require('../utils/responseHelper');
+const EmployeeService = require('../services/EmployeeService');
+
 class EmployeeController {
-  static async getAll(req, res)        // Get employees with filtering/pagination
-  static async getById(req, res)       // Get employee by ID
-  static async create(req, res)        // Create new employee
-  static async update(req, res)        // Update employee
-  static async deactivate(req, res)    // Deactivate employee
-  static async getByUserId(req, res)   // Get employee by user ID
+  static async getAllEmployees(req, res)      // Already exists - complete it
+  static async getEmployeeById(req, res)      // Already exists - complete it
+  static async createEmployee(req, res)       // Already exists - complete it
+  static async updateEmployee(req, res)       // Already exists - complete it
+  static async deleteEmployee(req, res)       // Already exists - complete it
+  static async uploadEmployeeDocument(req, res) // Already exists - complete it
+  static async getEmployeeDocuments(req, res)   // Already exists - complete it
+  static async getAllDepartments(req, res)     // Already exists - complete it
+  static async createDepartment(req, res)      // Already exists - complete it
 }
 ```
 
-#### **2. EmployeeService.js - Business Logic:**
+#### **2. UPDATE EmployeeService.js:**
+The file already exists with methods. **Update and complete them**:
 ```javascript
+const { Employee, Department, User } = require('../models');
+
 class EmployeeService {
-  static async getEmployees(filters)           // Get employees with filters
-  static async getById(id)                     // Get employee by ID
-  static async create(employeeData)            // Create employee
-  static async update(id, data)                // Update employee
-  static async deactivate(id)                  // Deactivate employee
-  static async generateEmployeeCode()          // Generate unique employee code
-  static async createUserAccount(employee)     // Create user account for employee
-  static async validateEmployeeData(data)      // Validate employee data
+  static async createEmployee(employeeData)    // Already exists - complete it
+  static async updateEmployee(id, data)        // Already exists - complete it
+  static async deactivateEmployee(id, reason)  // Already exists - complete it
+  static async uploadDocument(id, docData)     // Already exists - complete it
+  static async getEmployeeDocuments(id, type)  // Already exists - complete it
+  static async searchEmployees(criteria)       // Already exists - complete it
+  static async getEmployeeStatistics()         // Already exists - complete it
 }
 ```
 
-#### **3. Employee.js - Database Model:**
+#### **3. UPDATE employeeRoutes.js:**
+The file already exists with routes. **Update and complete them**:
 ```javascript
-class Employee {
-  static async findAll(filters)        // Find employees with filters
-  static async findById(id)            // Find employee by ID
-  static async findByUserId(userId)    // Find employee by user ID
-  static async create(data)            // Create employee record
-  static async update(id, data)        // Update employee record
-  static async updateStatus(id, status) // Update employee status
-}
+const express = require('express');
+const router = express.Router();
+const EmployeeController = require('../controllers/EmployeeController');
+const { authenticateToken, authorizeRoles } = require('../middleware/authMiddleware');
+
+// Routes already exist - complete the validation and middleware
+router.get('/', authenticateToken, authorizeRoles(['admin', 'manager']), EmployeeController.getAllEmployees);
+router.post('/', authenticateToken, authorizeRoles(['admin', 'manager']), EmployeeController.createEmployee);
+// ... etc (all routes already defined)
+```
+
+#### **4. Use Existing Models (Plain SQL - READ ONLY):**
+The models are already created with Plain SQL. **DO NOT MODIFY THEM**. Just use them:
+```javascript
+const { Employee, Department, User } = require('../models');
+
+// Available Employee methods (already implemented):
+await Employee.findById(id)
+await Employee.findAll(options)
+await Employee.create(employeeData)
+await Employee.update(id, updateData)
+await Employee.delete(id)
+await Employee.generateEmployeeCode()
+
+// Available Department methods (already implemented):
+await Department.findById(id)
+await Department.findAll(options)
+await Department.create(departmentData)
+await Department.update(id, updateData)
 ```
 
 #### **4. Document Handling:**

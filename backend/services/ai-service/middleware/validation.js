@@ -1,5 +1,5 @@
 const { body, param, validationResult } = require('express-validator');
-const { errorResponse } = require('../../../shared/utils/response');
+const { sendError } = require('../../../utils/responseHelper');
 
 // Validation middleware for chatbot query
 const validateChatbotQuery = [

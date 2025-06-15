@@ -1,13 +1,23 @@
 # ⏰ AGENT 3 - ATTENDANCE SERVICE DEVELOPMENT
 
+## 🚨 **CRITICAL: USE DEVELOP BRANCH & NEW ARCHITECTURE**
+
+### **🔄 MANDATORY FIRST STEPS:**
+```bash
+# 1. Switch to develop branch and get latest code
+git checkout develop
+git pull origin develop
+
+# 2. Check the new architecture (NO SEQUELIZE, NO SHARED FOLDER)
+ls backend/  # You should see: models/, controllers/, routes/, middleware/, utils/, services/
+```
+
 ## 📋 **YOUR ASSIGNMENT**
 - **Agent ID**: Agent 3
 - **Service**: Attendance Service
-- **Workspace Folder**: `backend/services/attendance-service/`
-- **Git Branch**: `feature/attendance-service-implementation`
-- **Development Phase**: Phase 1 (Foundation)
+- **Architecture**: **PLAIN SQL** (No Sequelize) + **Global Folder Structure**
+- **Your Files**: `AttendanceController.js`, `attendanceRoutes.js`, `AttendanceService.js`
 - **Priority**: HIGH (Critical Foundation Service)
-- **Dependencies**: Agent 2 (Employee Service) must be completed first
 
 ## 🚨 **CRITICAL RULES - MUST FOLLOW EXACTLY**
 

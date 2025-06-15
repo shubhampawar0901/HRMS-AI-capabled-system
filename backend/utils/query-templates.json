@@ -1,0 +1,106 @@
+{
+  "attendance_monthly_summary": {
+    "sql": "SELECT COUNT(*) as total_days, SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_days, SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_days, SUM(totalHours) as total_hours FROM attendance WHERE employeeId = ? AND MONTH(date) = ? AND YEAR(date) = ?",
+    "parameters": ["employee_id", "month", "year"],
+    "description": "Monthly attendance summary with present/absent counts and total hours",
+    "timeout": 30
+  },
+  
+  "attendance_recent_records": {
+    "sql": "SELECT date, checkInTime, checkOutTime, status, totalHours, location FROM attendance WHERE employeeId = ? ORDER BY date DESC LIMIT 10",
+    "parameters": ["employee_id"],
+    "description": "Recent 10 attendance records for employee",
+    "timeout": 30
+  },
+  
+  "attendance_absent_days": {
+    "sql": "SELECT COUNT(*) as absent_days, GROUP_CONCAT(DATE_FORMAT(date, '%M %d') SEPARATOR ', ') as absent_dates FROM attendance WHERE employeeId = ? AND status = 'absent' AND date BETWEEN ? AND ?",
+    "parameters": ["employee_id", "start_date", "end_date"],
+    "description": "Count of absent days in date range with specific dates",
+    "timeout": 30
+  },
+  
+  "leave_balance_current": {
+    "sql": "SELECT lb.*, lt.name as leave_type_name FROM leave_balances lb JOIN leave_types lt ON lb.leave_type_id = lt.id WHERE lb.employee_id = ? AND lb.year = YEAR(CURDATE())",
+    "parameters": ["employee_id"],
+    "description": "Current year leave balance with leave type names",
+    "timeout": 30
+  },
+  
+  "leave_applications_recent": {
+    "sql": "SELECT la.*, lt.name as leave_type_name FROM leave_applications la JOIN leave_types lt ON la.leave_type_id = lt.id WHERE la.employee_id = ? ORDER BY la.created_at DESC LIMIT 5",
+    "parameters": ["employee_id"],
+    "description": "Recent 5 leave applications with status",
+    "timeout": 30
+  },
+  
+  "performance_review_latest": {
+    "sql": "SELECT pr.*, e.first_name as reviewer_first_name, e.last_name as reviewer_last_name FROM performance_reviews pr LEFT JOIN employees e ON pr.reviewer_id = e.id WHERE pr.employee_id = ? ORDER BY pr.created_at DESC LIMIT 1",
+    "parameters": ["employee_id"],
+    "description": "Latest performance review with reviewer information",
+    "timeout": 30
+  },
+  
+  "performance_goals_active": {
+    "sql": "SELECT * FROM performance_goals WHERE employee_id = ? AND status = 'active' ORDER BY target_date ASC",
+    "parameters": ["employee_id"],
+    "description": "Active performance goals ordered by target date",
+    "timeout": 30
+  },
+  
+  "payroll_latest": {
+    "sql": "SELECT * FROM payroll_records WHERE employee_id = ? ORDER BY year DESC, month DESC LIMIT 1",
+    "parameters": ["employee_id"],
+    "description": "Latest payroll record for employee",
+    "timeout": 30
+  },
+  
+  "payroll_ytd_summary": {
+    "sql": "SELECT SUM(gross_salary) as ytd_gross, SUM(net_salary) as ytd_net, SUM(pf_deduction) as ytd_pf, SUM(tax_deduction) as ytd_tax FROM payroll_records WHERE employee_id = ? AND year = YEAR(CURDATE())",
+    "parameters": ["employee_id"],
+    "description": "Year-to-date payroll summary",
+    "timeout": 30
+  },
+  
+  "employee_profile_basic": {
+    "sql": "SELECT e.first_name, e.last_name, e.employee_code, e.position, e.hire_date, d.name as department_name FROM employees e LEFT JOIN departments d ON e.department_id = d.id WHERE e.id = ? AND e.status = 'active'",
+    "parameters": ["employee_id"],
+    "description": "Basic employee profile information with department",
+    "timeout": 30
+  },
+  
+  "attendance_weekly_hours": {
+    "sql": "SELECT SUM(totalHours) as total_hours, AVG(totalHours) as avg_hours, COUNT(*) as working_days FROM attendance WHERE employeeId = ? AND date BETWEEN ? AND ? AND status IN ('present', 'late')",
+    "parameters": ["employee_id", "start_date", "end_date"],
+    "description": "Weekly working hours summary",
+    "timeout": 30
+  },
+  
+  "leave_balance_specific_type": {
+    "sql": "SELECT lb.*, lt.name as leave_type_name FROM leave_balances lb JOIN leave_types lt ON lb.leave_type_id = lt.id WHERE lb.employee_id = ? AND lt.name LIKE ? AND lb.year = YEAR(CURDATE())",
+    "parameters": ["employee_id", "leave_type_pattern"],
+    "description": "Leave balance for specific leave type",
+    "timeout": 30
+  },
+  
+  "attendance_late_pattern": {
+    "sql": "SELECT COUNT(*) as late_days, GROUP_CONCAT(DATE_FORMAT(date, '%M %d') SEPARATOR ', ') as late_dates FROM attendance WHERE employeeId = ? AND status = 'late' AND date BETWEEN ? AND ?",
+    "parameters": ["employee_id", "start_date", "end_date"],
+    "description": "Late arrival pattern analysis",
+    "timeout": 30
+  },
+  
+  "overtime_summary": {
+    "sql": "SELECT SUM(overtimeHours) as total_overtime, AVG(overtimeHours) as avg_overtime, COUNT(CASE WHEN overtimeHours > 0 THEN 1 END) as overtime_days FROM attendance WHERE employeeId = ? AND date BETWEEN ? AND ?",
+    "parameters": ["employee_id", "start_date", "end_date"],
+    "description": "Overtime hours summary for date range",
+    "timeout": 30
+  },
+  
+  "department_info": {
+    "sql": "SELECT d.*, e.first_name as manager_first_name, e.last_name as manager_last_name FROM departments d LEFT JOIN employees e ON d.manager_id = e.id WHERE d.id = ? AND d.is_active = 1",
+    "parameters": ["department_id"],
+    "description": "Department information with manager details",
+    "timeout": 30
+  }
+}
