@@ -122,7 +122,7 @@ const SummaryCard = React.memo(({
   }
 
   return (
-    <div 
+    <div
       className={`
         ai-card-glow p-6 bg-gradient-to-br ${colors.bg} border ${colors.border}
         transform transition-all duration-300 ease-in-out
@@ -150,7 +150,7 @@ const SummaryCard = React.memo(({
 
       {/* Trend and Description */}
       <div className="space-y-2">
-        {trend && (
+        {trend && trendValue !== undefined && (
           <div className="flex items-center space-x-1">
             <TrendingUp className={`h-3 w-3 ${trendValue >= 0 ? 'text-green-500' : 'text-red-500'}`} />
             <span className={`text-xs font-medium ${trendValue >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -159,7 +159,7 @@ const SummaryCard = React.memo(({
             <span className="text-xs text-gray-500">vs last week</span>
           </div>
         )}
-        
+
         {description && (
           <p className="text-xs text-gray-600 leading-relaxed">
             {description}
@@ -285,12 +285,12 @@ const AnomalySummaryCards = React.memo(() => {
                         <span className="font-medium text-red-600">
                           {stats.highPriority} high-priority anomalies
                         </span>
-                        {' '}require immediate attention. 
+                        {' '}require immediate attention.
                       </>
                     )}
                     {stats.newThisWeek > 0 && (
                       <>
-                        {stats.newThisWeek} new patterns detected this week suggest 
+                        {stats.newThisWeek} new patterns detected this week suggest
                         potential attendance issues.
                       </>
                     )}

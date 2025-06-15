@@ -87,10 +87,92 @@ class AIController {
   
   static async getAttritionPredictions(req, res) {
     try {
-      const { riskThreshold = 0.7 } = req.query;
-      const predictions = await AIAttritionPrediction.getHighRiskEmployees(riskThreshold);
-      return sendSuccess(res, predictions, 'Attrition predictions retrieved');
+      const {
+        riskThreshold = 0.0,
+        departmentId,
+        limit = 50,
+        offset = 0
+      } = req.query;
+
+      // Convert riskThreshold to number and validate
+      const threshold = parseFloat(riskThreshold);
+
+      const options = {
+        riskThreshold: threshold > 0 ? threshold : 0,
+        departmentId: departmentId ? parseInt(departmentId) : null,
+        limit: parseInt(limit),
+        offset: parseInt(offset)
+      };
+
+      const predictions = await AIAttritionPrediction.getAllPredictions(options);
+
+      // Transform predictions for frontend
+      const transformedPredictions = predictions.map((prediction, index) => {
+        // Handle both model instances and raw database rows
+        const predictionObj = prediction.toJSON ? prediction.toJSON() : prediction;
+
+
+
+        // Parse JSON fields if they're strings
+        let factors = predictionObj.factors || [];
+        let recommendations = predictionObj.recommendations || [];
+
+        if (typeof factors === 'string') {
+          try {
+            factors = JSON.parse(factors);
+          } catch (e) {
+            factors = [];
+          }
+        }
+
+        if (typeof recommendations === 'string') {
+          try {
+            recommendations = JSON.parse(recommendations);
+          } catch (e) {
+            recommendations = [];
+          }
+        }
+
+        return {
+          id: predictionObj.id,
+          employeeId: predictionObj.employee_id || predictionObj.employeeId,
+          employeeName: predictionObj.employee_name || 'Unknown',
+          employeeCode: predictionObj.employee_code || '',
+          department: predictionObj.department_name || 'Unknown',
+          riskScore: parseFloat(predictionObj.risk_score || predictionObj.riskScore),
+          riskPercentage: Math.round(parseFloat(predictionObj.risk_score || predictionObj.riskScore) * 100),
+          riskLevel: predictionObj.risk_level || predictionObj.riskLevel,
+          factors: factors,
+          recommendations: recommendations,
+          predictionDate: predictionObj.prediction_date || predictionObj.predictionDate,
+          modelVersion: predictionObj.model_version || predictionObj.modelVersion,
+          createdAt: predictionObj.created_at || predictionObj.createdAt
+        };
+      });
+
+      // Calculate summary statistics
+      const summary = {
+        total: transformedPredictions.length,
+        critical: transformedPredictions.filter(p => p.riskLevel === 'critical').length,
+        high: transformedPredictions.filter(p => p.riskLevel === 'high').length,
+        medium: transformedPredictions.filter(p => p.riskLevel === 'medium').length,
+        low: transformedPredictions.filter(p => p.riskLevel === 'low').length,
+        averageRisk: transformedPredictions.length > 0
+          ? Math.round(transformedPredictions.reduce((sum, p) => sum + p.riskPercentage, 0) / transformedPredictions.length)
+          : 0
+      };
+
+      return sendSuccess(res, {
+        predictions: transformedPredictions,
+        summary,
+        pagination: {
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+          total: transformedPredictions.length
+        }
+      }, 'Attrition predictions retrieved successfully');
     } catch (error) {
+      console.error('Get attrition predictions error:', error);
       return sendError(res, error.message, 500);
     }
   }
