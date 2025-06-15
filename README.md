@@ -1745,4 +1745,4 @@ For questions, support, or contributions, please reach out through GitHub issues
 
 ---
 
-*Last updated: June 2024*
+*Last updated: June 2025*
