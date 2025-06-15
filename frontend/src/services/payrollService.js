@@ -5,8 +5,23 @@ import { apiRequest } from '@/api/interceptors';
 class PayrollService {
   // Get payroll records
   async getPayrollRecords(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
+    // Clean params to remove null/undefined values, but keep meaningful values
+    const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
+      // Keep all non-null, non-undefined, non-empty values
+      // Special handling: don't include month if it's null (means "All Months")
+      if (value !== null && value !== undefined && value !== '') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    console.log('🔍 PayrollService.getPayrollRecords called with params:', params);
+    console.log('🔍 Cleaned params:', cleanParams);
+
+    const queryParams = new URLSearchParams(cleanParams).toString();
     const url = queryParams ? `${API_ENDPOINTS.PAYROLL.RECORDS}?${queryParams}` : API_ENDPOINTS.PAYROLL.RECORDS;
+
+    console.log('🔍 Final URL:', url);
 
     return apiRequest(
       () => axiosInstance.get(url),
@@ -164,11 +179,26 @@ class PayrollService {
 
   // Get all employees payroll data (admin only)
   async getAllEmployeesPayroll(params = {}) {
+    // Clean params to remove null/undefined values, but keep meaningful values
+    const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
+      // Keep all non-null, non-undefined, non-empty values
+      // Special handling: don't include month if it's null (means "All Months")
+      if (value !== null && value !== undefined && value !== '') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    console.log('🔍 PayrollService.getAllEmployeesPayroll called with params:', params);
+    console.log('🔍 Cleaned params:', cleanParams);
+
     // Admin uses the records endpoint to get all payroll data
-    const queryParams = new URLSearchParams(params).toString();
+    const queryParams = new URLSearchParams(cleanParams).toString();
     const url = queryParams
       ? `${API_ENDPOINTS.PAYROLL.RECORDS}?${queryParams}`
       : API_ENDPOINTS.PAYROLL.RECORDS;
+
+    console.log('🔍 Final URL:', url);
 
     return apiRequest(
       () => axiosInstance.get(url),
