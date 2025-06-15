@@ -207,9 +207,9 @@ const GoalsList = () => {
       {/* Goals List */}
       <div className="grid grid-cols-1 gap-4">
         {goals?.length > 0 ? (
-          goals.map((goal) => (
-            <Card 
-              key={goal.id} 
+          goals.map((goal, index) => (
+            <Card
+              key={`goal-${goal.id || index}`}
               className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-gray-200"
             >
               <CardContent className="p-6">
@@ -254,21 +254,21 @@ const GoalsList = () => {
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-500" />
                         <span className="text-sm text-gray-600">
-                          {goal.employeeName || 'Employee'}
+                          {goal.employee_name || goal.employeeName || 'Employee'}
                         </span>
                       </div>
                       
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-500" />
                         <span className="text-sm text-gray-600">
-                          Due: {goal.dueDate ? new Date(goal.dueDate).toLocaleDateString() : 'No date'}
+                          Due: {(goal.target_date || goal.targetDate || goal.dueDate) ? new Date(goal.target_date || goal.targetDate || goal.dueDate).toLocaleDateString() : 'No date'}
                         </span>
                       </div>
                       
                       <div className="flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-gray-500" />
                         <span className="text-sm text-gray-600">
-                          Target: {goal.targetValue || 'N/A'}
+                          Progress: {goal.achievement_percentage || goal.achievementPercentage || 0}%
                         </span>
                       </div>
                       

@@ -22,19 +22,51 @@ class PayrollService {
     );
   }
 
-  // Get employee payroll (using payslips endpoint)
+  // Get employee payroll (role-based endpoint selection)
   async getEmployeePayroll(employeeId, params = {}) {
-    // Remove employeeId from params since backend gets it from token
-    const { employeeId: _, ...cleanParams } = params;
-    const queryParams = new URLSearchParams(cleanParams).toString();
-    const url = queryParams
-      ? `${API_ENDPOINTS.PAYROLL.PAYSLIPS}?${queryParams}`
-      : API_ENDPOINTS.PAYROLL.PAYSLIPS;
+    // For admin/manager: use records endpoint
+    // For employee: use payslips endpoint
+    const userRole = this.getUserRole(); // We'll need to implement this
 
-    return apiRequest(
-      () => axiosInstance.get(url),
-      `payroll-employee-${employeeId || 'current'}`
-    );
+    if (userRole === 'admin' || userRole === 'manager') {
+      // Use records endpoint for admin/manager
+      const queryParams = new URLSearchParams(params).toString();
+      const url = queryParams
+        ? `${API_ENDPOINTS.PAYROLL.RECORDS}?${queryParams}`
+        : API_ENDPOINTS.PAYROLL.RECORDS;
+
+      return apiRequest(
+        () => axiosInstance.get(url),
+        `payroll-records-${employeeId || 'all'}`
+      );
+    } else {
+      // Use payslips endpoint for employees (their own data)
+      const { employeeId: _, ...cleanParams } = params;
+      const queryParams = new URLSearchParams(cleanParams).toString();
+      const url = queryParams
+        ? `${API_ENDPOINTS.PAYROLL.PAYSLIPS}?${queryParams}`
+        : API_ENDPOINTS.PAYROLL.PAYSLIPS;
+
+      return apiRequest(
+        () => axiosInstance.get(url),
+        `payroll-employee-${employeeId || 'current'}`
+      );
+    }
+  }
+
+  // Helper method to get user role from token or context
+  getUserRole() {
+    // Try to get role from localStorage or token
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.role;
+      }
+    } catch (error) {
+      console.warn('Could not determine user role:', error);
+    }
+    return 'employee'; // Default to employee for safety
   }
 
   // Generate payroll
@@ -116,12 +148,13 @@ class PayrollService {
   }
 
   // Admin-specific methods
-  // Get employee payroll by admin (can specify any employee ID)
+  // Get employee payroll by admin (uses records endpoint)
   async getEmployeePayrollByAdmin(employeeId, params = {}) {
+    // Admin uses the records endpoint to get payroll data
     const queryParams = new URLSearchParams(params).toString();
     const url = queryParams
-      ? `${API_ENDPOINTS.PAYROLL.ADMIN_EMPLOYEE_PAYROLL(employeeId)}?${queryParams}`
-      : API_ENDPOINTS.PAYROLL.ADMIN_EMPLOYEE_PAYROLL(employeeId);
+      ? `${API_ENDPOINTS.PAYROLL.RECORDS}?${queryParams}`
+      : API_ENDPOINTS.PAYROLL.RECORDS;
 
     return apiRequest(
       () => axiosInstance.get(url),
@@ -131,10 +164,11 @@ class PayrollService {
 
   // Get all employees payroll data (admin only)
   async getAllEmployeesPayroll(params = {}) {
+    // Admin uses the records endpoint to get all payroll data
     const queryParams = new URLSearchParams(params).toString();
     const url = queryParams
-      ? `${API_ENDPOINTS.PAYROLL.ADMIN_ALL_EMPLOYEES}?${queryParams}`
-      : API_ENDPOINTS.PAYROLL.ADMIN_ALL_EMPLOYEES;
+      ? `${API_ENDPOINTS.PAYROLL.RECORDS}?${queryParams}`
+      : API_ENDPOINTS.PAYROLL.RECORDS;
 
     return apiRequest(
       () => axiosInstance.get(url),

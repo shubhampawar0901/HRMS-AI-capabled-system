@@ -46,24 +46,32 @@ class PerformanceController {
   static async getReviews(req, res) {
     try {
       const { role, employeeId } = req.user;
-      const { page = 1, limit = 20, status } = req.query;
+      const { page = 1, limit = 100, status } = req.query;
+
+      // Convert string "null" to actual null
+      const cleanStatus = (status === 'null' || status === '' || status === undefined) ? null : status;
+
+      // Check if employee/manager has employeeId
+      if ((role === 'employee' || role === 'manager') && !employeeId) {
+        return sendError(res, 'Employee ID is required. Please logout and login again to refresh your session.', 400);
+      }
 
       let reviews;
       let total;
 
       if (role === 'admin') {
         // Admin can see all reviews
-        const options = { status, page: parseInt(page), limit: parseInt(limit) };
+        const options = { status: cleanStatus, page: parseInt(page), limit: parseInt(limit) };
         reviews = await PerformanceReview.findAll(options);
         total = await PerformanceReview.count(options);
       } else if (role === 'manager') {
         // Manager can see reviews for their team
-        const options = { managerId: employeeId, status, page: parseInt(page), limit: parseInt(limit) };
+        const options = { managerId: employeeId, status: cleanStatus, page: parseInt(page), limit: parseInt(limit) };
         reviews = await PerformanceReview.findByManager(employeeId, options);
         total = await PerformanceReview.countByManager(employeeId, options);
       } else {
         // Employee can see their own reviews
-        const options = { employeeId, status, page: parseInt(page), limit: parseInt(limit) };
+        const options = { employeeId, status: cleanStatus, page: parseInt(page), limit: parseInt(limit) };
         reviews = await PerformanceReview.findByEmployee(employeeId, options);
         total = await PerformanceReview.countByEmployee(employeeId, options);
       }
@@ -216,26 +224,45 @@ class PerformanceController {
   static async getGoals(req, res) {
     try {
       const { role, employeeId } = req.user;
-      const { page = 1, limit = 20, status } = req.query;
+      const { page = 1, limit = 100, status } = req.query;
+
+      // DEBUG: Log the request details
+      console.log('🎯 getGoals called with:');
+      console.log('- Role:', role);
+      console.log('- EmployeeId:', employeeId);
+      console.log('- User object:', req.user);
+      console.log('- Query params:', req.query);
+
+      // Convert string "null" to actual null
+      const cleanStatus = (status === 'null' || status === '' || status === undefined) ? null : status;
+
+      // Check if employee/manager has employeeId
+      if ((role === 'employee' || role === 'manager') && !employeeId) {
+        console.log('❌ Missing employeeId for role:', role);
+        return sendError(res, 'Employee ID is required. Please logout and login again to refresh your session.', 400);
+      }
 
       let goals;
       let total;
 
       if (role === 'admin') {
         // Admin can see all goals
-        const options = { status, page: parseInt(page), limit: parseInt(limit) };
+        const options = { status: cleanStatus, page: parseInt(page), limit: parseInt(limit) };
         goals = await PerformanceGoal.findAll(options);
         total = await PerformanceGoal.count(options);
       } else if (role === 'manager') {
         // Manager can see goals for their team
-        const options = { managerId: employeeId, status, page: parseInt(page), limit: parseInt(limit) };
+        const options = { managerId: employeeId, status: cleanStatus, page: parseInt(page), limit: parseInt(limit) };
         goals = await PerformanceGoal.findByManager(employeeId, options);
         total = await PerformanceGoal.countByManager(employeeId, options);
       } else {
         // Employee can see their own goals
-        const options = { employeeId, status, page: parseInt(page), limit: parseInt(limit) };
+        console.log('🎯 Fetching goals for employee:', employeeId);
+        const options = { employeeId, status: cleanStatus, page: parseInt(page), limit: parseInt(limit) };
+        console.log('🎯 Options:', options);
         goals = await PerformanceGoal.findByEmployee(employeeId, options);
         total = await PerformanceGoal.countByEmployee(employeeId, options);
+        console.log('🎯 Found goals:', goals.length, 'Total:', total);
       }
 
       const responseData = {
@@ -251,7 +278,13 @@ class PerformanceController {
       return sendSuccess(res, responseData, 'Performance goals retrieved');
     } catch (error) {
       console.error('Get goals error:', error);
-      return sendError(res, 'Failed to get performance goals', 500);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        role: req.user?.role,
+        employeeId: req.user?.employeeId
+      });
+      return sendError(res, `Failed to get performance goals: ${error.message}`, 500);
     }
   }
 

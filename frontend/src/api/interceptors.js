@@ -73,7 +73,14 @@ export const handleApiError = (error) => {
 
 // Success response handler
 export const handleApiSuccess = (response) => {
+  // Return the response data directly if it already has success/data structure
+  if (response.data && typeof response.data === 'object' && 'success' in response.data) {
+    return response.data;
+  }
+
+  // Otherwise, wrap it in the expected format
   return {
+    success: true,
     data: response.data,
     status: response.status,
     message: response.data.message || 'Success'

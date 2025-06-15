@@ -93,7 +93,8 @@ class PerformanceReview {
     `;
     const params = [employeeId];
     
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND pr.status = ?';
       params.push(options.status);
     }
@@ -126,7 +127,8 @@ class PerformanceReview {
     `;
     const params = [reviewerId];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND pr.status = ?';
       params.push(options.status);
     }
@@ -151,7 +153,8 @@ class PerformanceReview {
     `;
     const params = [];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND pr.status = ?';
       params.push(options.status);
     }
@@ -175,7 +178,8 @@ class PerformanceReview {
     let query = 'SELECT COUNT(*) as total FROM performance_reviews WHERE 1=1';
     const params = [];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND status = ?';
       params.push(options.status);
     }
@@ -195,7 +199,8 @@ class PerformanceReview {
     `;
     const params = [managerId];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND pr.status = ?';
       params.push(options.status);
     }
@@ -223,7 +228,8 @@ class PerformanceReview {
     `;
     const params = [managerId];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND pr.status = ?';
       params.push(options.status);
     }
@@ -236,7 +242,8 @@ class PerformanceReview {
     let query = 'SELECT COUNT(*) as total FROM performance_reviews WHERE employee_id = ?';
     const params = [employeeId];
 
-    if (options.status) {
+    // Only add status filter if status is provided and not null
+    if (options.status && options.status !== null && options.status !== 'null') {
       query += ' AND status = ?';
       params.push(options.status);
     }

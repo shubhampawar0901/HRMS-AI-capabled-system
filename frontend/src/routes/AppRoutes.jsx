@@ -51,9 +51,7 @@ import ChatbotPage from '@/pages/ChatbotPage';
 import AdminSmartReports from '@/pages/admin/SmartReports';
 import ManagerSmartReports from '@/pages/manager/SmartReports';
 
-// Reports Pages
-import ReportsPage from '@/pages/reports/ReportsPage';
-import CustomReportPage from '@/pages/reports/CustomReportPage';
+
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuthContext();
@@ -171,9 +169,7 @@ const AppRoutes = () => {
         />
 
 
-        {/* Reports */}
-        <Route path="reports" element={<ReportsPage />} />
-        <Route path="reports/custom" element={<CustomReportPage />} />
+
       </Route>
 
       {/* Catch all route */}

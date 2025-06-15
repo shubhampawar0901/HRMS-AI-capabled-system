@@ -175,84 +175,123 @@ class Payroll {
   }
 
   static async findAll(options = {}) {
-    let query = `
-      SELECT p.*,
-             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
-             e.employee_code,
-             d.name as department_name,
-             CONCAT(proc.first_name, ' ', proc.last_name) as processed_by_name
-      FROM payroll_records p
-      LEFT JOIN employees e ON p.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
-      LEFT JOIN users u ON p.processed_by = u.id
-      LEFT JOIN employees proc ON u.id = proc.user_id
-      WHERE 1=1
-    `;
-    const params = [];
+    try {
+      console.log('🔍 Payroll.findAll called with options:', options);
 
-    if (options.month && options.month !== 'null' && options.month !== null) {
-      query += ' AND p.month = ?';
-      params.push(options.month);
+      let query = `
+        SELECT p.*,
+               CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+               e.employee_code,
+               d.name as department_name,
+               CONCAT(proc.first_name, ' ', proc.last_name) as processed_by_name
+        FROM payroll_records p
+        LEFT JOIN employees e ON p.employee_id = e.id
+        LEFT JOIN departments d ON e.department_id = d.id
+        LEFT JOIN users u ON p.processed_by = u.id
+        LEFT JOIN employees proc ON u.id = proc.user_id
+        WHERE 1=1
+      `;
+      const params = [];
+
+      if (options.month && options.month !== 'null' && options.month !== null) {
+        query += ' AND p.month = ?';
+        params.push(parseInt(options.month));
+        console.log('🔍 Added month filter:', options.month);
+      }
+
+      if (options.year) {
+        query += ' AND p.year = ?';
+        params.push(parseInt(options.year));
+        console.log('🔍 Added year filter:', options.year);
+      }
+
+      if (options.status) {
+        query += ' AND p.status = ?';
+        params.push(options.status);
+        console.log('🔍 Added status filter:', options.status);
+      }
+
+      if (options.departmentId) {
+        query += ' AND e.department_id = ?';
+        params.push(parseInt(options.departmentId));
+        console.log('🔍 Added department filter:', options.departmentId);
+      }
+
+      query += ' ORDER BY p.year DESC, p.month DESC, e.first_name, e.last_name';
+
+      if (options.limit) {
+        const limit = parseInt(options.limit);
+        query += ` LIMIT ${limit}`;
+        console.log('🔍 Added limit:', limit);
+
+        if (options.page) {
+          const offset = (parseInt(options.page) - 1) * limit;
+          query += ` OFFSET ${offset}`;
+          console.log('🔍 Added offset:', offset);
+        }
+      }
+
+      console.log('🔍 Final findAll query:', query);
+      console.log('🔍 Final findAll params:', params);
+
+      const rows = await executeQuery(query, params);
+      console.log('✅ findAll query executed successfully, rows:', rows.length);
+
+      if (rows.length > 0) {
+        console.log('📄 Sample findAll row:', rows[0]);
+      }
+
+      return rows.map(row => new Payroll(row));
+    } catch (error) {
+      console.error('❌ Payroll.findAll error:', error);
+      console.error('❌ Error stack:', error.stack);
+      throw error;
     }
-
-    if (options.year) {
-      query += ' AND p.year = ?';
-      params.push(options.year);
-    }
-
-    if (options.status) {
-      query += ' AND p.status = ?';
-      params.push(options.status);
-    }
-
-    if (options.departmentId) {
-      query += ' AND e.department_id = ?';
-      params.push(options.departmentId);
-    }
-
-    query += ' ORDER BY p.year DESC, p.month DESC, e.first_name, e.last_name';
-
-    if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
-    }
-
-    if (options.page && options.limit) {
-      const offset = (options.page - 1) * options.limit;
-      query += ' OFFSET ?';
-      params.push(offset);
-    }
-
-    const rows = await executeQuery(query, params);
-    return rows.map(row => new Payroll(row));
   }
 
   static async count(options = {}) {
-    let query = 'SELECT COUNT(*) as total FROM payroll_records p LEFT JOIN employees e ON p.employee_id = e.id WHERE 1=1';
-    const params = [];
+    try {
+      console.log('🔍 Payroll.count called with options:', options);
 
-    if (options.month && options.month !== 'null' && options.month !== null) {
-      query += ' AND p.month = ?';
-      params.push(options.month);
+      let query = 'SELECT COUNT(*) as total FROM payroll_records p LEFT JOIN employees e ON p.employee_id = e.id WHERE 1=1';
+      const params = [];
+
+      if (options.month && options.month !== 'null' && options.month !== null) {
+        query += ' AND p.month = ?';
+        params.push(parseInt(options.month));
+        console.log('🔍 Added month filter to count:', options.month);
+      }
+
+      if (options.year) {
+        query += ' AND p.year = ?';
+        params.push(parseInt(options.year));
+        console.log('🔍 Added year filter to count:', options.year);
+      }
+
+      if (options.status) {
+        query += ' AND p.status = ?';
+        params.push(options.status);
+        console.log('🔍 Added status filter to count:', options.status);
+      }
+
+      if (options.departmentId) {
+        query += ' AND e.department_id = ?';
+        params.push(parseInt(options.departmentId));
+        console.log('🔍 Added department filter to count:', options.departmentId);
+      }
+
+      console.log('🔍 Final count query:', query);
+      console.log('🔍 Final count params:', params);
+
+      const rows = await executeQuery(query, params);
+      console.log('✅ Count query executed successfully, result:', rows[0]);
+
+      return rows[0].total;
+    } catch (error) {
+      console.error('❌ Payroll.count error:', error);
+      console.error('❌ Error stack:', error.stack);
+      throw error;
     }
-
-    if (options.year) {
-      query += ' AND p.year = ?';
-      params.push(options.year);
-    }
-
-    if (options.status) {
-      query += ' AND p.status = ?';
-      params.push(options.status);
-    }
-
-    if (options.departmentId) {
-      query += ' AND e.department_id = ?';
-      params.push(options.departmentId);
-    }
-
-    const rows = await executeQuery(query, params);
-    return rows[0].total;
   }
 
   static async countByEmployee(employeeId, options = {}) {

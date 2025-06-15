@@ -22,7 +22,26 @@ const InsightsSection = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
+  /**
+   * Categorize insights based on content keywords
+   */
+  const categorizeInsight = (insight) => {
+    const lowerInsight = insight.toLowerCase();
 
+    if (lowerInsight.includes('improving') || lowerInsight.includes('excellent') || lowerInsight.includes('outstanding')) {
+      return 'positive';
+    }
+
+    if (lowerInsight.includes('declining') || lowerInsight.includes('concerning') || lowerInsight.includes('poor')) {
+      return 'negative';
+    }
+
+    if (lowerInsight.includes('attention') || lowerInsight.includes('monitor') || lowerInsight.includes('watch')) {
+      return 'warning';
+    }
+
+    return 'neutral';
+  };
 
   /**
    * Get insight icon and styling based on category
@@ -146,10 +165,11 @@ const InsightsSection = ({
  * Insights Summary Component
  * Provides a quick overview of insights by category
  */
-export const InsightsSummary = ({ 
+export const InsightsSummary = ({
   insights = [],
-  className = '' 
+  className = ''
 }) => {
+  // Use the exported function
   const categorizedInsights = insights.reduce((acc, insight) => {
     const category = categorizeInsight(insight);
     acc[category] = (acc[category] || 0) + 1;
@@ -280,22 +300,24 @@ export const InsightsFilter = ({
   );
 };
 
-// Helper function moved outside for reuse
-const categorizeInsight = (insight) => {
+
+
+// Helper function for external use
+export const categorizeInsight = (insight) => {
   const lowerInsight = insight.toLowerCase();
-  
+
   if (lowerInsight.includes('improving') || lowerInsight.includes('excellent') || lowerInsight.includes('outstanding')) {
     return 'positive';
   }
-  
+
   if (lowerInsight.includes('declining') || lowerInsight.includes('concerning') || lowerInsight.includes('poor')) {
     return 'negative';
   }
-  
+
   if (lowerInsight.includes('attention') || lowerInsight.includes('monitor') || lowerInsight.includes('watch')) {
     return 'warning';
   }
-  
+
   return 'neutral';
 };
 

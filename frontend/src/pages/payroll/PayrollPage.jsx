@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import PayrollDashboard from '@/components/payroll/PayrollDashboard';
-import AdminPayrollView from '@/components/payroll/AdminPayrollView';
+import PayrollManagement from '@/components/payroll/PayrollManagement';
 import { Card, CardContent } from '@/components/ui/card';
 import { Shield } from 'lucide-react';
 
@@ -29,7 +29,7 @@ const PayrollPage = () => {
 
   // Render different views based on user role
   if (user?.role === 'admin') {
-    return <AdminPayrollView />;
+    return <PayrollManagement />;
   }
 
   // For employees and managers, show the regular dashboard

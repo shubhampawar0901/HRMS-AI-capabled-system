@@ -12,7 +12,7 @@ const EmployeeSelector = ({ onEmployeeSelect, selectedEmployee, className = '' }
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
 
   // Fetch employees and departments
@@ -21,7 +21,7 @@ const EmployeeSelector = ({ onEmployeeSelect, selectedEmployee, className = '' }
       setLoading(true);
       try {
         const [employeesResponse, departmentsResponse] = await Promise.all([
-          employeeService.getEmployees({ limit: 1000 }), // Get all employees
+          employeeService.getEmployees({ limit: 100 }), // Get employees (max allowed by backend)
           employeeService.getDepartments()
         ]);
 
@@ -47,7 +47,7 @@ const EmployeeSelector = ({ onEmployeeSelect, selectedEmployee, className = '' }
     let filtered = employees;
 
     // Filter by department
-    if (selectedDepartment) {
+    if (selectedDepartment && selectedDepartment !== 'all') {
       filtered = filtered.filter(emp => emp.department_id?.toString() === selectedDepartment);
     }
 
@@ -165,7 +165,7 @@ const EmployeeSelector = ({ onEmployeeSelect, selectedEmployee, className = '' }
               <SelectValue placeholder="All Departments" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Departments</SelectItem>
+              <SelectItem value="all">All Departments</SelectItem>
               {departments.map((dept) => (
                 <SelectItem key={dept.id} value={dept.id.toString()}>
                   {dept.name}
@@ -189,12 +189,12 @@ const EmployeeSelector = ({ onEmployeeSelect, selectedEmployee, className = '' }
               <div className="text-center py-8 text-gray-500">
                 <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <p>No employees found</p>
-                {(searchTerm || selectedDepartment) && (
+                {(searchTerm || (selectedDepartment && selectedDepartment !== 'all')) && (
                   <Button 
                     variant="link" 
                     onClick={() => {
                       setSearchTerm('');
-                      setSelectedDepartment('');
+                      setSelectedDepartment('all');
                     }}
                     className="mt-2"
                   >

@@ -51,7 +51,12 @@ router.post('/reviews',
 // GET /api/performance/reviews
 router.get('/reviews',
   paginationValidation,
-  query('status').optional().isIn(['draft', 'submitted', 'completed']).withMessage('Invalid status'),
+  query('status').optional().custom((value) => {
+    if (value === null || value === undefined || value === '' || value === 'null' || ['draft', 'submitted', 'completed'].includes(value)) {
+      return true;
+    }
+    throw new Error('Invalid status');
+  }),
   validateRequest,
   PerformanceController.getReviews
 );
@@ -93,7 +98,12 @@ router.post('/goals',
 // GET /api/performance/goals
 router.get('/goals',
   paginationValidation,
-  query('status').optional().isIn(['active', 'completed', 'cancelled']).withMessage('Invalid status'),
+  query('status').optional().custom((value) => {
+    if (value === null || value === undefined || value === '' || value === 'null' || ['active', 'completed', 'cancelled'].includes(value)) {
+      return true;
+    }
+    throw new Error('Invalid status');
+  }),
   validateRequest,
   PerformanceController.getGoals
 );

@@ -311,4 +311,4 @@ export const useReportGeneration = (onSuccess, onError) => {
   };
 };
 
-export default useReportGeneration;
+

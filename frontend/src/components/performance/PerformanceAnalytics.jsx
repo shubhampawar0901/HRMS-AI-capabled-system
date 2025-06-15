@@ -51,32 +51,8 @@ const PerformanceAnalytics = () => {
     });
   };
 
-  // Mock analytics data structure (replace with real data from API)
-  const analyticsData = performanceAnalytics || {
-    overview: {
-      totalEmployees: 150,
-      averageRating: 4.2,
-      goalCompletionRate: 78,
-      reviewsCompleted: 142
-    },
-    departmentPerformance: [
-      { department: 'Engineering', avgRating: 4.3, employees: 45, goalCompletion: 82 },
-      { department: 'Marketing', avgRating: 4.1, employees: 25, goalCompletion: 75 },
-      { department: 'Sales', avgRating: 4.4, employees: 30, goalCompletion: 85 },
-      { department: 'HR', avgRating: 4.0, employees: 15, goalCompletion: 70 }
-    ],
-    performanceTrends: [
-      { month: 'Jan', rating: 4.0, goals: 70 },
-      { month: 'Feb', rating: 4.1, goals: 72 },
-      { month: 'Mar', rating: 4.2, goals: 78 },
-      { month: 'Apr', rating: 4.3, goals: 80 }
-    ],
-    topPerformers: [
-      { name: 'John Doe', department: 'Engineering', rating: 4.8, goals: 95 },
-      { name: 'Jane Smith', department: 'Sales', rating: 4.7, goals: 92 },
-      { name: 'Mike Johnson', department: 'Marketing', rating: 4.6, goals: 88 }
-    ]
-  };
+  // Use only real data from API - no mock data
+  const analyticsData = performanceAnalytics;
 
   if (loading) {
     return (
@@ -93,6 +69,29 @@ const PerformanceAnalytics = () => {
           <div className="text-center">
             <div className="text-red-600 mb-2">⚠️ Error Loading Analytics</div>
             <p className="text-red-700">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!analyticsData) {
+    return (
+      <Card className="border-gray-200">
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Analytics Data Available</h3>
+            <p className="text-gray-600 mb-4">
+              Performance analytics data is not available yet. Please check back later.
+            </p>
+            <Button
+              onClick={handleRefresh}
+              className="bg-blue-600 hover:bg-blue-700 transition-colors duration-300"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -177,7 +176,7 @@ const PerformanceAnalytics = () => {
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{analyticsData.overview.totalEmployees}</div>
+            <div className="text-2xl font-bold text-blue-900">{analyticsData.overview?.totalEmployees || 0}</div>
             <p className="text-xs text-blue-600 mt-1">Active employees</p>
           </CardContent>
         </Card>
@@ -188,7 +187,7 @@ const PerformanceAnalytics = () => {
             <Award className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-900">{analyticsData.overview.averageRating}</div>
+            <div className="text-2xl font-bold text-green-900">{analyticsData.overview?.averageRating || 'N/A'}</div>
             <p className="text-xs text-green-600 mt-1">Organization average</p>
           </CardContent>
         </Card>
@@ -199,7 +198,7 @@ const PerformanceAnalytics = () => {
             <Target className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">{analyticsData.overview.goalCompletionRate}%</div>
+            <div className="text-2xl font-bold text-purple-900">{analyticsData.overview?.goalCompletionRate || 0}%</div>
             <p className="text-xs text-purple-600 mt-1">Goals achieved</p>
           </CardContent>
         </Card>
@@ -210,7 +209,7 @@ const PerformanceAnalytics = () => {
             <Calendar className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-900">{analyticsData.overview.reviewsCompleted}</div>
+            <div className="text-2xl font-bold text-orange-900">{analyticsData.overview?.reviewsCompleted || 0}</div>
             <p className="text-xs text-orange-600 mt-1">This period</p>
           </CardContent>
         </Card>
@@ -226,24 +225,30 @@ const PerformanceAnalytics = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {analyticsData.departmentPerformance.map((dept, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{dept.department}</h4>
-                  <p className="text-sm text-gray-600">{dept.employees} employees</p>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-gray-900">{dept.avgRating}</div>
-                    <div className="text-xs text-gray-600">Avg Rating</div>
+            {analyticsData.departmentPerformance?.length > 0 ? (
+              analyticsData.departmentPerformance.map((dept, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900">{dept.department}</h4>
+                    <p className="text-sm text-gray-600">{dept.employees} employees</p>
                   </div>
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-gray-900">{dept.goalCompletion}%</div>
-                    <div className="text-xs text-gray-600">Goals</div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-gray-900">{dept.avgRating}</div>
+                      <div className="text-xs text-gray-600">Avg Rating</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-gray-900">{dept.goalCompletion}%</div>
+                      <div className="text-xs text-gray-600">Goals</div>
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No department performance data available
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -260,19 +265,25 @@ const PerformanceAnalytics = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {analyticsData.performanceTrends.map((trend, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">{trend.month}</span>
-                  <div className="flex items-center gap-4">
-                    <div className="text-sm text-gray-600">
-                      Rating: <span className="font-medium">{trend.rating}</span>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Goals: <span className="font-medium">{trend.goals}%</span>
+              {analyticsData.performanceTrends?.length > 0 ? (
+                analyticsData.performanceTrends.map((trend, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">{trend.month}</span>
+                    <div className="flex items-center gap-4">
+                      <div className="text-sm text-gray-600">
+                        Rating: <span className="font-medium">{trend.rating}</span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Goals: <span className="font-medium">{trend.goals}%</span>
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No performance trends data available
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -287,22 +298,28 @@ const PerformanceAnalytics = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {analyticsData.topPerformers.map((performer, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200">
-                  <div>
-                    <h4 className="font-medium text-gray-900">{performer.name}</h4>
-                    <p className="text-sm text-gray-600">{performer.department}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-yellow-800">
-                      {performer.rating} ⭐
+              {analyticsData.topPerformers?.length > 0 ? (
+                analyticsData.topPerformers.map((performer, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{performer.name}</h4>
+                      <p className="text-sm text-gray-600">{performer.department}</p>
                     </div>
-                    <div className="text-xs text-yellow-700">
-                      {performer.goals}% goals
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-yellow-800">
+                        {performer.rating} ⭐
+                      </div>
+                      <div className="text-xs text-yellow-700">
+                        {performer.goals}% goals
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No top performers data available
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

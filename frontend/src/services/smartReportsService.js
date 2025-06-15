@@ -268,4 +268,3 @@ class SmartReportsService {
 
 // Create and export singleton instance
 export const smartReportsService = new SmartReportsService();
-export default smartReportsService;

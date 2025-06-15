@@ -20,6 +20,14 @@ const authenticateToken = asyncHandler(async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // DEBUG: Log token details for performance endpoints
+    if (req.path.includes('/performance/')) {
+      console.log('🔐 Auth middleware - Performance endpoint accessed');
+      console.log('- Token (first 20 chars):', token.substring(0, 20) + '...');
+      console.log('- Decoded token:', decoded);
+      console.log('- Path:', req.path);
+    }
+
     // Add user info to request (support both old and new token formats)
     req.user = {
       id: decoded.id || decoded.userId, // Support both formats
