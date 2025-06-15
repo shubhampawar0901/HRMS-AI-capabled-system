@@ -39,15 +39,15 @@ class AIResumeParser {
     `;
     
     const result = await executeQuery(query, [
-      parserData.employeeId,
-      parserData.fileName,
-      parserData.filePath,
-      JSON.stringify(parserData.parsedData),
-      parserData.extractedText,
-      parserData.confidence,
-      parserData.processingTime,
+      parserData.employeeId || null,
+      parserData.fileName || null,
+      parserData.filePath || null,
+      JSON.stringify(parserData.parsedData || {}),
+      parserData.extractedText || null,
+      parserData.confidence || 0,
+      parserData.processingTime || 0,
       parserData.status || 'processed',
-      parserData.errorMessage
+      parserData.errorMessage || null
     ]);
     
     return await AIResumeParser.findById(result.insertId);

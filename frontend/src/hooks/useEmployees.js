@@ -87,17 +87,11 @@ export const useEmployees = (initialFilters = {}) => {
 
       const response = await employeeService.getAllEmployees();
 
-      // After handleApiSuccess, the structure is: { success, message, data: { employees, pagination } }
+      // The response structure is: { success: true, data: { employees: [...], pagination: {...} }, message: "..." }
       if (response && response.success) {
         const employees = response.data.employees || [];
-        console.log('✅ API Response Success:', {
-          totalEmployees: employees.length,
-          employees: employees.slice(0, 2), // Log first 2 employees
-          responseStructure: response
-        });
         setAllEmployees(employees);
       } else {
-        console.log('❌ API Response Failed:', response);
         setError(response.message || 'Failed to fetch employees');
         setAllEmployees([]);
       }
@@ -192,7 +186,7 @@ export const useEmployee = (id) => {
 
       const response = await employeeService.getEmployee(id);
 
-      // After handleApiSuccess, the structure is: { success, message, data }
+      // The response structure is: { success: true, data: {...}, message: "..." }
       if (response && response.success) {
         setEmployee(response.data);
       } else {
@@ -355,7 +349,7 @@ export const useDepartments = () => {
 
       const response = await employeeService.getDepartments();
 
-      // After handleApiSuccess, the structure is: { success, message, data }
+      // The response structure is: { success: true, data: [...], message: "..." }
       if (response && response.success) {
         setDepartments(response.data || []);
       } else {

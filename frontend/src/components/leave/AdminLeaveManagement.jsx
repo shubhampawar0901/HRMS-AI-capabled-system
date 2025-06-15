@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '@/hooks/useLeave';
-import { employeeService } from '@/services/employeeService';
+import { useEmployees } from '@/hooks/useEmployees';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +41,12 @@ const AdminLeaveManagement = () => {
     loadLeaveTypes
   } = useLeave();
 
+  const {
+    employees,
+    isLoading: employeesLoading,
+    loadEmployees
+  } = useEmployees();
+
   const [filters, setFilters] = useState({
     status: 'all',
     leaveType: 'all',
@@ -54,30 +60,13 @@ const AdminLeaveManagement = () => {
   const [processAction, setProcessAction] = useState('');
   const [comments, setComments] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [employees, setEmployees] = useState([]);
-  const [employeesLoading, setEmployeesLoading] = useState(false);
-
-  // Load employees data
-  const loadEmployees = async () => {
-    try {
-      setEmployeesLoading(true);
-      const response = await employeeService.getAllEmployees();
-      if (response && response.success) {
-        setEmployees(response.data.employees || []);
-      }
-    } catch (error) {
-      console.error('Failed to load employees:', error);
-    } finally {
-      setEmployeesLoading(false);
-    }
-  };
 
   // Load data on component mount
   useEffect(() => {
     loadLeaveTypes();
     loadEmployees();
     loadTeamApplications(filters);
-  }, [loadLeaveTypes, loadTeamApplications]);
+  }, [loadLeaveTypes, loadEmployees, loadTeamApplications]);
 
   // Reload data when filters change
   useEffect(() => {
@@ -160,6 +149,10 @@ const AdminLeaveManagement = () => {
 
   // Helper function to get employee name by ID
   const getEmployeeName = (employeeId) => {
+    if (!employees || employees.length === 0) {
+      return `Employee ${employeeId}`;
+    }
+
     const employee = employees.find(emp => emp.id === employeeId);
     if (employee) {
       return `${employee.firstName} ${employee.lastName}`.trim();
@@ -307,17 +300,17 @@ const AdminLeaveManagement = () => {
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                             <span className="text-xs font-semibold text-purple-600">
-                              {application.employeeName?.charAt(0) || application.employeeId?.toString().charAt(0) || 'E'}
+                              {getEmployeeName(application.employeeId).charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div className="font-medium text-gray-900">
-                            {application.employeeName || `Employee ${application.employeeId}`}
+                            {getEmployeeName(application.employeeId)}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50">
-                          {application.leaveTypeName || application.leaveType}
+                          {getLeaveTypeName(application.leaveTypeId)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -456,8 +449,8 @@ const AdminLeaveManagement = () => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-medium text-gray-900 mb-2">Application Details</h4>
                 <div className="space-y-1 text-sm text-gray-600">
-                  <div><strong>Employee:</strong> {selectedApplication.employeeName}</div>
-                  <div><strong>Leave Type:</strong> {selectedApplication.leaveTypeName || selectedApplication.leaveType}</div>
+                  <div><strong>Employee:</strong> {getEmployeeName(selectedApplication.employeeId)}</div>
+                  <div><strong>Leave Type:</strong> {getLeaveTypeName(selectedApplication.leaveTypeId)}</div>
                   <div><strong>Duration:</strong> {formatDate(selectedApplication.startDate)} to {formatDate(selectedApplication.endDate)}</div>
                   <div><strong>Days:</strong> {selectedApplication.totalDays || calculateDuration(selectedApplication.startDate, selectedApplication.endDate)}</div>
                 </div>
