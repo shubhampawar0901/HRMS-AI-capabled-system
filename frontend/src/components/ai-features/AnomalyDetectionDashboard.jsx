@@ -176,7 +176,7 @@ const AnomalyDetectionDashboard = React.memo(() => {
             <div className="flex items-center space-x-3">
               {/* Role Badge */}
               <span className="ai-badge">
-                {user?.role === 'admin' ? 'Admin Access' : 'Manager Access'}
+                Admin Access
               </span>
               
               {/* AI Badge */}

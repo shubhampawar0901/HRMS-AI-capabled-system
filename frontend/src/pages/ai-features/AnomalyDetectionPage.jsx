@@ -6,7 +6,7 @@ import AnomalyDetectionDashboard from '@/components/ai-features/AnomalyDetection
 
 /**
  * Anomaly Detection Page - AI-powered attendance anomaly detection
- * Role-based access: Admin and Manager only
+ * Role-based access: Admin only
  *
  * Main page wrapper that provides context and renders the dashboard
  */
@@ -14,7 +14,7 @@ const AnomalyDetectionPage = () => {
   const { user } = useAuthContext();
 
   // Double-check role-based access (additional security layer)
-  if (!user || !['admin', 'manager'].includes(user.role)) {
+  if (!user || user.role !== 'admin') {
     return <Navigate to="/unauthorized" replace />;
   }
 

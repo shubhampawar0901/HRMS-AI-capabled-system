@@ -127,7 +127,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
           name: 'Anomaly Detection',
           href: '/ai-features/anomaly-detection',
           icon: AlertTriangle,
-          roles: ['admin', 'manager'],
+          roles: ['admin'],
           description: 'AI-powered attendance anomaly detection'
         },
         {
