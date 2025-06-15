@@ -142,7 +142,7 @@ export const API_ENDPOINTS = {
     // Smart Reports (Admin/Manager)
     SMART_REPORTS: '/ai/smart-reports',      // POST - Generate smart reports
 
-    // Attendance Anomalies (Admin/Manager)
+    // Attendance Anomalies (Admin Only)
     ATTENDANCE_ANOMALIES: '/ai/attendance-anomalies',       // GET - Get attendance anomalies
     DETECT_ANOMALIES: '/ai/detect-anomalies',               // POST - Detect new anomalies
 

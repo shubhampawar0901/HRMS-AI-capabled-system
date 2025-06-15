@@ -132,7 +132,7 @@ router.get('/smart-feedback/history/:employeeId',
 
 router.get('/attendance-anomalies',
   authenticateToken,
-  authorize('admin', 'manager'),
+  authorize('admin'),
   [
     query('status').optional().isIn(['active', 'resolved', 'ignored']).withMessage('Invalid status')
   ],
@@ -142,7 +142,7 @@ router.get('/attendance-anomalies',
 
 router.get('/attendance-anomalies/stats',
   authenticateToken,
-  authorize('admin', 'manager'),
+  authorize('admin'),
   [
     query('period').optional().isIn(['week', 'month', 'quarter', 'year']).withMessage('Invalid period'),
     query('employeeId').optional().isInt().withMessage('Employee ID must be valid')
@@ -153,7 +153,7 @@ router.get('/attendance-anomalies/stats',
 
 router.post('/detect-anomalies',
   authenticateToken,
-  authorize('admin', 'manager'),
+  authorize('admin'),
   [
     body('employeeId').optional().custom((value) => {
       if (value === null || value === undefined) return true;
@@ -165,6 +165,30 @@ router.post('/detect-anomalies',
   ],
   validateRequest,
   AIController.detectAnomalies
+);
+
+// Resolve anomaly
+router.patch('/attendance-anomalies/:id/resolve',
+  authenticateToken,
+  authorize('admin'),
+  [
+    param('id').isInt().withMessage('Anomaly ID must be valid integer'),
+    body('resolution').optional().isLength({ max: 500 }).withMessage('Resolution must be less than 500 characters')
+  ],
+  validateRequest,
+  AIController.resolveAnomaly
+);
+
+// Ignore anomaly
+router.patch('/attendance-anomalies/:id/ignore',
+  authenticateToken,
+  authorize('admin'),
+  [
+    param('id').isInt().withMessage('Anomaly ID must be valid integer'),
+    body('reason').optional().isLength({ max: 500 }).withMessage('Reason must be less than 500 characters')
+  ],
+  validateRequest,
+  AIController.ignoreAnomaly
 );
 
 // ==========================================

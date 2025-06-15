@@ -77,13 +77,6 @@ class AnomalyDetectionService {
       return response.data;
     } catch (error) {
       console.error('❌ Error fetching anomalies:', error);
-
-      // Check if this is a network error (API not available)
-      if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK' || !error.response) {
-        console.warn('⚠️ API not available, returning mock data for development');
-        return this._getMockResponse('fetch anomalies');
-      }
-
       throw this._handleError(error, 'Failed to fetch anomalies');
     }
   }
@@ -121,17 +114,6 @@ class AnomalyDetectionService {
       return response.data;
     } catch (error) {
       console.error('❌ Error detecting anomalies:', error);
-
-      // Check if this is a network error (API not available)
-      if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK' || !error.response) {
-        console.warn('⚠️ API not available, returning mock data for development');
-        return {
-          success: true,
-          data: [],
-          message: 'Mock anomaly detection completed - API not available'
-        };
-      }
-
       throw this._handleError(error, 'Failed to detect anomalies');
     }
   }
@@ -215,13 +197,6 @@ class AnomalyDetectionService {
       return response.data;
     } catch (error) {
       console.error('❌ Error fetching anomaly statistics:', error);
-
-      // Check if this is a network error (API not available)
-      if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK' || !error.response) {
-        console.warn('⚠️ API not available, returning mock data for development');
-        return this._getMockResponse('statistics');
-      }
-
       throw this._handleError(error, 'Failed to fetch anomaly statistics');
     }
   }
@@ -315,10 +290,15 @@ class AnomalyDetectionService {
    * @returns {Error} Formatted error object
    */
   _handleError(error, defaultMessage) {
-    // Check if this is a network error (API not available)
+    // Handle network errors specifically
     if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK' || !error.response) {
-      console.warn('⚠️ API not available, using mock data for development');
-      return this._getMockResponse(defaultMessage);
+      const networkError = new Error('Unable to connect to the server. Please check your internet connection and try again.');
+      networkError.type = 'NETWORK_ERROR';
+      networkError.statusCode = 0;
+      networkError.userMessage = 'Connection failed. Please ensure the backend server is running and accessible.';
+      networkError.originalError = error;
+      networkError.timestamp = new Date().toISOString();
+      return networkError;
     }
 
     // Extract error message from response
@@ -366,46 +346,7 @@ class AnomalyDetectionService {
     return enhancedError;
   }
 
-  /**
-   * Get mock response when API is not available
-   * @private
-   * @param {string} operation - The operation being performed
-   * @returns {Object} Mock response object
-   */
-  _getMockResponse(operation) {
-    if (operation.includes('fetch anomalies')) {
-      return {
-        success: true,
-        data: [],
-        pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
-        message: 'No anomalies found (mock data)'
-      };
-    }
 
-    if (operation.includes('statistics')) {
-      return {
-        success: true,
-        data: {
-          totalActive: 0,
-          newThisWeek: 0,
-          resolvedThisMonth: 0,
-          highPriority: 0,
-          trends: {
-            weeklyChange: 0,
-            monthlyChange: 0,
-            severityDistribution: { high: 0, medium: 0, low: 0 }
-          }
-        },
-        message: 'Mock statistics data'
-      };
-    }
-
-    return {
-      success: true,
-      data: [],
-      message: 'Mock response - API not available'
-    };
-  }
 }
 
 // Create and export service instance

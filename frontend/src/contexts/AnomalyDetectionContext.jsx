@@ -327,7 +327,13 @@ export const AnomalyDetectionProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error fetching anomalies:', error);
-      dispatch({ type: ActionTypes.SET_ERROR, payload: error.userMessage || error.message });
+
+      // Enhanced error handling with specific error types
+      const errorMessage = error.type === 'NETWORK_ERROR'
+        ? 'Unable to connect to the server. Please check your connection and try again.'
+        : error.userMessage || error.message || 'Failed to fetch anomalies';
+
+      dispatch({ type: ActionTypes.SET_ERROR, payload: errorMessage });
     } finally {
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
     }
@@ -357,13 +363,23 @@ export const AnomalyDetectionProvider = ({ children }) => {
       dispatch({ type: ActionTypes.SET_DETECTION_PROGRESS, payload: 100 });
 
       if (response.success) {
+        // Handle the new response format from backend
+        const { newAnomalies, skippedDuplicates, summary } = response.data;
+
+        console.log('🎯 Anomaly detection results:', summary);
+
         // Add new anomalies to the list
-        if (response.data && response.data.length > 0) {
-          response.data.forEach(anomaly => {
+        if (newAnomalies && newAnomalies.length > 0) {
+          newAnomalies.forEach(anomaly => {
             dispatch({ type: ActionTypes.ADD_ANOMALY, payload: anomaly });
           });
         }
-        
+
+        // Log skipped duplicates for debugging
+        if (skippedDuplicates && skippedDuplicates.length > 0) {
+          console.log('⚠️ Skipped duplicate anomalies:', skippedDuplicates);
+        }
+
         // Refresh the full list to get updated data
         await fetchAnomalies();
       }
@@ -417,7 +433,13 @@ export const AnomalyDetectionProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error fetching anomaly stats:', error);
-      dispatch({ type: ActionTypes.SET_ERROR, payload: error.userMessage || error.message });
+
+      // Enhanced error handling for stats API
+      const errorMessage = error.type === 'NETWORK_ERROR'
+        ? 'Unable to connect to the server. Statistics are temporarily unavailable.'
+        : error.userMessage || error.message || 'Failed to fetch anomaly statistics';
+
+      dispatch({ type: ActionTypes.SET_ERROR, payload: errorMessage });
     }
   }, []);
 
@@ -492,23 +514,11 @@ export const AnomalyDetectionProvider = ({ children }) => {
   // AUTO-DETECTION FOR ADMIN USERS
   // ==========================================
 
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      // Auto-run detection when admin opens the page
-      const runAutoDetection = async () => {
-        const lastWeek = {
-          startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          endDate: new Date().toISOString().split('T')[0]
-        };
-
-        await detectAnomalies(null, lastWeek);
-      };
-
-      // Run with a small delay to allow page to load
-      const timer = setTimeout(runAutoDetection, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [user?.role, detectAnomalies]);
+  // Auto-detection completely removed to prevent:
+  // 1. Unwanted pop-up modal on page load/refresh
+  // 2. Automatic anomaly count increment on page refresh
+  // 3. Duplicate anomaly creation in database
+  // Users must manually trigger detection using the "Run Detection" button
 
   // ==========================================
   // CONTEXT VALUE

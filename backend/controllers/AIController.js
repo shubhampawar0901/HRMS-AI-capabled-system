@@ -350,8 +350,7 @@ class AIController {
 
       console.log(`📊 Getting anomaly stats for ${role} user, employeeId: ${employeeId}, period: ${period}`);
 
-      // For admin users, get system-wide statistics
-      // For managers, get their team statistics (if implemented)
+      // For admin users only - get system-wide statistics
       // employeeId parameter is optional for filtering
 
       // Get actual statistics from database
@@ -375,29 +374,15 @@ class AIController {
           startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       }
 
-      // Get anomaly counts (mock data for now - replace with actual queries)
-      const stats = {
-        totalActive: 0,
-        newThisWeek: 0,
-        resolvedThisMonth: 0,
-        highPriority: 0,
-        trends: {
-          weeklyChange: 0,
-          monthlyChange: 0,
-          severityDistribution: {
-            high: 0,
-            medium: 0,
-            low: 0
-          }
-        },
-        period: period,
-        dateRange: {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: now.toISOString().split('T')[0]
-        }
-      };
+      // Get real statistics from database
+      const stats = await AIAttendanceAnomaly.getStatistics({
+        period,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: now.toISOString().split('T')[0],
+        employeeId: employeeId || null
+      });
 
-      console.log(`✅ Anomaly stats calculated for period: ${period}`);
+      console.log(`✅ Anomaly stats calculated for period: ${period}`, stats);
 
       return sendSuccess(res, stats, 'Attendance anomaly statistics retrieved');
     } catch (error) {
@@ -409,29 +394,127 @@ class AIController {
   static async detectAnomalies(req, res) {
     try {
       const { employeeId, dateRange } = req.body;
-      
+
+      console.log(`🔍 Starting anomaly detection for employeeId: ${employeeId}, dateRange:`, dateRange);
+
       // Run anomaly detection
       const aiService = AIController.getAIService();
       const anomalies = await aiService.detectAttendanceAnomalies(employeeId, dateRange);
-      
-      // Save detected anomalies
+
+      console.log(`🤖 AI detected ${anomalies.length} potential anomalies`);
+
+      // Check for existing anomalies to prevent duplicates
       const savedAnomalies = [];
+      const skippedDuplicates = [];
+
       for (const anomaly of anomalies) {
+        // Check if similar anomaly already exists for this employee and date range
+        const existingAnomaly = await AIAttendanceAnomaly.findExisting({
+          employeeId: anomaly.employeeId,
+          anomalyType: anomaly.type,
+          detectedDate: new Date().toISOString().split('T')[0],
+          status: 'active'
+        });
+
+        if (existingAnomaly) {
+          console.log(`⚠️ Skipping duplicate anomaly for employee ${anomaly.employeeId}, type: ${anomaly.type}`);
+          skippedDuplicates.push({
+            employeeId: anomaly.employeeId,
+            type: anomaly.type,
+            reason: 'Duplicate anomaly already exists'
+          });
+          continue;
+        }
+
+        // Create new anomaly record
         const record = await AIAttendanceAnomaly.create({
           employeeId: anomaly.employeeId,
           anomalyType: anomaly.type,
-          detectedDate: anomaly.date,
+          detectedDate: new Date().toISOString().split('T')[0],
           anomalyData: anomaly.data,
           severity: anomaly.severity,
           description: anomaly.description,
           recommendations: anomaly.recommendations,
           status: 'active'
         });
+
+        console.log(`✅ Created new anomaly record for employee ${anomaly.employeeId}, type: ${anomaly.type}`);
         savedAnomalies.push(record);
       }
 
-      return sendCreated(res, savedAnomalies, 'Anomalies detected and saved');
+      const result = {
+        newAnomalies: savedAnomalies,
+        skippedDuplicates: skippedDuplicates,
+        summary: {
+          totalDetected: anomalies.length,
+          newCreated: savedAnomalies.length,
+          duplicatesSkipped: skippedDuplicates.length
+        }
+      };
+
+      console.log(`📊 Anomaly detection completed:`, result.summary);
+
+      return sendCreated(res, result, `Anomaly detection completed. ${savedAnomalies.length} new anomalies created, ${skippedDuplicates.length} duplicates skipped.`);
     } catch (error) {
+      console.error('Anomaly detection error:', error);
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  static async resolveAnomaly(req, res) {
+    try {
+      const { id } = req.params;
+      const { resolution = '' } = req.body;
+
+      console.log(`✅ Resolving anomaly ${id} with resolution: ${resolution}`);
+
+      // Find the anomaly
+      const anomaly = await AIAttendanceAnomaly.findById(id);
+      if (!anomaly) {
+        return sendError(res, 'Anomaly not found', 404);
+      }
+
+      // Update anomaly status to resolved
+      const updatedAnomaly = await AIAttendanceAnomaly.update(id, {
+        status: 'resolved',
+        resolution,
+        resolvedAt: new Date().toISOString()
+      });
+
+      console.log(`✅ Anomaly ${id} resolved successfully`);
+
+      return sendSuccess(res, updatedAnomaly, 'Anomaly resolved successfully');
+    } catch (error) {
+      console.error('Resolve anomaly error:', error);
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  static async ignoreAnomaly(req, res) {
+    try {
+      const { id } = req.params;
+      const { reason = '' } = req.body;
+
+      console.log(`🚫 Ignoring anomaly ${id} with reason: ${reason}`);
+
+      // Find the anomaly
+      const anomaly = await AIAttendanceAnomaly.findById(id);
+      if (!anomaly) {
+        return sendError(res, 'Anomaly not found', 404);
+      }
+
+      // Update anomaly status to ignored
+      const updatedAnomaly = await AIAttendanceAnomaly.update(id, {
+        status: 'ignored',
+        ignoreReason: reason,
+        ignoredAt: new Date().toISOString()
+      });
+
+      console.log(`✅ Anomaly ${id} ignored successfully`);
+
+      return sendSuccess(res, updatedAnomaly, 'Anomaly ignored successfully');
+    } catch (error) {
+      console.error('Ignore anomaly error:', error);
       return sendError(res, error.message, 500);
     }
   }
