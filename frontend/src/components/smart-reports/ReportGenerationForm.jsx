@@ -2,44 +2,42 @@ import React, { useEffect, useState } from 'react';
 import {
   UserIcon,
   UsersIcon,
-  DocumentTextIcon,
   SparklesIcon,
   ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
-import { useReportGeneration } from '@/hooks/useReportGeneration';
 import { useAuth } from '@/hooks/useAuth';
 import { employeeService } from '@/services/employeeService';
+import { smartReportsService } from '@/services/smartReportsService';
 
 /**
- * Report Generation Form Component
- * Handles the creation of new smart reports with comprehensive form validation
+ * Simplified Report Generation Form Component
+ * Streamlined one-click report generation experience
  */
-const ReportGenerationForm = ({ 
-  onReportGenerated, 
+const ReportGenerationForm = ({
+  onReportGenerated,
   onCancel,
-  className = '' 
+  className = ''
 }) => {
   const { user } = useAuth();
+
+  // Form state
+  const [formData, setFormData] = useState({
+    reportType: 'employee',
+    targetId: ''
+  });
+
+  // UI state
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [managerOptions, setManagerOptions] = useState([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const {
-    formData,
-    errors,
-    loading,
-    updateFormData,
-    setDateRangeFromOption,
-    resetForm,
-    generateReport,
-    availableReportTypes,
-    dateRangeOptions,
-    canGenerateReports,
-    selectedTargetName,
-    autoGenerateReportName
-  } = useReportGeneration(onReportGenerated, (error) => {
-    console.error('Report generation failed:', error);
-  });
+  // Available report types based on user role
+  const availableReportTypes = [
+    { value: 'employee', label: 'Employee Report' },
+    { value: 'team', label: 'Team Report' }
+  ];
 
   /**
    * Load employee options for selection
@@ -47,11 +45,11 @@ const ReportGenerationForm = ({
   const loadEmployeeOptions = async () => {
     setLoadingEmployees(true);
     try {
-      const response = await employeeService.getEmployees({ 
-        limit: 100, 
-        status: 'active' 
+      const response = await employeeService.getEmployees({
+        limit: 100,
+        status: 'active'
       });
-      
+
       if (response.success) {
         setEmployeeOptions(response.data.employees || []);
       }
@@ -70,7 +68,7 @@ const ReportGenerationForm = ({
     try {
       // Get employees who have team members (managers)
       const response = await employeeService.getManagers();
-      
+
       if (response.success) {
         setManagerOptions(response.data.managers || []);
       }
@@ -82,18 +80,52 @@ const ReportGenerationForm = ({
   };
 
   /**
-   * Handle form submission
+   * Simplified form submission - synchronous generation
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const result = await generateReport();
-    
-    if (result.success) {
-      // Form will be reset by the hook
-      if (onReportGenerated) {
-        onReportGenerated(result.data);
+
+    // Validate form
+    if (!formData.reportType || !formData.targetId) {
+      setError('Please select both report type and target.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // Prepare submission data with system defaults
+      const submissionData = {
+        reportType: formData.reportType,
+        targetId: parseInt(formData.targetId),
+        // System defaults - no user input required
+        reportName: `${formData.reportType === 'employee' ? 'Employee' : 'Team'} Report - ${new Date().toLocaleDateString()}`,
+        dateRange: {
+          startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Last 90 days
+          endDate: new Date().toISOString().split('T')[0]
+        }
+      };
+
+      // Generate report synchronously
+      const response = await smartReportsService.generateReport(submissionData);
+
+      if (response.success) {
+        // Reset form
+        setFormData({ reportType: 'employee', targetId: '' });
+
+        // Call success callback with generated report
+        if (onReportGenerated) {
+          onReportGenerated(response.data);
+        }
+      } else {
+        throw new Error(response.message || 'Failed to generate report');
       }
+    } catch (err) {
+      console.error('Error generating report:', err);
+      setError(err.message || 'Failed to generate report. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,8 +133,9 @@ const ReportGenerationForm = ({
    * Handle report type change
    */
   const handleReportTypeChange = (reportType) => {
-    updateFormData({ reportType, targetId: '' });
-    
+    setFormData({ reportType, targetId: '' });
+    setError('');
+
     // Load appropriate options
     if (reportType === 'employee') {
       loadEmployeeOptions();
@@ -115,7 +148,8 @@ const ReportGenerationForm = ({
    * Handle target selection change
    */
   const handleTargetChange = (targetId) => {
-    updateFormData({ targetId });
+    setFormData(prev => ({ ...prev, targetId }));
+    setError('');
   };
 
   /**
@@ -141,13 +175,9 @@ const ReportGenerationForm = ({
   };
 
   /**
-   * Auto-generate report name when target changes
+   * Check if user can generate reports
    */
-  useEffect(() => {
-    if (formData.targetId && selectedTargetName) {
-      autoGenerateReportName();
-    }
-  }, [formData.targetId, selectedTargetName, autoGenerateReportName]);
+  const canGenerateReports = ['admin', 'manager'].includes(user?.role);
 
   // Load initial data
   useEffect(() => {
@@ -170,6 +200,34 @@ const ReportGenerationForm = ({
     );
   }
 
+  // Loading state during report generation
+  if (loading) {
+    return (
+      <div className={`max-w-2xl mx-auto ${className}`}>
+        <div className="text-center py-12">
+          <div className="mx-auto mb-6 h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center">
+            <SparklesIcon className="h-8 w-8 text-indigo-600 animate-pulse" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Generating Your Report...
+          </h2>
+          <p className="text-sm text-gray-600 mb-6">
+            Our AI is analyzing performance data and creating insights. This may take a moment.
+          </p>
+
+          {/* Generic Progress Bar */}
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+            <div className="bg-indigo-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+          </div>
+
+          <p className="text-xs text-gray-500">
+            Please don't close this window...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`max-w-2xl mx-auto ${className}`}>
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -180,9 +238,19 @@ const ReportGenerationForm = ({
             Generate Smart Report
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Create AI-powered performance insights and recommendations
+            One-click AI-powered performance insights and recommendations
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <ExclamationCircleIcon className="h-5 w-5 text-red-600 mr-2" />
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        )}
 
         {/* Report Type Selection */}
         <div>
@@ -194,10 +262,10 @@ const ReportGenerationForm = ({
               <div
                 key={type.value}
                 className={`
-                  relative rounded-lg border-2 p-4 cursor-pointer transition-all duration-200
+                  relative rounded-lg border-2 p-4 cursor-pointer transition-all duration-200 hover:scale-105
                   ${formData.reportType === type.value
-                    ? 'border-indigo-500 bg-indigo-50'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-indigo-500 bg-indigo-50 shadow-lg'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md'
                   }
                 `}
                 onClick={() => handleReportTypeChange(type.value)}
@@ -223,7 +291,7 @@ const ReportGenerationForm = ({
                     <p className={`text-xs ${
                       formData.reportType === type.value ? 'text-indigo-700' : 'text-gray-500'
                     }`}>
-                      {type.value === 'employee' 
+                      {type.value === 'employee'
                         ? 'Individual performance analysis'
                         : 'Team performance overview'
                       }
@@ -241,9 +309,6 @@ const ReportGenerationForm = ({
               </div>
             ))}
           </div>
-          {errors.reportType && (
-            <p className="mt-2 text-sm text-red-600">{errors.reportType}</p>
-          )}
         </div>
 
         {/* Target Selection */}
@@ -256,16 +321,16 @@ const ReportGenerationForm = ({
               value={formData.targetId}
               onChange={(e) => handleTargetChange(e.target.value)}
               disabled={loadingEmployees}
-              className={`
-                block w-full rounded-md border-gray-300 shadow-sm 
-                focus:border-indigo-500 focus:ring-indigo-500
+              className="
+                block w-full rounded-md border-gray-300 shadow-sm
+                focus:border-indigo-500 focus:ring-indigo-500 focus:ring-2
                 disabled:bg-gray-100 disabled:cursor-not-allowed
-                ${errors.targetId ? 'border-red-300' : ''}
-              `}
+                transition-all duration-200 hover:shadow-md
+              "
             >
               <option value="">
-                {loadingEmployees 
-                  ? 'Loading...' 
+                {loadingEmployees
+                  ? 'Loading...'
                   : `Choose ${formData.reportType === 'employee' ? 'employee' : 'manager'}`
                 }
               </option>
@@ -275,98 +340,25 @@ const ReportGenerationForm = ({
                 </option>
               ))}
             </select>
-            {errors.targetId && (
-              <p className="mt-2 text-sm text-red-600">{errors.targetId}</p>
-            )}
           </div>
         )}
 
-        {/* Date Range Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date Range (Optional)
-          </label>
-          
-          {/* Quick Date Range Options */}
-          <div className="mb-3">
-            <div className="flex flex-wrap gap-2">
-              {dateRangeOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setDateRangeFromOption(option)}
-                  className="
-                    px-3 py-1.5 text-xs font-medium rounded-md border
-                    text-gray-700 bg-gray-100 border-gray-200
-                    hover:bg-gray-200 hover:scale-105
-                    transition-all duration-200 ease-in-out
-                  "
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Custom Date Range */}
-          <div className="grid grid-cols-2 gap-4">
+        {/* Simplified Info Box */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <SparklesIcon className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={formData.dateRange.startDate}
-                onChange={(e) => updateFormData({
-                  dateRange: { ...formData.dateRange, startDate: e.target.value }
-                })}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                End Date
-              </label>
-              <input
-                type="date"
-                value={formData.dateRange.endDate}
-                onChange={(e) => updateFormData({
-                  dateRange: { ...formData.dateRange, endDate: e.target.value }
-                })}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
+              <h3 className="text-sm font-medium text-blue-900 mb-1">
+                Smart Report Features
+              </h3>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• AI analyzes last 90 days of performance data</li>
+                <li>• Includes attendance, goals, and review metrics</li>
+                <li>• Generates actionable insights and recommendations</li>
+                <li>• Report name auto-generated based on selection</li>
+              </ul>
             </div>
           </div>
-          {errors.dateRange && (
-            <p className="mt-2 text-sm text-red-600">{errors.dateRange}</p>
-          )}
-        </div>
-
-        {/* Report Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Report Name (Optional)
-          </label>
-          <div className="relative">
-            <DocumentTextIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              value={formData.reportName}
-              onChange={(e) => updateFormData({ reportName: e.target.value })}
-              placeholder="Auto-generated based on selection"
-              className={`
-                block w-full pl-10 rounded-md border-gray-300 shadow-sm 
-                focus:border-indigo-500 focus:ring-indigo-500
-                ${errors.reportName ? 'border-red-300' : ''}
-              `}
-            />
-          </div>
-          {errors.reportName && (
-            <p className="mt-2 text-sm text-red-600">{errors.reportName}</p>
-          )}
-          <p className="mt-1 text-xs text-gray-500">
-            Leave blank to auto-generate based on your selections
-          </p>
         </div>
 
         {/* Form Actions */}
@@ -374,40 +366,33 @@ const ReportGenerationForm = ({
           <button
             type="button"
             onClick={() => {
-              resetForm();
+              setFormData({ reportType: 'employee', targetId: '' });
+              setError('');
               if (onCancel) onCancel();
             }}
             className="
-              px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 
-              rounded-md hover:bg-gray-50 hover:scale-105
+              px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300
+              rounded-md hover:bg-gray-50 hover:scale-105 hover:shadow-md
               transition-all duration-200 ease-in-out
             "
           >
             Cancel
           </button>
-          
+
           <button
             type="submit"
-            disabled={loading || !formData.reportType || !formData.targetId}
+            disabled={!formData.reportType || !formData.targetId || loadingEmployees}
             className="
-              px-6 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent 
-              rounded-md hover:bg-indigo-700 hover:scale-105
+              px-8 py-3 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600
+              border border-transparent rounded-md hover:from-indigo-700 hover:to-purple-700
+              hover:scale-105 hover:shadow-lg
               disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
               transition-all duration-200 ease-in-out
               flex items-center space-x-2
             "
           >
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <SparklesIcon className="h-4 w-4" />
-                <span>Generate Report</span>
-              </>
-            )}
+            <SparklesIcon className="h-5 w-5" />
+            <span>Generate Smart Report</span>
           </button>
         </div>
       </form>

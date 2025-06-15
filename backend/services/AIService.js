@@ -21,9 +21,14 @@ class AIService {
       model: 'gemini-1.5-flash'
     });
 
-    // Advanced model for complex analysis (Gemini 2.0 Flash Exp)
+    // Advanced model for complex analysis (Gemini 1.5 Pro)
     this.advancedModel = this.genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp'
+      model: 'gemini-1.5-pro'
+    });
+
+    // Smart Reports model - Gemini 1.5 Pro for comprehensive analysis
+    this.smartReportsModel = this.genAI.getGenerativeModel({
+      model: 'gemini-1.5-pro'
     });
 
     // Gemini 2.0 Pro model for resume parsing
@@ -1323,7 +1328,8 @@ class AIService {
     try {
       const prompt = this.buildSmartReportPrompt(reportType, data);
 
-      const result = await this.model.generateContent(prompt);
+      // Use Gemini 1.5 Pro for comprehensive Smart Reports
+      const result = await this.smartReportsModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
@@ -1347,89 +1353,242 @@ class AIService {
     ];
   }
 
+  // Helper function to safely format dates
+  formatDateSafely(dateValue) {
+    if (!dateValue) return 'N/A';
+
+    // If it's already a string in a readable format, return as is
+    if (typeof dateValue === 'string') {
+      // Try to parse it as a date and format it
+      try {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return date.toDateString();
+        }
+        // If parsing fails, return the original string
+        return dateValue;
+      } catch (error) {
+        return dateValue;
+      }
+    }
+
+    // If it's a Date object, use toDateString
+    if (dateValue instanceof Date) {
+      return dateValue.toDateString();
+    }
+
+    // Fallback
+    return String(dateValue);
+  }
+
   buildSmartReportPrompt(reportType, data) {
     switch(reportType) {
       case 'employee':
         return `
-          Generate a comprehensive natural language performance summary for this employee:
+          You are a senior HR analytics expert tasked with creating a comprehensive, professional-grade performance analysis report. Generate a detailed, insightful report that provides real value to managers and administrators.
 
-          EMPLOYEE INFORMATION:
+          EMPLOYEE PROFILE:
           - Name: ${data.employee.name}
           - Position: ${data.employee.position}
           - Department: ${data.employee.department}
           - Tenure: ${data.employee.tenure} years
+          - Employee ID: ${data.employee.id}
+          - Hire Date: ${data.employee.hireDate}
 
-          PERFORMANCE METRICS (${data.dateRange.startDate.toDateString()} to ${data.dateRange.endDate.toDateString()}):
+          ANALYSIS PERIOD: ${this.formatDateSafely(data.dateRange.startDate)} to ${this.formatDateSafely(data.dateRange.endDate)}
+
+          COMPREHENSIVE PERFORMANCE DATA:
+
+          Performance Reviews:
           - Average Rating: ${data.performance.averageRating}/5.0
-          - Total Reviews: ${data.performance.totalReviews}
-          - Rating Trend: ${data.performance.ratingTrend}
+          - Total Reviews Completed: ${data.performance.totalReviews}
+          - Performance Trend: ${data.performance.ratingTrend}
+          - Recent Review Scores: ${JSON.stringify(data.performance.recentScores || [])}
+          - Goal Achievement Rate: ${data.performance.goalAchievementRate || 'N/A'}%
 
-          ATTENDANCE METRICS:
-          - Attendance Rate: ${data.attendance.attendanceRate}%
+          Attendance & Punctuality Analysis:
+          - Overall Attendance Rate: ${data.attendance.attendanceRate}%
           - Punctuality Rate: ${data.attendance.punctualityRate}%
-          - Total Hours: ${data.attendance.totalHours}
+          - Total Working Hours: ${data.attendance.totalHours}
+          - Average Daily Hours: ${data.attendance.averageDailyHours || 'N/A'}
+          - Late Arrivals: ${data.attendance.lateCount || 0} instances
+          - Early Departures: ${data.attendance.earlyDepartureCount || 0} instances
+          - Attendance Pattern: ${data.attendance.pattern || 'Regular'}
 
-          GOALS PERFORMANCE:
+          Goal Management & Achievement:
           - Goal Completion Rate: ${data.goals.completionRate}%
-          - Average Achievement: ${data.goals.averageAchievement}%
+          - Average Achievement Score: ${data.goals.averageAchievement}%
           - Active Goals: ${data.goals.activeGoals}
+          - Completed Goals: ${data.goals.completedGoals || 0}
+          - Overdue Goals: ${data.goals.overdueGoals || 0}
+          - Goal Categories: ${JSON.stringify(data.goals.categories || [])}
 
-          LEAVE UTILIZATION:
-          - Leave Days Used: ${data.leave.approvedDays}
-          - Utilization Rate: ${data.leave.utilizationRate}%
+          Leave Management:
+          - Total Leave Days Used: ${data.leave.approvedDays}
+          - Leave Utilization Rate: ${data.leave.utilizationRate}%
+          - Sick Leave Days: ${data.leave.sickDays || 0}
+          - Vacation Days: ${data.leave.vacationDays || 0}
+          - Personal Leave: ${data.leave.personalDays || 0}
+          - Leave Pattern Analysis: ${data.leave.pattern || 'Normal'}
 
-          Please generate a professional, narrative summary that includes:
-          1. Overall performance assessment (2-3 paragraphs)
-          2. Key strengths and achievements
-          3. Areas for improvement or concern
-          4. Specific recommendations for development
-          5. Risk factors (if any)
+          INSTRUCTIONS FOR COMPREHENSIVE ANALYSIS:
+
+          Create a detailed, professional report (minimum 1000-1500 words) that includes:
+
+          1. EXECUTIVE SUMMARY (200-300 words)
+             - Overall performance assessment with specific metrics
+             - Key highlights and concerns
+             - Strategic recommendations summary
+
+          2. DETAILED PERFORMANCE ANALYSIS (300-400 words)
+             - In-depth review of performance ratings and trends
+             - Comparison with department/organizational benchmarks
+             - Analysis of performance consistency and growth trajectory
+             - Identification of peak performance periods and contributing factors
+
+          3. ATTENDANCE & PRODUCTIVITY INSIGHTS (250-300 words)
+             - Comprehensive attendance pattern analysis
+             - Punctuality trends and impact on productivity
+             - Working hours analysis and efficiency metrics
+             - Correlation between attendance and performance outcomes
+
+          4. GOAL ACHIEVEMENT & DEVELOPMENT (200-250 words)
+             - Detailed goal completion analysis
+             - Assessment of goal-setting effectiveness
+             - Development trajectory and skill progression
+             - Alignment with career advancement objectives
+
+          5. RISK ASSESSMENT & OPPORTUNITIES (150-200 words)
+             - Identification of potential retention risks
+             - Performance improvement opportunities
+             - Career development potential assessment
+             - Succession planning considerations
+
+          6. STRATEGIC RECOMMENDATIONS (200-250 words)
+             - Specific, actionable development recommendations
+             - Performance improvement strategies
+             - Career advancement pathways
+             - Management intervention suggestions
 
           Return ONLY a JSON object with this structure:
           {
-            "summary": "A comprehensive 3-4 paragraph narrative summary in professional language",
-            "insights": [
-              "Key insight 1 in natural language",
-              "Key insight 2 in natural language",
-              "Key insight 3 in natural language"
-            ],
-            "recommendations": [
-              "Specific actionable recommendation 1",
-              "Specific actionable recommendation 2",
-              "Specific actionable recommendation 3"
-            ]
+            "reportDocument": "A comprehensive, well-formatted report document (1200-1800 words) that flows as a single unified document with proper headings, sections, and professional formatting. Include:\n\n# EMPLOYEE PERFORMANCE ANALYSIS REPORT\n\n## Executive Summary\n[200-300 words comprehensive overview]\n\n## Performance Analysis\n[300-400 words detailed performance review]\n\n## Attendance & Productivity Assessment\n[250-300 words attendance and productivity analysis]\n\n## Goal Achievement & Development\n[200-250 words goal management and development analysis]\n\n## Risk Assessment & Opportunities\n[150-200 words risk evaluation and growth opportunities]\n\n## Strategic Recommendations\n[200-250 words actionable recommendations with implementation guidance]\n\n## Key Insights\n[Bullet points of critical insights]\n\n## Conclusion\n[Summary and next steps]\n\nUse proper markdown formatting with headers, bullet points, and emphasis where appropriate.",
+            "keyMetrics": {
+              "overallScore": "Calculated overall performance score (0-100)",
+              "strengthAreas": ["Primary strength 1", "Primary strength 2", "Primary strength 3"],
+              "improvementAreas": ["Improvement area 1", "Improvement area 2", "Improvement area 3"],
+              "retentionRisk": "low|medium|high",
+              "developmentPotential": "low|medium|high|exceptional"
+            }
           }
 
-          Make the summary conversational yet professional, as if written by an experienced HR manager.
+          CRITICAL REQUIREMENTS:
+          - Use professional, analytical language appropriate for senior management
+          - Include specific data points and metrics throughout the analysis
+          - Provide actionable insights with clear business impact
+          - Ensure each section meets the minimum word count requirements
+          - Focus on strategic value and decision-making support
+          - Maintain objectivity while highlighting both strengths and areas for improvement
         `;
 
       case 'team':
         return `
-          Generate a comprehensive team performance summary:
+          You are a senior HR analytics expert specializing in team performance analysis. Generate a comprehensive, strategic team performance report that provides actionable insights for senior management and team development.
 
-          TEAM INFORMATION:
+          TEAM PROFILE:
           - Manager: ${data.manager.name}
           - Department: ${data.manager.department}
           - Team Size: ${data.team.size} employees
+          - Manager ID: ${data.manager.id}
+          - Department Code: ${data.manager.departmentCode || 'N/A'}
 
-          TEAM METRICS (${data.dateRange.startDate.toDateString()} to ${data.dateRange.endDate.toDateString()}):
+          ANALYSIS PERIOD: ${this.formatDateSafely(data.dateRange.startDate)} to ${this.formatDateSafely(data.dateRange.endDate)}
+
+          COMPREHENSIVE TEAM METRICS:
+
+          Overall Team Performance:
           - Average Performance Rating: ${data.teamMetrics.averageRating}/5.0
-          - Average Goal Achievement: ${data.teamMetrics.averageGoalAchievement}%
-          - Average Attendance Rate: ${data.teamMetrics.averageAttendanceRate}%
+          - Team Goal Achievement Rate: ${data.teamMetrics.averageGoalAchievement}%
+          - Team Attendance Rate: ${data.teamMetrics.averageAttendanceRate}%
+          - Performance Distribution: ${JSON.stringify(data.teamMetrics.performanceDistribution || {})}
+          - Team Productivity Index: ${data.teamMetrics.productivityIndex || 'N/A'}
 
-          TEAM MEMBERS SUMMARY:
+          Individual Team Member Analysis:
           ${data.memberSummaries.map(member =>
-            `- ${member.employee.name}: Rating ${member.performance.averageRating}/5.0, Attendance ${member.attendance.attendanceRate}%`
+            `- ${member.employee.name} (${member.employee.position}):
+              * Performance Rating: ${member.performance.averageRating}/5.0
+              * Attendance Rate: ${member.attendance.attendanceRate}%
+              * Goal Completion: ${member.goals.completionRate || 'N/A'}%
+              * Tenure: ${member.employee.tenure || 'N/A'} years
+              * Recent Trend: ${member.performance.trend || 'Stable'}`
           ).join('\n')}
 
-          Generate a narrative summary focusing on:
-          1. Team dynamics and overall performance
-          2. Individual standout performances
-          3. Areas needing management attention
-          4. Team development recommendations
-          5. Strategic insights for team growth
+          Team Collaboration Metrics:
+          - Cross-functional Projects: ${data.teamMetrics.collaborationProjects || 0}
+          - Knowledge Sharing Sessions: ${data.teamMetrics.knowledgeSharing || 0}
+          - Team Meeting Attendance: ${data.teamMetrics.meetingAttendance || 'N/A'}%
+          - Peer Feedback Scores: ${data.teamMetrics.peerFeedback || 'N/A'}
 
-          Return the same JSON structure as employee reports but focused on team insights.
+          INSTRUCTIONS FOR COMPREHENSIVE TEAM ANALYSIS:
+
+          Create a detailed, strategic team report (minimum 1200-1600 words) that includes:
+
+          1. EXECUTIVE SUMMARY (250-350 words)
+             - Overall team performance assessment with key metrics
+             - Strategic highlights and critical concerns
+             - High-level recommendations for leadership
+
+          2. TEAM PERFORMANCE ANALYSIS (350-450 words)
+             - Detailed analysis of team performance trends
+             - Individual contributor assessment and ranking
+             - Performance distribution analysis and implications
+             - Comparison with organizational benchmarks and industry standards
+
+          3. TEAM DYNAMICS & COLLABORATION (300-350 words)
+             - Assessment of team cohesion and collaboration effectiveness
+             - Communication patterns and knowledge sharing analysis
+             - Leadership effectiveness and management style impact
+             - Team culture and engagement indicators
+
+          4. INDIVIDUAL TALENT ASSESSMENT (250-300 words)
+             - High-performer identification and development potential
+             - Underperformer analysis and improvement strategies
+             - Succession planning and leadership pipeline assessment
+             - Skills gap analysis and training needs identification
+
+          5. OPERATIONAL EFFICIENCY & PRODUCTIVITY (200-250 words)
+             - Team productivity metrics and efficiency analysis
+             - Resource utilization and capacity planning insights
+             - Process improvement opportunities
+             - Technology adoption and digital transformation readiness
+
+          6. STRATEGIC RECOMMENDATIONS & ACTION PLAN (200-300 words)
+             - Specific team development initiatives
+             - Performance improvement strategies
+             - Talent retention and acquisition recommendations
+             - Long-term team growth and scaling strategies
+
+          Return ONLY a JSON object with this structure:
+          {
+            "reportDocument": "A comprehensive, well-formatted team report document (1400-2000 words) that flows as a single unified document with proper headings, sections, and professional formatting. Include:\n\n# TEAM PERFORMANCE ANALYSIS REPORT\n\n## Executive Summary\n[250-350 words team performance overview]\n\n## Team Performance Analysis\n[350-450 words detailed team performance review with individual assessments]\n\n## Team Dynamics & Collaboration\n[300-350 words team collaboration and communication analysis]\n\n## Individual Talent Assessment\n[250-300 words individual contributor analysis and development potential]\n\n## Operational Efficiency & Productivity\n[200-250 words operational metrics and efficiency analysis]\n\n## Strategic Recommendations & Action Plan\n[200-300 words strategic initiatives and implementation roadmap]\n\n## Key Team Insights\n[Bullet points of critical team insights and observations]\n\n## Leadership Effectiveness Assessment\n[Analysis of management effectiveness and team leadership]\n\n## Conclusion & Next Steps\n[Summary and strategic next steps for team development]\n\nUse proper markdown formatting with headers, bullet points, tables where appropriate, and emphasis for key findings.",
+            "keyMetrics": {
+              "teamEffectivenessScore": "Overall team effectiveness score (0-100)",
+              "topPerformers": ["Top performer 1", "Top performer 2", "Top performer 3"],
+              "developmentPriorities": ["Priority area 1", "Priority area 2", "Priority area 3"],
+              "retentionRisk": "low|medium|high",
+              "growthPotential": "low|medium|high|exceptional",
+              "leadershipEffectiveness": "low|medium|high|exceptional"
+            }
+          }
+
+          CRITICAL REQUIREMENTS:
+          - Use strategic, executive-level language appropriate for senior leadership
+          - Include specific team metrics and comparative analysis
+          - Provide actionable insights with clear business impact and ROI
+          - Ensure each section meets the minimum word count requirements
+          - Focus on strategic team development and organizational value
+          - Balance individual assessment with team-wide analysis
+          - Include both short-term tactical and long-term strategic recommendations
         `;
 
       default:
@@ -1439,32 +1598,273 @@ class AIService {
 
   fallbackSmartReportSummary(reportType, data) {
     if (reportType === 'employee') {
+      const performanceLevel = data.performance.averageRating > 4.0 ? 'exceptional' :
+                              data.performance.averageRating > 3.5 ? 'strong' :
+                              data.performance.averageRating > 2.5 ? 'satisfactory' : 'needs improvement';
+
+      const attendanceLevel = data.attendance.attendanceRate > 95 ? 'excellent' :
+                             data.attendance.attendanceRate > 85 ? 'good' : 'concerning';
+
+      const reportDocument = `# EMPLOYEE PERFORMANCE ANALYSIS REPORT
+
+## Executive Summary
+
+This comprehensive performance analysis for **${data.employee.name}** (${data.employee.position}) reveals ${performanceLevel} performance with an average rating of **${data.performance.averageRating}/5.0** over the analysis period from ${this.formatDateSafely(data.dateRange.startDate)} to ${this.formatDateSafely(data.dateRange.endDate)}.
+
+The employee demonstrates ${attendanceLevel} attendance commitment with a **${data.attendance.attendanceRate}%** attendance rate and **${data.attendance.punctualityRate}%** punctuality rate. Goal achievement analysis shows a **${data.goals.completionRate}%** completion rate, indicating ${data.goals.completionRate > 80 ? 'strong execution capabilities and effective goal management' : 'opportunities for improved goal setting and achievement strategies'}.
+
+## Performance Analysis
+
+**Overall Performance Rating:** ${data.performance.averageRating}/5.0 (${performanceLevel})
+
+${data.employee.name} has demonstrated ${data.performance.ratingTrend} performance trends throughout the evaluation period. With ${data.performance.totalReviews} completed performance reviews, the employee shows consistent delivery patterns with specific strengths in core competency areas.
+
+**Key Performance Indicators:**
+- Average Performance Rating: ${data.performance.averageRating}/5.0
+- Performance Trend: ${data.performance.ratingTrend}
+- Total Reviews Completed: ${data.performance.totalReviews}
+
+The performance analysis indicates ${performanceLevel} contribution to team objectives with opportunities for continued growth and development.
+
+## Attendance & Productivity Assessment
+
+**Attendance Overview:** ${data.attendance.attendanceRate}% (${attendanceLevel})
+
+The employee maintains ${attendanceLevel} attendance standards with **${data.attendance.attendanceRate}%** overall attendance rate and **${data.attendance.punctualityRate}%** punctuality rate. Total working hours of **${data.attendance.totalHours}** demonstrate consistent productivity patterns.
+
+**Attendance Metrics:**
+- Overall Attendance Rate: ${data.attendance.attendanceRate}%
+- Punctuality Rate: ${data.attendance.punctualityRate}%
+- Total Working Hours: ${data.attendance.totalHours}
+
+This attendance profile supports reliable team operations and consistent project delivery capabilities.
+
+## Goal Achievement & Development
+
+**Goal Completion Rate:** ${data.goals.completionRate}%
+
+Goal management assessment reveals **${data.goals.completionRate}%** completion rate with **${data.goals.activeGoals}** currently active goals. The employee demonstrates ${data.goals.averageAchievement}% average achievement score, indicating ${data.goals.completionRate > 80 ? 'effective goal-setting alignment and strong execution capabilities' : 'opportunities for enhanced goal planning and achievement strategies'}.
+
+**Goal Performance Metrics:**
+- Completion Rate: ${data.goals.completionRate}%
+- Average Achievement: ${data.goals.averageAchievement}%
+- Active Goals: ${data.goals.activeGoals}
+
+## Risk Assessment & Opportunities
+
+**Retention Risk:** ${data.performance.ratingTrend === 'declining' && data.attendance.attendanceRate < 85 ? 'Medium to High' : 'Low to Medium'}
+
+Risk assessment indicates ${data.performance.ratingTrend === 'declining' ? 'medium' : 'low'} retention risk based on performance trends and engagement indicators. Development potential assessment shows ${data.performance.averageRating > 4.0 ? 'exceptional' : data.performance.averageRating > 3.5 ? 'high' : 'moderate'} opportunities for career advancement and skill enhancement.
+
+**Risk Factors:**
+- Performance Trend: ${data.performance.ratingTrend}
+- Attendance Reliability: ${attendanceLevel}
+- Development Potential: ${data.performance.averageRating > 4.0 ? 'High' : 'Moderate'}
+
+## Strategic Recommendations
+
+Based on the comprehensive analysis, the following strategic recommendations are proposed:
+
+**Immediate Actions:**
+${data.performance.ratingTrend === 'declining' ?
+  '- Implement performance improvement plan with weekly coaching sessions\n- Establish clear milestone tracking and regular feedback mechanisms' :
+  '- Leverage strong performance for advanced development opportunities\n- Consider leadership development and mentoring roles'}
+
+**Development Focus:**
+${data.attendance.attendanceRate < 90 ?
+  '- Address attendance concerns through flexible work arrangements\n- Evaluate support systems and work-life balance initiatives' :
+  '- Utilize attendance reliability for team leadership responsibilities\n- Expand role complexity and strategic project involvement'}
+
+**Goal Enhancement:**
+${data.goals.completionRate < 80 ?
+  '- Redesign goal-setting process with SMART criteria implementation\n- Increase frequency of progress reviews and support mechanisms' :
+  '- Expand goal complexity and strategic alignment for career development\n- Introduce stretch assignments and cross-functional objectives'}
+
+## Key Insights
+
+• **Performance Trajectory:** ${data.performance.ratingTrend} trend with ${performanceLevel} current performance level
+• **Reliability Factor:** ${attendanceLevel} attendance commitment supporting consistent operations
+• **Goal Orientation:** ${data.goals.completionRate > 80 ? 'Strong' : 'Developing'} achievement focus with systematic approach
+• **Development Readiness:** ${data.performance.averageRating > 4.0 ? 'High potential for advanced responsibilities' : 'Solid foundation for continued growth'}
+
+## Conclusion
+
+${data.employee.name} demonstrates ${performanceLevel} performance with ${attendanceLevel} reliability standards. The analysis indicates ${data.performance.ratingTrend === 'improving' ? 'positive momentum with acceleration potential through targeted development initiatives' : 'stable performance foundation with opportunities for strategic enhancement through focused coaching and development planning'}.
+
+**Next Steps:**
+1. Schedule comprehensive development discussion
+2. Implement recommended action items
+3. Establish quarterly progress review schedule
+4. Monitor performance indicators and adjust strategies as needed
+
+---
+*Report generated on ${new Date().toLocaleDateString()} | Analysis Period: ${this.formatDateSafely(data.dateRange.startDate)} to ${this.formatDateSafely(data.dateRange.endDate)}*`;
+
       return {
-        summary: `${data.employee.name} has shown ${data.performance.ratingTrend} performance with an average rating of ${data.performance.averageRating}/5.0. Their attendance rate of ${data.attendance.attendanceRate}% demonstrates ${data.attendance.attendanceRate > 95 ? 'excellent' : data.attendance.attendanceRate > 85 ? 'good' : 'concerning'} commitment. Goal completion rate of ${data.goals.completionRate}% indicates ${data.goals.completionRate > 80 ? 'strong' : 'developing'} execution capabilities.`,
-        insights: [
-          `Performance rating trend is ${data.performance.ratingTrend}`,
-          `Attendance rate of ${data.attendance.attendanceRate}% is ${data.attendance.attendanceRate > 95 ? 'excellent' : 'acceptable'}`,
-          `Goal completion rate of ${data.goals.completionRate}% shows execution capability`
-        ],
-        recommendations: [
-          data.performance.ratingTrend === 'declining' ? 'Schedule performance improvement discussion' : 'Continue current performance trajectory',
-          data.attendance.attendanceRate < 90 ? 'Address attendance concerns' : 'Maintain current attendance standards',
-          data.goals.completionRate < 80 ? 'Review goal setting and support mechanisms' : 'Consider stretch goals for continued growth'
-        ]
+        reportDocument,
+        keyMetrics: {
+          overallScore: Math.round((data.performance.averageRating * 20) + (data.attendance.attendanceRate * 0.3) + (data.goals.completionRate * 0.2)),
+          strengthAreas: [
+            data.performance.averageRating > 4.0 ? 'Exceptional Performance' : 'Consistent Delivery',
+            data.attendance.attendanceRate > 95 ? 'Excellent Attendance' : 'Reliable Presence',
+            data.goals.completionRate > 80 ? 'Strong Goal Achievement' : 'Goal-Oriented Approach'
+          ],
+          improvementAreas: [
+            data.performance.ratingTrend === 'declining' ? 'Performance Consistency' : 'Advanced Skill Development',
+            data.attendance.punctualityRate < 90 ? 'Punctuality Enhancement' : 'Time Management Optimization',
+            data.goals.completionRate < 80 ? 'Goal Setting Effectiveness' : 'Strategic Planning Skills'
+          ],
+          retentionRisk: data.performance.ratingTrend === 'declining' && data.attendance.attendanceRate < 85 ? 'high' :
+                        data.performance.averageRating < 3.0 ? 'medium' : 'low',
+          developmentPotential: data.performance.averageRating > 4.0 && data.goals.completionRate > 85 ? 'exceptional' :
+                               data.performance.averageRating > 3.5 ? 'high' : 'medium'
+        }
       };
     } else {
+      // Team report fallback
+      const teamPerformanceLevel = data.teamMetrics.averageRating > 4.0 ? 'exceptional' :
+                                   data.teamMetrics.averageRating > 3.5 ? 'strong' :
+                                   data.teamMetrics.averageRating > 2.5 ? 'satisfactory' : 'needs improvement';
+
+      const teamReportDocument = `# TEAM PERFORMANCE ANALYSIS REPORT
+
+## Executive Summary
+
+This comprehensive team performance analysis for **${data.manager.name}'s** ${data.team.size}-member team in the ${data.manager.department} department reveals ${teamPerformanceLevel} collective performance with an average rating of **${data.teamMetrics.averageRating}/5.0** during the analysis period from ${this.formatDateSafely(data.dateRange.startDate)} to ${this.formatDateSafely(data.dateRange.endDate)}.
+
+The team demonstrates strong operational effectiveness with **${data.teamMetrics.averageAttendanceRate}%** average attendance rate and **${data.teamMetrics.averageGoalAchievement}%** goal achievement rate. Team dynamics analysis indicates effective collaboration and leadership alignment with opportunities for strategic development and enhanced performance optimization.
+
+## Team Performance Analysis
+
+**Overall Team Rating:** ${data.teamMetrics.averageRating}/5.0 (${teamPerformanceLevel})
+
+The team of ${data.team.size} members demonstrates ${teamPerformanceLevel} collective performance across all evaluation criteria. Individual performance distribution shows balanced contribution levels with identified high performers and development opportunities.
+
+**Team Performance Metrics:**
+- Average Team Rating: ${data.teamMetrics.averageRating}/5.0
+- Team Size: ${data.team.size} members
+- Performance Level: ${teamPerformanceLevel}
+- Goal Achievement Rate: ${data.teamMetrics.averageGoalAchievement}%
+
+**Individual Team Member Performance:**
+${data.memberSummaries.map(member =>
+  `• **${member.employee.name}** (${member.employee.position}): ${member.performance.averageRating}/5.0 rating, ${member.attendance.attendanceRate}% attendance`
+).join('\n')}
+
+## Team Dynamics & Collaboration
+
+**Collaboration Effectiveness:** ${data.teamMetrics.averageRating > 3.5 ? 'High' : 'Moderate'}
+
+The team demonstrates effective working relationships with strong communication patterns and knowledge sharing practices. Leadership effectiveness under ${data.manager.name}'s management shows positive team culture development with opportunities for enhanced engagement and strategic alignment.
+
+**Key Collaboration Indicators:**
+- Team Communication: Effective
+- Knowledge Sharing: Active
+- Leadership Alignment: Strong
+- Team Cohesion: ${teamPerformanceLevel}
+
+## Individual Talent Assessment
+
+**High Performers Identified:** ${data.memberSummaries.filter(m => m.performance.averageRating > 4.0).length} team members
+
+Individual talent analysis across ${data.team.size} team members reveals diverse skill sets and development potential. The following performance distribution has been identified:
+
+**Performance Distribution:**
+${data.memberSummaries.map(member => {
+  const level = member.performance.averageRating > 4.0 ? 'High Performer' :
+                member.performance.averageRating > 3.5 ? 'Strong Contributor' :
+                member.performance.averageRating > 2.5 ? 'Solid Performer' : 'Development Needed';
+  return `• ${member.employee.name}: ${level} (${member.performance.averageRating}/5.0)`;
+}).join('\n')}
+
+## Operational Efficiency & Productivity
+
+**Team Attendance Rate:** ${data.teamMetrics.averageAttendanceRate}%
+
+Operational efficiency metrics demonstrate effective resource utilization with **${data.teamMetrics.averageAttendanceRate}%** attendance reliability supporting consistent project delivery. The team maintains strong operational standards with opportunities for process optimization.
+
+**Operational Metrics:**
+- Average Attendance: ${data.teamMetrics.averageAttendanceRate}%
+- Goal Achievement: ${data.teamMetrics.averageGoalAchievement}%
+- Team Productivity: ${teamPerformanceLevel}
+- Resource Utilization: Effective
+
+## Strategic Recommendations & Action Plan
+
+Based on comprehensive team analysis, the following strategic recommendations are proposed:
+
+**Team Development Initiatives:**
+${teamPerformanceLevel === 'exceptional' ?
+  '• Implement advanced leadership development programs\n• Establish mentoring roles for high performers\n• Create cross-functional project opportunities' :
+  '• Focus on performance optimization and skill enhancement\n• Implement regular team development sessions\n• Establish clear performance improvement pathways'}
+
+**Leadership Enhancement:**
+• Strengthen team communication frameworks
+• Implement regular feedback mechanisms
+• Develop succession planning strategies
+• Enhance team collaboration tools and processes
+
+**Performance Optimization:**
+${data.teamMetrics.averageAttendanceRate < 90 ?
+  '• Address attendance concerns through team engagement initiatives\n• Evaluate work-life balance and support systems' :
+  '• Leverage strong attendance for increased project complexity\n• Expand team responsibilities and strategic involvement'}
+
+## Key Team Insights
+
+• **Team Effectiveness:** ${teamPerformanceLevel} collective performance with balanced individual contributions
+• **Leadership Impact:** Positive management effectiveness under ${data.manager.name}'s leadership
+• **Growth Potential:** ${data.teamMetrics.averageRating > 4.0 ? 'High potential for advanced team initiatives' : 'Solid foundation for continued development'}
+• **Operational Reliability:** ${data.teamMetrics.averageAttendanceRate}% attendance rate supporting consistent delivery
+• **Strategic Positioning:** Strong foundation for organizational growth and expansion
+
+## Leadership Effectiveness Assessment
+
+**Management Performance:** ${data.teamMetrics.averageRating > 4.0 ? 'Exceptional' : data.teamMetrics.averageRating > 3.5 ? 'Strong' : 'Effective'}
+
+${data.manager.name} demonstrates ${data.teamMetrics.averageRating > 4.0 ? 'exceptional' : 'effective'} leadership capabilities with the team achieving ${teamPerformanceLevel} performance levels. Leadership effectiveness is evidenced by team cohesion, performance consistency, and goal achievement rates.
+
+**Leadership Strengths:**
+• Team performance management
+• Goal alignment and achievement
+• Operational effectiveness
+• Team development focus
+
+## Conclusion & Next Steps
+
+The ${data.manager.department} team under ${data.manager.name}'s leadership demonstrates ${teamPerformanceLevel} performance with strong operational foundations. The analysis indicates excellent potential for continued growth through targeted development initiatives and strategic enhancement programs.
+
+**Immediate Next Steps:**
+1. Implement recommended team development initiatives
+2. Establish regular performance monitoring systems
+3. Create individual development plans for team members
+4. Schedule quarterly team effectiveness reviews
+
+**Long-term Strategic Goals:**
+1. Enhance team leadership capabilities
+2. Expand cross-functional collaboration
+3. Develop succession planning framework
+4. Optimize operational efficiency and productivity
+
+---
+*Report generated on ${new Date().toLocaleDateString()} | Analysis Period: ${this.formatDateSafely(data.dateRange.startDate)} to ${this.formatDateSafely(data.dateRange.endDate)}*`;
+
       return {
-        summary: `Team of ${data.team.size} members under ${data.manager.name} shows average performance rating of ${data.teamMetrics.averageRating}/5.0 with ${data.teamMetrics.averageAttendanceRate}% attendance rate.`,
-        insights: [
-          `Team size: ${data.team.size} members`,
-          `Average performance: ${data.teamMetrics.averageRating}/5.0`,
-          `Team attendance: ${data.teamMetrics.averageAttendanceRate}%`
-        ],
-        recommendations: [
-          'Regular team performance reviews',
-          'Focus on team development',
-          'Monitor individual performance trends'
-        ]
+        reportDocument: teamReportDocument,
+        keyMetrics: {
+          teamEffectivenessScore: Math.round((data.teamMetrics.averageRating * 20) + (data.teamMetrics.averageAttendanceRate * 0.3) + (data.teamMetrics.averageGoalAchievement * 0.2)),
+          topPerformers: data.memberSummaries.slice(0, 3).map(member => member.employee.name),
+          developmentPriorities: [
+            teamPerformanceLevel === 'exceptional' ? 'Advanced Leadership Development' : 'Performance Enhancement',
+            'Cross-functional Collaboration',
+            'Strategic Planning Capabilities'
+          ],
+          retentionRisk: data.teamMetrics.averageRating < 3.0 ? 'high' :
+                        data.teamMetrics.averageAttendanceRate < 85 ? 'medium' : 'low',
+          growthPotential: data.teamMetrics.averageRating > 4.0 && data.teamMetrics.averageGoalAchievement > 85 ? 'exceptional' :
+                          data.teamMetrics.averageRating > 3.5 ? 'high' : 'medium',
+          leadershipEffectiveness: data.teamMetrics.averageRating > 4.0 ? 'exceptional' :
+                                  data.teamMetrics.averageRating > 3.5 ? 'high' : 'medium'
+        }
       };
     }
   }

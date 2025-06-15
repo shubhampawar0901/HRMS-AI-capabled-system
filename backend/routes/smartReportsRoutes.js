@@ -29,13 +29,22 @@ const paginationValidation = [
 // SMART REPORTS ROUTES
 // ==========================================
 
-// POST /api/smart-reports - Generate new smart report
+// POST /api/smart-reports - Generate new smart report (asynchronous)
 router.post('/',
   authenticateToken,
   authorize('admin', 'manager'),
   generateReportValidation,
   validateRequest,
   SmartReportsController.generateSmartReport
+);
+
+// POST /api/smart-reports/sync - Generate smart report synchronously
+router.post('/sync',
+  authenticateToken,
+  authorize('admin', 'manager'),
+  generateReportValidation,
+  validateRequest,
+  SmartReportsController.generateSmartReportSync
 );
 
 // GET /api/smart-reports - List smart reports with pagination

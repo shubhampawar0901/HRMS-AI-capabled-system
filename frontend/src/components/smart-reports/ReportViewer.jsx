@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { 
+import {
   ArrowLeftIcon,
   DocumentArrowDownIcon,
   ShareIcon,
@@ -9,8 +9,6 @@ import {
   ChartBarIcon
 } from '@heroicons/react/24/outline';
 import ReportStatusBadge from './ReportStatusBadge';
-import InsightsSection from './InsightsSection';
-import RecommendationsSection from './RecommendationsSection';
 import DataSnapshotModal from './DataSnapshotModal';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -18,16 +16,15 @@ import { useAuth } from '@/hooks/useAuth';
  * Report Viewer Component
  * Displays a complete smart report with all sections and actions
  */
-const ReportViewer = ({ 
-  report, 
-  onBack, 
+const ReportViewer = ({
+  report,
+  onBack,
   onExport,
   onShare,
-  className = '' 
+  className = ''
 }) => {
   const { user } = useAuth();
   const [showDataSnapshot, setShowDataSnapshot] = useState(false);
-  const [activeSection, setActiveSection] = useState('summary');
 
   if (!report) {
     return (
@@ -84,153 +81,222 @@ const ReportViewer = ({
   const ReportIcon = reportTypeInfo.icon;
 
   /**
-   * Render navigation tabs
+   * Render markdown-style content with basic formatting
    */
-  const renderTabs = () => {
-    const tabs = [
-      { key: 'summary', label: 'Summary', count: null },
-      { key: 'insights', label: 'Insights', count: report.insights?.length || 0 },
-      { key: 'recommendations', label: 'Recommendations', count: report.recommendations?.length || 0 }
-    ];
+  const renderMarkdownContent = (content) => {
+    if (!content) return null;
+
+    // Split content into lines and process each line
+    const lines = content.split('\n');
+    const elements = [];
+    let currentElement = null;
+    let listItems = [];
+
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim();
+
+      // Handle headers
+      if (trimmedLine.startsWith('# ')) {
+        if (listItems.length > 0) {
+          elements.push(<ul key={`list-${elements.length}`} className="list-disc list-inside mb-4 space-y-1">{listItems}</ul>);
+          listItems = [];
+        }
+        elements.push(<h1 key={index} className="text-2xl font-bold text-gray-900 mb-6 pb-2 border-b border-gray-200">{trimmedLine.substring(2)}</h1>);
+      } else if (trimmedLine.startsWith('## ')) {
+        if (listItems.length > 0) {
+          elements.push(<ul key={`list-${elements.length}`} className="list-disc list-inside mb-4 space-y-1">{listItems}</ul>);
+          listItems = [];
+        }
+        elements.push(<h2 key={index} className="text-xl font-semibold text-gray-800 mb-4 mt-6">{trimmedLine.substring(3)}</h2>);
+      } else if (trimmedLine.startsWith('### ')) {
+        if (listItems.length > 0) {
+          elements.push(<ul key={`list-${elements.length}`} className="list-disc list-inside mb-4 space-y-1">{listItems}</ul>);
+          listItems = [];
+        }
+        elements.push(<h3 key={index} className="text-lg font-medium text-gray-700 mb-3 mt-4">{trimmedLine.substring(4)}</h3>);
+      }
+      // Handle bullet points
+      else if (trimmedLine.startsWith('• ') || trimmedLine.startsWith('- ')) {
+        const content = trimmedLine.substring(2);
+        // Handle bold text in bullet points
+        const formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        listItems.push(<li key={index} className="text-gray-700" dangerouslySetInnerHTML={{ __html: formattedContent }} />);
+      }
+      // Handle regular paragraphs
+      else if (trimmedLine && !trimmedLine.startsWith('---')) {
+        if (listItems.length > 0) {
+          elements.push(<ul key={`list-${elements.length}`} className="list-disc list-inside mb-4 space-y-1">{listItems}</ul>);
+          listItems = [];
+        }
+        // Handle bold text and other formatting
+        let formattedLine = trimmedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        elements.push(<p key={index} className="text-gray-700 mb-3 leading-relaxed" dangerouslySetInnerHTML={{ __html: formattedLine }} />);
+      }
+      // Handle empty lines (spacing)
+      else if (!trimmedLine && !trimmedLine.startsWith('---')) {
+        // Add spacing for empty lines
+        if (elements.length > 0 && elements[elements.length - 1].type !== 'div') {
+          elements.push(<div key={index} className="mb-2" />);
+        }
+      }
+    });
+
+    // Add any remaining list items
+    if (listItems.length > 0) {
+      elements.push(<ul key={`list-${elements.length}`} className="list-disc list-inside mb-4 space-y-1">{listItems}</ul>);
+    }
+
+    return elements;
+  };
+
+  /**
+   * Render the unified report document
+   */
+  const renderReportDocument = () => {
+    // Get the report content - prioritize reportDocument, fallback to aiSummary
+    const reportContent = report.reportDocument || report.aiSummary || 'No report content available.';
 
     return (
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8 px-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveSection(tab.key)}
-              className={`
-                py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap
-                transition-all duration-200 ease-in-out
-                ${activeSection === tab.key
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
-            >
-              {tab.label}
-              {tab.count !== null && (
-                <span className={`
-                  ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium
-                  ${activeSection === tab.key
-                    ? 'bg-indigo-100 text-indigo-600'
-                    : 'bg-gray-100 text-gray-600'
-                  }
-                `}>
-                  {tab.count}
-                </span>
+      <div className="max-w-none">
+        {/* Key Metrics Dashboard - Show at top if available */}
+        {report.keyMetrics && (
+          <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Performance Metrics</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Overall Score */}
+              {report.keyMetrics.overallScore && (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                        <ChartBarIcon className="h-5 w-5 text-indigo-600" />
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-900">Overall Score</p>
+                      <p className="text-lg font-semibold text-indigo-600">
+                        {report.keyMetrics.overallScore}/100
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
-            </button>
-          ))}
-        </nav>
+
+              {/* Retention Risk */}
+              {report.keyMetrics.retentionRisk && (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        report.keyMetrics.retentionRisk === 'high' ? 'bg-red-100' :
+                        report.keyMetrics.retentionRisk === 'medium' ? 'bg-yellow-100' : 'bg-green-100'
+                      }`}>
+                        <UserIcon className={`h-5 w-5 ${
+                          report.keyMetrics.retentionRisk === 'high' ? 'text-red-600' :
+                          report.keyMetrics.retentionRisk === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                        }`} />
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-900">Retention Risk</p>
+                      <p className={`text-lg font-semibold capitalize ${
+                        report.keyMetrics.retentionRisk === 'high' ? 'text-red-600' :
+                        report.keyMetrics.retentionRisk === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {report.keyMetrics.retentionRisk}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Development Potential */}
+              {report.keyMetrics.developmentPotential && (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <EyeIcon className="h-5 w-5 text-purple-600" />
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-900">Development Potential</p>
+                      <p className="text-lg font-semibold text-purple-600 capitalize">
+                        {report.keyMetrics.developmentPotential}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Team Effectiveness (for team reports) */}
+              {report.keyMetrics.teamEffectivenessScore && (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <ChartBarIcon className="h-5 w-5 text-green-600" />
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-900">Team Effectiveness</p>
+                      <p className="text-lg font-semibold text-green-600">
+                        {report.keyMetrics.teamEffectivenessScore}/100
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Main Report Document */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="prose prose-lg max-w-none">
+            {renderMarkdownContent(reportContent)}
+          </div>
+        </div>
+
+        {/* Strength and Improvement Areas - Show at bottom if available */}
+        {report.keyMetrics && (report.keyMetrics.strengthAreas || report.keyMetrics.improvementAreas) && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Strength Areas */}
+            {report.keyMetrics.strengthAreas && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                <h4 className="text-lg font-semibold text-green-900 mb-4">Key Strengths</h4>
+                <ul className="space-y-3">
+                  {report.keyMetrics.strengthAreas.map((strength, index) => (
+                    <li key={index} className="flex items-start text-green-800">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-3 mt-2 flex-shrink-0"></div>
+                      <span className="text-sm font-medium">{strength}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Improvement Areas */}
+            {report.keyMetrics.improvementAreas && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                <h4 className="text-lg font-semibold text-orange-900 mb-4">Areas for Improvement</h4>
+                <ul className="space-y-3">
+                  {report.keyMetrics.improvementAreas.map((area, index) => (
+                    <li key={index} className="flex items-start text-orange-800">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full mr-3 mt-2 flex-shrink-0"></div>
+                      <span className="text-sm font-medium">{area}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   };
 
-  /**
-   * Render report summary section
-   */
-  const renderSummary = () => (
-    <div className="prose max-w-none">
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">AI-Generated Summary</h3>
-        <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-          {report.aiSummary}
-        </div>
-      </div>
 
-      {/* Quick Stats */}
-      {report.dataSnapshot && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {report.dataSnapshot.performance && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <ChartBarIcon className="h-5 w-5 text-blue-600" />
-                  </div>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">Performance Rating</p>
-                  <p className="text-lg font-semibold text-blue-600">
-                    {report.dataSnapshot.performance.averageRating}/5.0
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {report.dataSnapshot.attendance && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <CalendarIcon className="h-5 w-5 text-green-600" />
-                  </div>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">Attendance Rate</p>
-                  <p className="text-lg font-semibold text-green-600">
-                    {report.dataSnapshot.attendance.attendanceRate}%
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {report.dataSnapshot.goals && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <EyeIcon className="h-5 w-5 text-purple-600" />
-                  </div>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">Goal Completion</p>
-                  <p className="text-lg font-semibold text-purple-600">
-                    {report.dataSnapshot.goals.completionRate}%
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
-  /**
-   * Render active section content
-   */
-  const renderActiveSection = () => {
-    switch (activeSection) {
-      case 'insights':
-        return (
-          <InsightsSection
-            insights={report.insights || []}
-            title="AI-Generated Insights"
-            className="p-6"
-          />
-        );
-      case 'recommendations':
-        return (
-          <RecommendationsSection
-            recommendations={report.recommendations || []}
-            title="Action Recommendations"
-            className="p-6"
-          />
-        );
-      case 'summary':
-      default:
-        return (
-          <div className="p-6">
-            {renderSummary()}
-          </div>
-        );
-    }
-  };
 
   return (
     <div className={`bg-white ${className}`}>
@@ -276,7 +342,7 @@ const ReportViewer = ({
               <button
                 onClick={() => setShowDataSnapshot(true)}
                 className="
-                  inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 
+                  inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700
                   bg-white border border-gray-300 rounded-md hover:bg-gray-50
                   transition-all duration-200 ease-in-out hover:scale-105
                 "
@@ -284,36 +350,6 @@ const ReportViewer = ({
                 <ChartBarIcon className="h-4 w-4 mr-2" />
                 View Data
               </button>
-
-              {/* Export Button */}
-              {onExport && (
-                <button
-                  onClick={() => onExport(report)}
-                  className="
-                    inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 
-                    bg-white border border-gray-300 rounded-md hover:bg-gray-50
-                    transition-all duration-200 ease-in-out hover:scale-105
-                  "
-                >
-                  <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
-                  Export
-                </button>
-              )}
-
-              {/* Share Button */}
-              {onShare && (
-                <button
-                  onClick={() => onShare(report)}
-                  className="
-                    inline-flex items-center px-3 py-2 text-sm font-medium text-white 
-                    bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700
-                    transition-all duration-200 ease-in-out hover:scale-105
-                  "
-                >
-                  <ShareIcon className="h-4 w-4 mr-2" />
-                  Share
-                </button>
-              )}
             </div>
           </div>
 
@@ -339,14 +375,14 @@ const ReportViewer = ({
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        {renderTabs()}
       </div>
 
       {/* Content */}
       <div className="min-h-96">
         {report.status === 'completed' ? (
-          renderActiveSection()
+          <div className="p-6">
+            {renderReportDocument()}
+          </div>
         ) : report.status === 'generating' ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">

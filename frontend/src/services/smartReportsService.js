@@ -10,7 +10,7 @@ import { apiRequest } from '@/api/interceptors';
 class SmartReportsService {
   
   /**
-   * Generate new smart report
+   * Generate new smart report synchronously
    * @param {Object} reportData - Report generation data
    * @param {string} reportData.reportType - "employee" or "team"
    * @param {number} reportData.targetId - employee_id for employee reports, manager_id for team reports
@@ -22,8 +22,20 @@ class SmartReportsService {
    */
   async generateReport(reportData) {
     return apiRequest(
+      () => axiosInstance.post(`${API_ENDPOINTS.SMART_REPORTS.GENERATE}/sync`, reportData),
+      'smart-reports-generate-sync'
+    );
+  }
+
+  /**
+   * Generate new smart report asynchronously (original method)
+   * @param {Object} reportData - Report generation data
+   * @returns {Promise} API response with pending report data
+   */
+  async generateReportAsync(reportData) {
+    return apiRequest(
       () => axiosInstance.post(API_ENDPOINTS.SMART_REPORTS.GENERATE, reportData),
-      'smart-reports-generate'
+      'smart-reports-generate-async'
     );
   }
 
