@@ -148,7 +148,16 @@ const AppRoutes = () => {
 
         {/* AI Features */}
         <Route path="ai-features" element={<AIFeaturesPage />} />
-        <Route path="ai-features/attrition" element={<AttritionPage />} />
+
+        {/* AI Features - Attrition Predictor (Admin Only) */}
+        <Route
+          path="ai-features/attrition"
+          element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AttritionPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* AI Features - Anomaly Detection (Admin/Manager Only) */}
         <Route
