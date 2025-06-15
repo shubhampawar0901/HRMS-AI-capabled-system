@@ -158,13 +158,84 @@ class AIController {
     try {
       const { employeeId } = req.params;
       const { feedbackType, limit = 10 } = req.query;
-      
+
       const feedback = await AISmartFeedback.findByEmployee(employeeId, {
         feedbackType,
         limit: parseInt(limit)
       });
 
       return sendSuccess(res, feedback, 'Feedback history retrieved');
+    } catch (error) {
+      return sendError(res, error.message, 500);
+    }
+  }
+
+  static async updateSmartFeedback(req, res) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const { sendEmail = false } = req.body; // ✅ NEW: Optional email flag
+      const userId = req.user.id;
+
+      // Check if feedback exists
+      const existingFeedback = await AISmartFeedback.findById(id);
+      if (!existingFeedback) {
+        return sendError(res, 'Feedback not found', 404);
+      }
+
+      // Update feedback
+      const updatedFeedback = await AISmartFeedback.update(id, updateData);
+
+      // ✅ NEW: Send email if requested
+      if (sendEmail) {
+        try {
+          // Get employee details
+          const Employee = require('../models/Employee');
+          const employee = await Employee.findById(existingFeedback.employeeId);
+
+          // Get manager details
+          const manager = await Employee.findByUserId(userId);
+
+          if (employee && manager) {
+            const EmailService = require('../services/EmailService');
+            const emailService = new EmailService();
+
+            const emailResult = await emailService.sendFeedbackEmail(
+              employee.email,
+              `${employee.firstName} ${employee.lastName}`,
+              {
+                feedbackType: existingFeedback.feedbackType,
+                generatedFeedback: updateData.generatedFeedback || existingFeedback.generatedFeedback,
+                suggestions: updateData.suggestions || existingFeedback.suggestions
+              },
+              `${manager.firstName} ${manager.lastName}`
+            );
+
+            console.log('📧 Feedback email sent:', emailResult);
+            return sendSuccess(res, {
+              feedback: updatedFeedback,
+              emailSent: true,
+              emailResult: emailResult
+            }, 'Feedback updated and email sent successfully');
+          } else {
+            console.warn('⚠️ Could not find employee or manager details for email');
+            return sendSuccess(res, {
+              feedback: updatedFeedback,
+              emailSent: false,
+              warning: 'Feedback updated but email could not be sent - missing employee/manager details'
+            }, 'Feedback updated but email failed');
+          }
+        } catch (emailError) {
+          console.error('❌ Email sending failed:', emailError);
+          return sendSuccess(res, {
+            feedback: updatedFeedback,
+            emailSent: false,
+            error: emailError.message
+          }, 'Feedback updated but email failed to send');
+        }
+      }
+
+      return sendSuccess(res, updatedFeedback, 'Feedback updated successfully');
     } catch (error) {
       return sendError(res, error.message, 500);
     }

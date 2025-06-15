@@ -286,6 +286,74 @@
     @apply border-ring/50;
   }
 
+  /* Enhanced Form Inputs with Blue Focus */
+  .hrms-input-shadow {
+    @apply w-full px-3 py-2 bg-background border border-gray-300 rounded-md text-sm;
+    @apply shadow-sm hover:shadow-lg;
+    @apply transition-all duration-300 ease-in-out;
+    @apply focus:outline-none;
+  }
+
+  .hrms-input-shadow:hover {
+    @apply border-gray-400;
+  }
+
+  .hrms-input-shadow:focus {
+    @apply border-blue-500;
+    box-shadow: 0 0 0 1px rgb(59 130 246 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+
+  /* Enhanced Select Components with Blue Focus */
+  .hrms-select-shadow {
+    @apply shadow-sm hover:shadow-lg;
+    @apply transition-all duration-300 ease-in-out;
+    @apply focus:outline-none;
+    @apply border border-gray-300 hover:border-gray-400;
+  }
+
+  .hrms-select-shadow:focus,
+  .hrms-select-shadow[data-state="open"] {
+    @apply border-blue-500 !important;
+    box-shadow: 0 0 0 1px rgb(59 130 246 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+  }
+
+  /* Override any conflicting focus styles */
+  .hrms-select-shadow[data-state="open"]:focus {
+    @apply border-blue-500 !important;
+    box-shadow: 0 0 0 1px rgb(59 130 246 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+    outline: none !important;
+  }
+
+  /* Remove any default focus ring */
+  .hrms-select-shadow:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 1px rgb(59 130 246 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+  }
+
+  /* Left align select value text */
+  .hrms-select-shadow [data-radix-select-value] {
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Ensure select trigger content is left aligned */
+  .hrms-select-shadow .select-trigger-content {
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Enhanced Textarea with Blue Focus */
+  .hrms-textarea-shadow {
+    @apply shadow-sm hover:shadow-lg;
+    @apply transition-all duration-300 ease-in-out;
+    @apply focus:outline-none;
+  }
+
+  .hrms-textarea-shadow:focus {
+    @apply border-blue-500;
+    box-shadow: 0 0 0 1px rgb(59 130 246 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+
   /* Navigation System */
   .hrms-nav-item {
     @apply flex items-center px-3 py-2 rounded-md text-sm font-medium;

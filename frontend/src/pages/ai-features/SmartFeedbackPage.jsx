@@ -47,6 +47,7 @@ const SmartFeedbackPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedFeedback, setEditedFeedback] = useState('');
+  const [isSending, setIsSending] = useState(false); // ✅ NEW: Add sending state
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [feedbackHistory, setFeedbackHistory] = useState([]);
@@ -170,24 +171,93 @@ const SmartFeedbackPage = () => {
     }
   };
 
-  const handleAcceptAndSend = () => {
-    // In a real implementation, this would send the feedback to the employee
-    setSuccess('Feedback accepted and sent to employee!');
-    // Reset form
-    setSelectedEmployee(null);
-    setFeedbackType('');
-    setPerformanceData({
-      attendanceRate: '',
-      goalsCompleted: '',
-      totalGoals: '',
-      peerRatings: '',
-      managerRating: '',
-      projectsCompleted: '',
-      trainingHours: '',
-      performanceScore: ''
-    });
-    setGeneratedFeedback(null);
-    setEditedFeedback('');
+  const handleAcceptAndSend = async () => {
+    try {
+      setIsSending(true); // ✅ NEW: Set sending state
+      setError(null);
+      setSuccess(null);
+
+      // If feedback was edited, save the changes and send email
+      if (generatedFeedback?.id && (isEditing || editedFeedback !== generatedFeedback?.generatedFeedback)) {
+        const finalFeedback = editedFeedback || generatedFeedback.generatedFeedback;
+
+        try {
+          // ✅ NEW: Pass sendEmail=true to trigger email
+          const response = await smartFeedbackService.updateSmartFeedback(generatedFeedback.id, {
+            generatedFeedback: finalFeedback,
+            performanceData: generatedFeedback.performanceData,
+            suggestions: generatedFeedback.suggestions,
+            confidence: generatedFeedback.confidence
+          }, true); // ✅ sendEmail = true
+
+          // Update local state
+          setGeneratedFeedback({
+            ...generatedFeedback,
+            generatedFeedback: finalFeedback
+          });
+          setIsEditing(false);
+
+          // ✅ NEW: Check email result
+          if (response.data?.emailSent) {
+            setSuccess('✅ Feedback sent to employee via email! They will receive it shortly.');
+          } else {
+            setSuccess('✅ Feedback updated but email could not be sent. Please contact the employee directly.');
+          }
+
+        } catch (updateError) {
+          console.error('Could not send feedback:', updateError);
+          setError('Failed to send feedback. Please try again.');
+          return;
+        }
+      } else {
+        // If no edits were made, still need to send email
+        if (generatedFeedback?.id) {
+          try {
+            const response = await smartFeedbackService.updateSmartFeedback(generatedFeedback.id, {
+              generatedFeedback: generatedFeedback.generatedFeedback,
+              performanceData: generatedFeedback.performanceData,
+              suggestions: generatedFeedback.suggestions,
+              confidence: generatedFeedback.confidence
+            }, true); // ✅ sendEmail = true
+
+            if (response.data?.emailSent) {
+              setSuccess('✅ Feedback sent to employee via email! They will receive it shortly.');
+            } else {
+              setSuccess('✅ Feedback processed but email could not be sent. Please contact the employee directly.');
+            }
+          } catch (emailError) {
+            console.error('Could not send feedback email:', emailError);
+            setError('Failed to send feedback email. Please try again.');
+            return;
+          }
+        }
+      }
+
+      // Reset form for next feedback
+      setTimeout(() => {
+        setSelectedEmployee(null);
+        setFeedbackType('');
+        setPerformanceData({
+          attendanceRate: '',
+          goalsCompleted: '',
+          totalGoals: '',
+          peerRatings: '',
+          managerRating: '',
+          projectsCompleted: '',
+          trainingHours: '',
+          performanceScore: ''
+        });
+        setGeneratedFeedback(null);
+        setEditedFeedback('');
+        setSuccess(null);
+      }, 3000); // Clear form after 3 seconds
+
+    } catch (error) {
+      console.error('Error sending feedback:', error);
+      setError('Failed to send feedback. Please try again.');
+    } finally {
+      setIsSending(false); // ✅ Reset sending state
+    }
   };
 
   const feedbackTypes = smartFeedbackService.getFeedbackTypes();
@@ -224,50 +294,17 @@ const SmartFeedbackPage = () => {
             <div className="h-full flex">
               {/* Left Panel - Form */}
               <div className="w-1/2 border-r border-gray-200/50 p-6 overflow-y-auto">
-                {/* Workflow Guide */}
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">?</span>
-                    </div>
-                    <h3 className="font-semibold text-blue-900">How to Generate AI Feedback</h3>
-                  </div>
-                  <div className="space-y-2 text-sm text-blue-800">
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                      <span>Select an employee from your team</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                      <span>Choose the type of feedback you want to provide</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
-                      <span><strong>Optional:</strong> Add performance data for more personalized feedback</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">✓</span>
-                      <span>Click "Generate AI Feedback" and review the results</span>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="space-y-6">
                   {/* Employee Selection */}
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                      <label className="text-sm font-medium text-gray-700">Select Employee</label>
-                      <Badge variant="destructive" className="text-xs">Required</Badge>
-                    </div>
-                    <p className="text-xs text-gray-600 ml-8">Choose the team member you want to provide feedback for</p>
+                    <label className="text-lg font-bold text-gray-800">Select Employee</label>
                     <Select value={selectedEmployee?.id?.toString() || ''} onValueChange={(value) => {
                       if (value && value !== 'no-employees') {
                         const employee = Array.isArray(employees) ? employees.find(emp => emp.id === parseInt(value)) : null;
                         setSelectedEmployee(employee);
                       }
                     }}>
-                      <SelectTrigger className="w-full shadow-sm hover:shadow-md transition-all duration-300">
+                      <SelectTrigger className="w-full hrms-select-shadow">
                         <SelectValue placeholder="Select an employee to provide feedback..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -278,14 +315,9 @@ const SmartFeedbackPage = () => {
                                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                                   <User className="h-4 w-4 text-blue-600" />
                                 </div>
-                                <div>
-                                  <div className="font-medium">
-                                    {employee.firstName} {employee.lastName}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {employee.position} • {employee.department}
-                                  </div>
-                                </div>
+                                <span className="font-medium">
+                                  {employee.firstName} {employee.lastName}
+                                </span>
                               </div>
                             </SelectItem>
                           ))
@@ -301,53 +333,14 @@ const SmartFeedbackPage = () => {
                     </Select>
                   </div>
 
-                  {/* Selected Employee Display */}
-                  {selectedEmployee && (
-                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-4 shadow-md">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-blue-900 text-lg">
-                            {selectedEmployee.firstName} {selectedEmployee.lastName}
-                          </h4>
-                          <p className="text-sm text-blue-700">
-                            {selectedEmployee.position} • {selectedEmployee.department}
-                          </p>
-                          <p className="text-xs text-blue-600">
-                            Employee ID: {selectedEmployee.employeeCode || selectedEmployee.id}
-                          </p>
-                        </div>
-                        <Badge variant="default" className="bg-green-600 hover:bg-green-700">
-                          ✓ Selected
-                        </Badge>
-                      </div>
-                    </div>
-                  )}
 
-                  {/* No Selection Placeholder */}
-                  {!selectedEmployee && (
-                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                      <h4 className="font-medium text-gray-700 mb-1">No Employee Selected</h4>
-                      <p className="text-sm text-gray-500">
-                        Please select an employee from the dropdown above to generate feedback
-                      </p>
-                    </div>
-                  )}
 
                   {/* Feedback Type */}
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                      <label className="text-sm font-medium text-gray-700">Feedback Type</label>
-                      <Badge variant="destructive" className="text-xs">Required</Badge>
-                    </div>
-                    <p className="text-xs text-gray-600 ml-8">What kind of feedback do you want to provide?</p>
+                    <label className="text-lg font-bold text-gray-800">Feedback Type</label>
                     <Select value={feedbackType} onValueChange={setFeedbackType}>
-                      <SelectTrigger className="w-full shadow-sm hover:shadow-md transition-all duration-300">
-                        <SelectValue placeholder="Choose the type of feedback to generate..." />
+                      <SelectTrigger className="w-full hrms-select-shadow text-left">
+                        <SelectValue placeholder="Choose the type of feedback to generate..." className="text-left" />
                       </SelectTrigger>
                       <SelectContent>
                         {feedbackTypes.map((type) => (
@@ -365,18 +358,16 @@ const SmartFeedbackPage = () => {
                   {/* Performance Data Inputs */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
-                      <h3 className="text-sm font-medium text-gray-700">Performance Data</h3>
-                      <Badge variant="outline" className="text-xs">Optional</Badge>
+                      <h3 className="text-lg font-bold text-gray-800">Performance Data</h3>
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">Optional</Badge>
                     </div>
-                    <p className="text-xs text-gray-600 ml-8">Add specific performance metrics to make the feedback more detailed and accurate</p>
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="text-xs font-medium text-gray-600">Attendance Rate (%)</label>
                           <input
                             type="number"
-                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm hover:shadow-md transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="hrms-input-shadow"
                             value={performanceData.attendanceRate}
                             onChange={(e) => setPerformanceData(prev => ({ ...prev, attendanceRate: e.target.value }))}
                             placeholder="e.g., 95"
@@ -386,7 +377,7 @@ const SmartFeedbackPage = () => {
                           <label className="text-xs font-medium text-gray-600">Goals Completed</label>
                           <input
                             type="number"
-                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm hover:shadow-md transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="hrms-input-shadow"
                             value={performanceData.goalsCompleted}
                             onChange={(e) => setPerformanceData(prev => ({ ...prev, goalsCompleted: e.target.value }))}
                             placeholder="e.g., 8"
@@ -396,7 +387,7 @@ const SmartFeedbackPage = () => {
                           <label className="text-xs font-medium text-gray-600">Total Goals</label>
                           <input
                             type="number"
-                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm hover:shadow-md transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="hrms-input-shadow"
                             value={performanceData.totalGoals}
                             onChange={(e) => setPerformanceData(prev => ({ ...prev, totalGoals: e.target.value }))}
                             placeholder="e.g., 10"
@@ -409,57 +400,19 @@ const SmartFeedbackPage = () => {
                             step="0.1"
                             min="1"
                             max="5"
-                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm hover:shadow-md transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="hrms-input-shadow"
                             value={performanceData.peerRatings}
                             onChange={(e) => setPerformanceData(prev => ({ ...prev, peerRatings: e.target.value }))}
                             placeholder="e.g., 4.2"
                           />
                         </div>
                       </div>
-                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                        <div className="flex items-start gap-2">
-                          <span className="text-blue-600 text-sm">💡</span>
-                          <div className="text-xs text-blue-800">
-                            <p className="font-medium mb-1">Tips for better feedback:</p>
-                            <ul className="space-y-1 text-blue-700">
-                              <li>• <strong>Leave empty</strong> if you don't have specific data - AI will generate general feedback</li>
-                              <li>• <strong>Fill some fields</strong> for more targeted feedback based on actual performance</li>
-                              <li>• <strong>Attendance:</strong> Employee's attendance percentage (0-100)</li>
-                              <li>• <strong>Goals:</strong> Number of completed vs total assigned goals</li>
-                              <li>• <strong>Peer Rating:</strong> Average rating from team members (1-5 scale)</li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
+
                     </div>
                   </div>
 
                   {/* Generate Button Section */}
                   <div className="space-y-3">
-                    {/* Status Check */}
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Ready to Generate?</h4>
-                      <div className="space-y-1 text-xs">
-                        <div className="flex items-center gap-2">
-                          {selectedEmployee ? (
-                            <span className="text-green-600">✅ Employee selected</span>
-                          ) : (
-                            <span className="text-red-600">❌ Please select an employee</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {feedbackType ? (
-                            <span className="text-green-600">✅ Feedback type chosen</span>
-                          ) : (
-                            <span className="text-red-600">❌ Please choose feedback type</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-blue-600">ℹ️ Performance data is optional</span>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Generate Button */}
                     <Button
                       onClick={handleGenerateFeedback}
@@ -489,7 +442,7 @@ const SmartFeedbackPage = () => {
               </div>
 
               {/* Right Panel - Results */}
-              <div className="w-1/2 p-6 overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
+              <div className="w-1/2 p-6 overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 shadow-inner">
                 {/* Status Messages */}
                 {error && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
@@ -505,38 +458,114 @@ const SmartFeedbackPage = () => {
                   </div>
                 )}
 
-                {/* Placeholder when no feedback generated */}
+                {/* Instructions and Placeholder when no feedback generated */}
                 {!generatedFeedback && !isGenerating && (
-                  <div className="h-full flex items-center justify-center">
-                    <div className="text-center max-w-md">
-                      <div className="w-20 h-20 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Brain className="h-10 w-10 text-blue-600" />
+                  <div className="space-y-6">
+                    {/* How to Generate AI Feedback Instructions */}
+                    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-gray-200/50">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                          <Brain className="h-6 w-6 text-white" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-800">How to Generate AI Feedback</h3>
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">AI Feedback Generator</h3>
-                      <p className="text-gray-600 mb-4">
-                        Complete the form on the left and click "Generate AI Feedback" to create personalized feedback for your team member.
-                      </p>
-                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-gray-200/50">
-                        <h4 className="font-medium text-gray-800 mb-2">What you'll get:</h4>
-                        <ul className="text-sm text-gray-600 space-y-1 text-left">
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                            Personalized feedback based on employee data
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                            AI-generated suggestions for improvement
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                            Professional, constructive feedback tone
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                            Ability to edit and customize before sending
-                          </li>
-                        </ul>
+
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <span className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg flex-shrink-0">1</span>
+                          <div>
+                            <h4 className="text-lg font-bold text-gray-800 mb-1">Select an employee from your team</h4>
+                            <p className="text-sm text-gray-600">Choose the team member you want to provide feedback for</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <span className="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg flex-shrink-0">2</span>
+                          <div>
+                            <h4 className="text-lg font-bold text-gray-800 mb-1">Choose the type of feedback you want to provide</h4>
+                            <p className="text-sm text-gray-600">Select from performance review, goal setting, or other feedback types</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <span className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg flex-shrink-0">3</span>
+                          <div>
+                            <h4 className="text-lg font-bold text-gray-800 mb-1">Optional: Add performance data for more personalized feedback</h4>
+                            <p className="text-sm text-gray-600">Include specific metrics to make the feedback more targeted and accurate</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <span className="w-8 h-8 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg flex-shrink-0">4</span>
+                          <div>
+                            <h4 className="text-lg font-bold text-gray-800 mb-1">Click "Generate AI Feedback" and review the results</h4>
+                            <p className="text-sm text-gray-600">AI will create personalized feedback that you can edit and customize</p>
+                          </div>
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Tips Section */}
+                    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-gray-200/50">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="text-2xl">💡</span>
+                        <h4 className="text-lg font-bold text-gray-800">Tips for Better Feedback</h4>
+                      </div>
+                      <ul className="space-y-3 text-sm text-gray-700">
+                        <li className="flex items-start gap-3">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800">Leave performance data empty</strong> if you don't have specific metrics - AI will generate general feedback
+                          </div>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800">Fill some performance fields</strong> for more targeted feedback based on actual data
+                          </div>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800">Attendance:</strong> Employee's attendance percentage (0-100)
+                          </div>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800">Goals:</strong> Number of completed vs total assigned goals
+                          </div>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800">Peer Rating:</strong> Average rating from team members (1-5 scale)
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* What You'll Get Section */}
+                    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-gray-200/50">
+                      <h4 className="text-lg font-bold text-gray-800 mb-4">What You'll Get:</h4>
+                      <ul className="space-y-3 text-sm text-gray-700">
+                        <li className="flex items-center gap-3">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                          <span>Personalized feedback based on employee data</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                          <span>AI-generated suggestions for improvement</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                          <span>Professional, constructive feedback tone</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                          <span>Ability to edit and customize before sending</span>
+                        </li>
+                      </ul>
                     </div>
                   </div>
                 )}
@@ -545,11 +574,11 @@ const SmartFeedbackPage = () => {
                 {isGenerating && (
                   <div className="h-full flex items-center justify-center">
                     <div className="text-center">
-                      <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Loader2 className="h-8 w-8 text-white animate-spin" />
+                      <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                        <Loader2 className="h-10 w-10 text-white animate-spin" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Generating Feedback...</h3>
-                      <p className="text-gray-600">
+                      <h3 className="text-2xl font-bold text-gray-800 mb-3">Generating Feedback...</h3>
+                      <p className="text-gray-600 text-lg">
                         Our AI is analyzing the employee data and creating personalized feedback. This may take a few moments.
                       </p>
                     </div>
@@ -558,8 +587,8 @@ const SmartFeedbackPage = () => {
 
                 {/* Generated Feedback */}
                 {generatedFeedback && (
-                  <div className="space-y-4">
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-gray-200/50">
+                  <div className="space-y-6">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-2xl border border-gray-200/50">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-medium text-gray-800">Generated Feedback</h3>
                         <div className="flex items-center gap-2">
@@ -581,7 +610,7 @@ const SmartFeedbackPage = () => {
                           <Textarea
                             value={editedFeedback}
                             onChange={(e) => setEditedFeedback(e.target.value)}
-                            className="min-h-[120px]"
+                            className="min-h-[120px] hrms-textarea-shadow"
                             placeholder="Edit the feedback..."
                           />
                           <div className="flex gap-2">
@@ -601,7 +630,7 @@ const SmartFeedbackPage = () => {
 
                     {/* Suggestions */}
                     {generatedFeedback.suggestions && generatedFeedback.suggestions.length > 0 && (
-                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-gray-200/50">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-2xl border border-gray-200/50">
                         <h3 className="font-medium text-gray-800 mb-3">AI Suggestions</h3>
                         <ul className="space-y-2">
                           {generatedFeedback.suggestions.map((suggestion, index) => (
@@ -618,13 +647,24 @@ const SmartFeedbackPage = () => {
                     <div className="flex gap-3">
                       <Button
                         onClick={handleAcceptAndSend}
-                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg transition-all duration-300 hover:shadow-xl"
+                        disabled={isSending}
+                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg transition-all duration-300 hover:shadow-xl disabled:opacity-50"
                       >
-                        <Send className="w-4 h-4 mr-2" />
-                        Accept & Send
+                        {isSending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending Email...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Accept & Send Email
+                          </>
+                        )}
                       </Button>
                       <Button
                         variant="outline"
+                        disabled={isSending}
                         onClick={() => {
                           setGeneratedFeedback(null);
                           setEditedFeedback('');
@@ -650,7 +690,7 @@ const SmartFeedbackPage = () => {
                     ) : feedbackHistory.length > 0 ? (
                       <div className="space-y-3">
                         {feedbackHistory.map((feedback, index) => (
-                          <div key={index} className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-gray-200/50">
+                          <div key={index} className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-gray-200/50">
                             <div className="flex items-center justify-between mb-2">
                               <Badge variant="secondary" className="text-xs">
                                 {feedback.feedbackType}

@@ -60,13 +60,34 @@ class SmartFeedbackService {
    */
   async getFeedbackHistoryViaPerformance(params = {}) {
     const queryParams = new URLSearchParams(params).toString();
-    const url = queryParams 
-      ? `${API_ENDPOINTS.PERFORMANCE.FEEDBACK_HISTORY}?${queryParams}` 
+    const url = queryParams
+      ? `${API_ENDPOINTS.PERFORMANCE.FEEDBACK_HISTORY}?${queryParams}`
       : API_ENDPOINTS.PERFORMANCE.FEEDBACK_HISTORY;
-    
+
     return apiRequest(
       () => axiosInstance.get(url),
       'performance-feedback-history'
+    );
+  }
+
+  /**
+   * Update smart feedback (for editing/sending feedback)
+   * @param {number} feedbackId - Feedback ID
+   * @param {Object} updateData - Updated feedback data
+   * @param {string} updateData.generatedFeedback - Updated feedback text
+   * @param {Object} updateData.performanceData - Updated performance data (optional)
+   * @param {Array} updateData.suggestions - Updated suggestions (optional)
+   * @param {number} updateData.confidence - Updated confidence score (optional)
+   * @param {boolean} sendEmail - Whether to send email to employee (optional)
+   * @returns {Promise} API response with updated feedback
+   */
+  async updateSmartFeedback(feedbackId, updateData, sendEmail = false) {
+    return apiRequest(
+      () => axiosInstance.put(`${API_ENDPOINTS.AI.SMART_FEEDBACK_GENERATE}/update/${feedbackId}`, {
+        ...updateData,
+        sendEmail // ✅ NEW: Include email flag
+      }),
+      `smart-feedback-update-${feedbackId}`
     );
   }
 
