@@ -4,23 +4,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert } from '@/components/ui/alert';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { useEmployeeForm } from '@/hooks/useEmployeeForm';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  MapPin, 
+import ResumeUpload from './ResumeUpload';
+import {
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  MapPin,
   Building2,
   DollarSign,
   Users,
   AlertCircle,
+  CheckCircle,
   Loader2,
   Save,
   X,
@@ -41,7 +43,10 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
     handleChange,
     handleSubmit,
     resetForm,
-    isEditing
+    isEditing,
+    handleResumeParseSuccess,
+    resumeParseSuccess,
+    resumeParseMessage
   } = useEmployeeForm(employeeId);
 
   const handleFormSubmit = async (e) => {
@@ -164,6 +169,22 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
       )}
 
       <form onSubmit={handleFormSubmit} className="space-y-6">
+        {/* Resume Parse Success Notification */}
+        {resumeParseMessage && (
+          <Alert className={`${resumeParseSuccess ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
+            {resumeParseSuccess ? (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+            )}
+            <div className="ml-2">
+              <p className={`font-medium ${resumeParseSuccess ? 'text-green-800' : 'text-blue-800'}`}>
+                {resumeParseMessage}
+              </p>
+            </div>
+          </Alert>
+        )}
+
         {/* Personal Information */}
         <Card className="hrms-card">
           <CardHeader>
@@ -217,6 +238,14 @@ const EmployeeForm = ({ employeeId, onSuccess, onCancel }) => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Resume Upload Section - Only show for new employees */}
+        {!isEditing && (
+          <ResumeUpload
+            onParseSuccess={handleResumeParseSuccess}
+            onError={(error) => console.error('Resume parse error:', error)}
+          />
+        )}
 
         {/* Employment Information */}
         <Card className="hrms-card">

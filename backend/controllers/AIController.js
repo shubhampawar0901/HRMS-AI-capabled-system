@@ -40,18 +40,24 @@ class AIController {
       }
 
       const aiService = AIController.getAIService();
+
+      // Store original file info before processing (since file gets deleted during processing)
+      const originalFileName = req.file.originalname;
+      const originalFilePath = req.file.path;
+
       const result = await aiService.parseResume(req.file);
-      
+
       // Save to database
       const parserRecord = await AIResumeParser.create({
         employeeId: req.body.employeeId || null,
-        fileName: req.file.originalname,
-        filePath: req.file.path,
+        fileName: originalFileName,
+        filePath: originalFilePath, // Store original path for reference
         parsedData: result.parsedData,
         extractedText: result.extractedText,
         confidence: result.confidence,
         processingTime: result.processingTime,
-        status: 'processed'
+        status: 'processed',
+        errorMessage: null  // Explicitly set to null instead of undefined
       });
 
       return sendCreated(res, {
