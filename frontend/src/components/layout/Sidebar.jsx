@@ -13,6 +13,7 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   AlertTriangle,
   BarChart3
 } from 'lucide-react';
@@ -20,7 +21,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const Sidebar = ({ isOpen, onClose }) => {
+const Sidebar = ({ isOpen, onClose, onToggle }) => {
   const { user } = useAuthContext();
 
   // State for expandable menu items (persisted in localStorage)
@@ -147,23 +148,44 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
-            {isOpen && (
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
+              {!isOpen && (
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-sm">HR</span>
                 </div>
-                <span className="font-bold text-foreground">HRMS</span>
-              </div>
-            )}
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="lg:hidden"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+              )}
+              {isOpen && (
+                <>
+                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-sm">HR</span>
+                  </div>
+                  <span className="font-bold text-foreground">HRMS</span>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-1">
+              {/* Toggle button for desktop */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggle}
+                className="hidden lg:flex hover:bg-accent"
+                title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                <ChevronLeft className={`h-4 w-4 transition-transform duration-200 ${isOpen ? '' : 'rotate-180'}`} />
+              </Button>
+
+              {/* Close button for mobile */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="lg:hidden"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
           {/* Navigation */}
