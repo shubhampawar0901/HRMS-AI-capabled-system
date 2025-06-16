@@ -50,6 +50,7 @@ router.post('/sync',
 // GET /api/smart-reports - List smart reports with pagination
 router.get('/',
   authenticateToken,
+  authorize('admin', 'manager'),
   paginationValidation,
   validateRequest,
   SmartReportsController.getSmartReports
@@ -58,6 +59,7 @@ router.get('/',
 // GET /api/smart-reports/:id - Get specific smart report
 router.get('/:id',
   authenticateToken,
+  authorize('admin', 'manager'),
   param('id').isInt({ min: 1 }).withMessage('Report ID must be a positive integer'),
   validateRequest,
   SmartReportsController.getSmartReportById
@@ -66,6 +68,7 @@ router.get('/:id',
 // GET /api/smart-reports/:id/status - Get report generation status
 router.get('/:id/status',
   authenticateToken,
+  authorize('admin', 'manager'),
   param('id').isInt({ min: 1 }).withMessage('Report ID must be a positive integer'),
   validateRequest,
   SmartReportsController.getReportStatus

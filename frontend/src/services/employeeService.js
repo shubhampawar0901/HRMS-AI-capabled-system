@@ -39,6 +39,10 @@ class EmployeeService {
     if (params.departmentId && params.departmentId !== '' && !isNaN(params.departmentId)) {
       cleanParams.departmentId = parseInt(params.departmentId);
     }
+    if (params.managerId && params.managerId !== '' && !isNaN(params.managerId)) {
+      cleanParams.managerId = parseInt(params.managerId);
+      console.log('🔍 Frontend: Adding managerId filter:', cleanParams.managerId);
+    }
     if (params.status && params.status.trim().length > 0) {
       cleanParams.status = params.status.trim();
     }

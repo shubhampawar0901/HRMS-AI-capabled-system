@@ -120,9 +120,9 @@ class SmartReportsDataService {
     
     return {
       totalReviews: reviews[0].total_reviews || 0,
-      averageRating: parseFloat(reviews[0].avg_rating) || 0,
-      highestRating: parseFloat(reviews[0].highest_rating) || 0,
-      lowestRating: parseFloat(reviews[0].lowest_rating) || 0,
+      averageRating: reviews[0].avg_rating ? parseFloat(reviews[0].avg_rating) : 0,
+      highestRating: reviews[0].highest_rating ? parseFloat(reviews[0].highest_rating) : 0,
+      lowestRating: reviews[0].lowest_rating ? parseFloat(reviews[0].lowest_rating) : 0,
       lastReviewDate: reviews[0].last_review_date,
       ratingTrend: await this.calculateRatingTrend(employeeId, startDate, endDate)
     };
@@ -231,19 +231,19 @@ class SmartReportsDataService {
   
   async getTeamMetrics(managerId, startDate, endDate) {
     const teamQuery = `
-      SELECT 
+      SELECT
         COUNT(DISTINCT e.id) as team_size,
-        AVG(pr.overall_rating) as avg_team_rating,
-        AVG(pg.achievement_percentage) as avg_goal_achievement,
-        AVG(attendance_stats.attendance_rate) as avg_attendance_rate
+        COALESCE(AVG(pr.overall_rating), 0) as avg_team_rating,
+        COALESCE(AVG(pg.achievement_percentage), 0) as avg_goal_achievement,
+        COALESCE(AVG(attendance_stats.attendance_rate), 0) as avg_attendance_rate
       FROM employees e
       LEFT JOIN performance_reviews pr ON e.id = pr.employee_id AND pr.created_at BETWEEN ? AND ?
       LEFT JOIN performance_goals pg ON e.id = pg.employee_id AND pg.created_at BETWEEN ? AND ?
       LEFT JOIN (
-        SELECT 
+        SELECT
           employeeId,
           (SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) / COUNT(*) * 100) as attendance_rate
-        FROM attendance 
+        FROM attendance
         WHERE date BETWEEN ? AND ?
         GROUP BY employeeId
       ) attendance_stats ON e.id = attendance_stats.employeeId
@@ -254,9 +254,9 @@ class SmartReportsDataService {
     
     return {
       teamSize: result[0].team_size || 0,
-      averageRating: parseFloat(result[0].avg_team_rating) || 0,
-      averageGoalAchievement: parseFloat(result[0].avg_goal_achievement) || 0,
-      averageAttendanceRate: parseFloat(result[0].avg_attendance_rate) || 0
+      averageRating: result[0].avg_team_rating ? parseFloat(result[0].avg_team_rating) : 0,
+      averageGoalAchievement: result[0].avg_goal_achievement ? parseFloat(result[0].avg_goal_achievement) : 0,
+      averageAttendanceRate: result[0].avg_attendance_rate ? parseFloat(result[0].avg_attendance_rate) : 0
     };
   }
   

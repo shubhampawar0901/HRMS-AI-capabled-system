@@ -171,14 +171,60 @@ class Employee {
   }
 
   static async findAll(options = {}) {
-    console.log('🔍 Using hardcoded query for active employees...');
+    console.log('🔍 Employee.findAll called with options:', options);
 
-    // Completely hardcoded query with no parameters to avoid prepared statement issues
-    const query = 'SELECT * FROM employees WHERE status != "deleted" AND status = "active" ORDER BY first_name, last_name LIMIT 100';
+    let query = `
+      SELECT e.*, d.name as department_name,
+             CONCAT(m.first_name, ' ', m.last_name) as manager_name
+      FROM employees e
+      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN employees m ON e.manager_id = m.id
+      WHERE e.status != 'deleted' AND e.status = 'active'
+    `;
+    const params = [];
 
-    console.log('🔍 Employee.findAll SQL (hardcoded):', query);
+    // Add managerId filter for managers to see only their team members
+    if (options.managerId) {
+      query += ' AND e.manager_id = ?';
+      params.push(options.managerId);
+      console.log('🔍 Filtering by managerId:', options.managerId);
+    }
 
-    const rows = await executeQuery(query, []);
+    // Add department filter
+    if (options.departmentId) {
+      query += ' AND e.department_id = ?';
+      params.push(options.departmentId);
+    }
+
+    // Add search filter
+    if (options.search) {
+      query += ` AND (
+        e.first_name LIKE ? OR
+        e.last_name LIKE ? OR
+        e.employee_code LIKE ? OR
+        e.email LIKE ?
+      )`;
+      const searchTerm = `%${options.search}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    query += ' ORDER BY e.first_name, e.last_name';
+
+    // Add pagination - use string interpolation to avoid parameter binding issues
+    if (options.limit) {
+      const limit = parseInt(options.limit);
+      query += ` LIMIT ${limit}`;
+    }
+
+    if (options.offset) {
+      const offset = parseInt(options.offset);
+      query += ` OFFSET ${offset}`;
+    }
+
+    console.log('🔍 Employee.findAll SQL:', query);
+    console.log('🔍 Employee.findAll params:', params);
+
+    const rows = await executeQuery(query, params);
     console.log('🔍 Employee.findAll results:', rows.length, 'rows');
 
     return rows.map(row => new Employee(row));
@@ -248,14 +294,40 @@ class Employee {
   }
 
   static async count(options = {}) {
-    console.log('🔍 Using hardcoded count query for active employees...');
+    console.log('🔍 Employee.count called with options:', options);
 
-    // Hardcoded query for active employees count
-    const query = 'SELECT COUNT(*) as total FROM employees WHERE status != "deleted" AND status = "active"';
+    let query = 'SELECT COUNT(*) as total FROM employees e WHERE e.status != "deleted" AND e.status = "active"';
+    const params = [];
 
-    console.log('🔍 Employee.count SQL (hardcoded):', query);
+    // Add managerId filter for managers to count only their team members
+    if (options.managerId) {
+      query += ' AND e.manager_id = ?';
+      params.push(options.managerId);
+      console.log('🔍 Counting by managerId:', options.managerId);
+    }
 
-    const rows = await executeQuery(query, []);
+    // Add department filter
+    if (options.departmentId) {
+      query += ' AND e.department_id = ?';
+      params.push(options.departmentId);
+    }
+
+    // Add search filter
+    if (options.search) {
+      query += ` AND (
+        e.first_name LIKE ? OR
+        e.last_name LIKE ? OR
+        e.employee_code LIKE ? OR
+        e.email LIKE ?
+      )`;
+      const searchTerm = `%${options.search}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    console.log('🔍 Employee.count SQL:', query);
+    console.log('🔍 Employee.count params:', params);
+
+    const rows = await executeQuery(query, params);
     console.log('🔍 Employee.count result:', rows[0].total);
 
     return rows[0].total;

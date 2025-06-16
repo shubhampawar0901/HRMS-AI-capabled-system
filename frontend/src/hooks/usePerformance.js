@@ -120,12 +120,17 @@ export const usePerformance = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await performanceService.createPerformanceReview(reviewData);
-      
+
       if (response.success) {
-        // Refresh performance reviews
+        // Refresh performance reviews to show the newly created review
+        console.log('✅ Review created successfully, refreshing reviews list...');
         await fetchPerformanceReviews();
+
+        // Reset pagination to first page to ensure new review is visible
+        setPagination(prev => ({ ...prev, page: 1 }));
+
         return response.data;
       } else {
         throw new Error(response.message || 'Failed to create performance review');
@@ -144,11 +149,12 @@ export const usePerformance = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await performanceService.updatePerformanceReview(reviewId, reviewData);
-      
+
       if (response.success) {
-        // Refresh performance reviews
+        // Refresh performance reviews to show the updated review
+        console.log('✅ Review updated successfully, refreshing reviews list...');
         await fetchPerformanceReviews();
         return response.data;
       } else {

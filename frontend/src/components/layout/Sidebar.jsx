@@ -143,7 +143,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
           name: 'Resume Parser',
           href: '/ai-features/resume-parser',
           icon: FileText,
-          roles: ['admin', 'manager'],
+          roles: ['admin'],
           description: 'AI-powered resume parsing and employee onboarding'
         },
         {

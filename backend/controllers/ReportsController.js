@@ -441,9 +441,9 @@ class ReportsController {
         CONCAT(e.first_name, ' ', e.last_name) as employee_name,
         d.name as department_name,
         COUNT(pr.id) as total_reviews,
-        AVG(pr.overall_rating) as avg_rating,
+        COALESCE(AVG(pr.overall_rating), 0) as avg_rating,
         COUNT(pg.id) as total_goals,
-        AVG(pg.achievement_percentage) as avg_goal_completion
+        COALESCE(AVG(pg.achievement_percentage), 0) as avg_goal_completion
       FROM employees e
       LEFT JOIN performance_reviews pr ON e.id = pr.employee_id
         AND YEAR(pr.created_at) = ?
@@ -473,9 +473,9 @@ class ReportsController {
         e.employee_code,
         CONCAT(e.first_name, ' ', e.last_name) as employee_name,
         COUNT(pr.id) as total_reviews,
-        AVG(pr.overall_rating) as avg_rating,
+        COALESCE(AVG(pr.overall_rating), 0) as avg_rating,
         COUNT(pg.id) as total_goals,
-        AVG(pg.achievement_percentage) as avg_goal_completion
+        COALESCE(AVG(pg.achievement_percentage), 0) as avg_goal_completion
       FROM employees e
       LEFT JOIN performance_reviews pr ON e.id = pr.employee_id
         AND YEAR(pr.created_at) = ?

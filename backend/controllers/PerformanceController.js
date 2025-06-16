@@ -11,6 +11,14 @@ class PerformanceController {
       const { role, userId, employeeId } = req.user;
       const { employeeId: targetEmployeeId, reviewPeriod, overallRating, comments } = req.body;
 
+      console.log('🔍 Performance Review Creation Request:', {
+        role,
+        userId,
+        managerEmployeeId: employeeId,
+        targetEmployeeId,
+        reviewPeriod
+      });
+
       // Check permissions
       if (role !== 'admin' && role !== 'manager') {
         return sendError(res, 'Access denied', 403);
@@ -18,10 +26,31 @@ class PerformanceController {
 
       // For managers, check if they can review this employee
       if (role === 'manager') {
+        console.log('🔍 Manager validation: Checking if employee', targetEmployeeId, 'reports to manager', employeeId);
+
         const employee = await Employee.findById(targetEmployeeId);
-        if (employee.managerId !== employeeId) {
-          return sendError(res, 'You can only review your team members', 403);
+        if (!employee) {
+          console.log('❌ Employee not found:', targetEmployeeId);
+          return sendError(res, 'Employee not found', 404);
         }
+
+        console.log('🔍 Employee found:', {
+          id: employee.id,
+          name: `${employee.firstName} ${employee.lastName}`,
+          managerId: employee.managerId,
+          managerEmployeeId: employeeId
+        });
+
+        if (employee.managerId !== employeeId) {
+          console.log('❌ Manager validation failed:', {
+            employeeManagerId: employee.managerId,
+            requestingManagerId: employeeId,
+            match: employee.managerId === employeeId
+          });
+          return sendError(res, `You can only review your team members. Employee ${employee.firstName} ${employee.lastName} does not report to you.`, 403);
+        }
+
+        console.log('✅ Manager validation passed');
       }
 
       const review = await PerformanceReview.create({
@@ -33,6 +62,7 @@ class PerformanceController {
         status: 'draft'
       });
 
+      console.log('✅ Performance review created successfully:', review.id);
       return sendCreated(res, review, 'Performance review created successfully');
     } catch (error) {
       console.error('Create review error:', error);
@@ -562,7 +592,7 @@ class PerformanceController {
       SELECT
         e.id as employeeId,
         CONCAT(e.first_name, ' ', e.last_name) as employeeName,
-        AVG(pr.overall_rating) as overallRating,
+        COALESCE(AVG(pr.overall_rating), 0) as overallRating,
         COUNT(DISTINCT pg.id) as goalsCompleted,
         COUNT(DISTINCT pg2.id) as totalGoals,
         MAX(pr.created_at) as lastReviewDate
@@ -585,7 +615,7 @@ class PerformanceController {
       SELECT
         e.id as employeeId,
         CONCAT(e.first_name, ' ', e.last_name) as employeeName,
-        AVG(pr.overall_rating) as overallRating,
+        COALESCE(AVG(pr.overall_rating), 0) as overallRating,
         COUNT(DISTINCT pg.id) as goalsCompleted,
         COUNT(DISTINCT pg2.id) as totalGoals,
         MAX(pr.created_at) as lastReviewDate

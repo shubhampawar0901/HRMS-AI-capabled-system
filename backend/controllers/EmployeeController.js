@@ -9,13 +9,18 @@ class EmployeeController {
   
   static async getAllEmployees(req, res) {
     try {
-      const { 
-        page = 1, 
-        limit = 10, 
-        departmentId, 
+      const {
+        page = 1,
+        limit = 10,
+        departmentId,
         status = 'active',
-        search 
+        search,
+        managerId
       } = req.query;
+
+      const { role, employeeId } = req.user;
+
+      console.log('🔍 getAllEmployees called by:', { role, employeeId, managerId });
 
       const options = {
         limit: parseInt(limit),
@@ -25,8 +30,30 @@ class EmployeeController {
         search
       };
 
+      // For managers, automatically filter to their team members if managerId is provided
+      if (managerId && role === 'manager') {
+        // Verify the manager is requesting their own team
+        if (parseInt(managerId) === parseInt(employeeId)) {
+          options.managerId = parseInt(managerId);
+          console.log('🔍 Manager filtering to their team:', managerId);
+        } else {
+          return sendError(res, 'You can only view your own team members', 403);
+        }
+      } else if (managerId && role === 'admin') {
+        // Admins can filter by any managerId
+        options.managerId = parseInt(managerId);
+        console.log('🔍 Admin filtering by managerId:', managerId);
+      }
+
       const employees = await Employee.findAll(options);
-      const total = await Employee.count({ departmentId, status, search });
+      const total = await Employee.count({
+        departmentId,
+        status,
+        search,
+        managerId: options.managerId
+      });
+
+      console.log('🔍 Found employees:', employees.length, 'Total:', total);
 
       return sendSuccess(res, {
         employees,

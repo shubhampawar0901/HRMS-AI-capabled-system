@@ -1,5 +1,5 @@
 const express = require('express');
-const { body, query, param } = require('express-validator');
+const { body, query } = require('express-validator');
 const PerformanceController = require('../controllers/PerformanceController');
 const { validateRequest } = require('../middleware/validationMiddleware');
 
@@ -8,14 +8,7 @@ const router = express.Router();
 // ==========================================
 // VALIDATION RULES
 // ==========================================
-const createReviewValidation = [
-  body('employeeId').isInt().withMessage('Employee ID is required'),
-  body('reviewPeriod').isString().withMessage('Review period is required'),
-  body('overallRating').isFloat({ min: 1, max: 5 }).withMessage('Overall rating must be between 1 and 5'),
-  body('comments').isLength({ min: 10 }).withMessage('Comments must be at least 10 characters long')
-];
-
-// Removed goal validation arrays to allow flexible goal creation
+// Removed createReviewValidation to allow flexible review creation
 
 const generateFeedbackValidation = [
   body('employeeId').isInt().withMessage('Employee ID is required')
@@ -32,8 +25,6 @@ const paginationValidation = [
 
 // POST /api/performance/reviews
 router.post('/reviews',
-  createReviewValidation,
-  validateRequest,
   PerformanceController.createReview
 );
 
@@ -52,24 +43,16 @@ router.get('/reviews',
 
 // GET /api/performance/reviews/:id
 router.get('/reviews/:id',
-  param('id').isInt().withMessage('Valid review ID is required'),
-  validateRequest,
   PerformanceController.getReviewById
 );
 
 // PUT /api/performance/reviews/:id
 router.put('/reviews/:id',
-  param('id').isInt().withMessage('Valid review ID is required'),
-  body('overallRating').optional().isFloat({ min: 1, max: 5 }).withMessage('Overall rating must be between 1 and 5'),
-  body('comments').optional().isLength({ min: 10 }).withMessage('Comments must be at least 10 characters long'),
-  validateRequest,
   PerformanceController.updateReview
 );
 
 // PUT /api/performance/reviews/:id/submit
 router.put('/reviews/:id/submit',
-  param('id').isInt().withMessage('Valid review ID is required'),
-  validateRequest,
   PerformanceController.submitReview
 );
 

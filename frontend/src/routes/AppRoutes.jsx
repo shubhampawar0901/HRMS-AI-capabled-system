@@ -56,6 +56,7 @@ import SmartReportsPage from '@/pages/ai-features/SmartReportsPage';
 
 // Admin Smart Reports
 import AdminSmartReports from '@/pages/admin/SmartReports';
+import ManagerSmartReports from '@/pages/manager/SmartReports';
 
 
 
@@ -195,11 +196,11 @@ const AppRoutes = () => {
           }
         />
 
-        {/* AI Features - Resume Parser (Admin/Manager Only) */}
+        {/* AI Features - Resume Parser (Admin Only) */}
         <Route
           path="ai-features/resume-parser"
           element={
-            <ProtectedRoute requiredRoles={['admin', 'manager']}>
+            <ProtectedRoute requiredRoles={['admin']}>
               <ResumeParserPage />
             </ProtectedRoute>
           }
@@ -224,7 +225,7 @@ const AppRoutes = () => {
           path="manager/smart-reports"
           element={
             <ProtectedRoute requiredRoles={['manager']}>
-              <AdminSmartReports />
+              <ManagerSmartReports />
             </ProtectedRoute>
           }
         />

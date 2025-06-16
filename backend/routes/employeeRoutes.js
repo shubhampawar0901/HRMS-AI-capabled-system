@@ -69,6 +69,13 @@ router.get('/',
       }
       return true;
     }),
+    query('managerId').optional().custom((value) => {
+      if (value === '' || value === undefined || value === null) return true;
+      if (!Number.isInteger(Number(value)) || Number(value) < 1) {
+        throw new Error('Manager ID must be a valid positive integer');
+      }
+      return true;
+    }),
     query('status').optional().isIn(['active', 'inactive', 'terminated']).withMessage('Invalid status'),
     query('search').optional().custom((value) => {
       if (value === '' || value === undefined || value === null) return true;
