@@ -16,9 +16,9 @@ class AIService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    // Fast model for quick responses (Gemini 1.5 Flash)
+    // Fast model for quick responses (Gemini 2.0 Flash for chatbot)
     this.fastModel = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash'
+      model: 'gemini-2.0-flash'
     });
 
     // Advanced model for complex analysis (Gemini 1.5 Flash - avoiding quota issues)
@@ -838,7 +838,7 @@ class AIService {
     } catch (error) {
       console.error('Chatbot query error:', error);
       return {
-        message: "I'm experiencing technical difficulties. Please try again later or contact HR directly.",
+        message: "I'm having trouble processing your request right now. Please try asking in a different way or contact HR for assistance.",
         intent: 'error',
         confidence: 0.0,
         type: 'error',
@@ -1141,7 +1141,22 @@ class AIService {
         Relevant Policy Information:
         ${context}
 
-        Provide a clear, helpful answer based on the policy information. If the policy information doesn't fully answer the question, mention that they should contact HR for more details.
+        CRITICAL RESPONSE RULES:
+        - MAXIMUM 100 WORDS - Count every word and stay under this limit
+        - NEVER mention employee IDs, database issues, or technical details
+        - If information is unavailable, say "I don't have that information available"
+        - Use natural, conversational language only
+        - Be helpful and professional
+        - Focus on actionable information
+
+        FORBIDDEN PHRASES:
+        - "Employee ID X"
+        - "not found in database"
+        - "database error"
+        - "please provide employee name"
+        - Any technical references
+
+        Provide a clear, helpful answer under 100 words based on the policy information. If the policy information doesn't fully answer the question, mention that they should contact HR for more details.
 
         Keep the response professional, concise, and helpful. Start responses naturally without saying "I'm Shubh" unless it's a greeting.
       `;
@@ -1172,7 +1187,7 @@ class AIService {
     try {
       if (!userContext.employeeId) {
         return {
-          message: "I couldn't find your employee information. Please contact HR for assistance.",
+          message: "I don't have your employee information available. Please contact HR for assistance.",
           type: 'error'
         };
       }
@@ -1181,7 +1196,7 @@ class AIService {
       const employee = await Employee.findById(userContext.employeeId);
       if (!employee) {
         return {
-          message: "I couldn't find your employee profile. Please contact HR for assistance.",
+          message: "I don't have your employee profile available. Please contact HR for assistance.",
           type: 'error'
         };
       }
@@ -1206,7 +1221,7 @@ class AIService {
     } catch (error) {
       console.error('Error handling employee data query:', error);
       return {
-        message: "I'm having trouble accessing your profile information. Please contact HR directly.",
+        message: "I don't have your profile information available. Please contact HR for assistance.",
         type: 'error'
       };
     }
@@ -1238,7 +1253,22 @@ class AIService {
 
         ${context ? `Relevant Information:\n${context}\n\n` : ''}
 
-        Provide a helpful, professional response. If you don't have specific information, guide them to contact HR directly.
+        CRITICAL RESPONSE RULES:
+        - MAXIMUM 100 WORDS - Count every word and stay under this limit
+        - NEVER mention employee IDs, database issues, or technical details
+        - If information is unavailable, say "I don't have that information available"
+        - Use natural, conversational language only
+        - Be helpful and professional
+        - Focus on actionable information
+
+        FORBIDDEN PHRASES:
+        - "Employee ID X"
+        - "not found in database"
+        - "database error"
+        - "please provide employee name"
+        - Any technical references
+
+        Provide a helpful, professional response under 100 words. If you don't have specific information, guide them to contact HR directly.
         Keep the response concise and actionable. Start responses naturally without saying "I'm Shubh" unless it's a greeting.
       `;
 

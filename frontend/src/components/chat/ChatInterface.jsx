@@ -84,11 +84,11 @@ const ChatInterface = () => {
         aria-label="Chat conversation"
         aria-live="polite"
       >
-        <div className="p-3 md:p-4">
+        <div className="p-2 md:p-3">
           {messages.length === 0 ? (
             <WelcomeScreen onQuickAction={handleSendMessage} />
           ) : (
-            <div className="space-y-3 md:space-y-4 max-w-4xl mx-auto">
+            <div className="space-y-2 max-w-4xl mx-auto">
               {messages.map((message) => (
                 <MessageBubble
                   key={message.id}

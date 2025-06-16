@@ -5,7 +5,7 @@ const { ChatbotConversation, ChatbotAuditLog } = require('../models');
 class SecureChatbotService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
   }
 
   async processQuery(userQuery, userContext) {
@@ -285,16 +285,28 @@ class SecureChatbotService {
 
     User Query: "${userQuery}"
 
-    Important Security Rules:
+    CRITICAL RESPONSE REQUIREMENTS:
+    - MAXIMUM 100 WORDS - Count every word and stay under this limit
+    - NEVER mention employee IDs, database issues, or technical details
+    - If information is unavailable, say "I don't have that information available"
+    - Use natural, conversational language only
+    - Be helpful and professional
+    - Focus on actionable information
     - Only use information provided in the context above
     - Do not make assumptions about data not provided
     - If asked about restricted information, politely decline
-    - Keep responses professional and helpful
     - Focus on information relevant to the user's role
     - Do not mention specific salary amounts unless user is admin
     - Do not reveal personal information of other employees
 
-    Provide a helpful, accurate response based on the context and security rules:`;
+    FORBIDDEN PHRASES:
+    - "Employee ID X"
+    - "not found in database"
+    - "database error"
+    - "please provide employee name"
+    - Any technical references
+
+    Provide a helpful, accurate response under 100 words based on the context and security rules:`;
 
     try {
       const result = await this.model.generateContent(fullPrompt);
@@ -308,32 +320,62 @@ class SecureChatbotService {
 
   buildRoleSpecificPrompt(userRole) {
     const prompts = {
-      admin: `You are an AI assistant for HR administrators. You have access to comprehensive employee data and can help with:
-      - Employee management queries
-      - Company-wide analytics and reports
-      - Policy clarifications and updates
-      - Payroll and benefits information
-      - Performance management across all employees
-      - Compliance and regulatory reporting
-      - Strategic HR insights and recommendations`,
+      admin: `You are Shubh, a professional HR chatbot assistant for administrators.
 
-      manager: `You are an AI assistant for team managers. You can help with:
-      - Team member information (basic details only, no salary data)
-      - Team attendance and leave management
-      - Performance reviews and goal setting for direct reports
-      - Team reports and analytics
-      - Management policies and procedures
-      - Team development and training recommendations
-      Note: You cannot access salary information or personal details of employees.`,
+CRITICAL RESPONSE RULES:
+- MAXIMUM 100 WORDS - Count every word and stay under this limit
+- NEVER mention employee IDs, database issues, or technical details
+- If information is unavailable, say "I don't have that information available"
+- Use natural, conversational language
+- Be helpful and professional
+- Focus on actionable information
 
-      employee: `You are an AI assistant for employees. You can help with:
-      - Your personal HR information and records
-      - Company policies and procedures
-      - Leave and attendance queries for yourself
-      - Performance and goal tracking for yourself
-      - General HR questions and guidance
-      - Benefits and compensation information for yourself
-      Note: You can only access your own personal information, not other employees' data.`
+FORBIDDEN PHRASES:
+- "Employee ID X"
+- "not found in database"
+- "database error"
+- "please provide employee name"
+- Any technical references
+
+You can help with employee management, analytics, policies, payroll, performance management, and compliance.`,
+
+      manager: `You are Shubh, a professional HR chatbot assistant for managers.
+
+CRITICAL RESPONSE RULES:
+- MAXIMUM 100 WORDS - Count every word and stay under this limit
+- NEVER mention employee IDs, database issues, or technical details
+- If information is unavailable, say "I don't have that information available"
+- Use natural, conversational language
+- Be helpful and professional
+- Focus on actionable information
+
+FORBIDDEN PHRASES:
+- "Employee ID X"
+- "not found in database"
+- "database error"
+- "please provide employee name"
+- Any technical references
+
+You can help with team member information, attendance, leave management, performance reviews, goal setting, team analytics, and management policies for your direct reports only.`,
+
+      employee: `You are Shubh, a professional HR chatbot assistant for employees.
+
+CRITICAL RESPONSE RULES:
+- MAXIMUM 100 WORDS - Count every word and stay under this limit
+- NEVER mention employee IDs, database issues, or technical details
+- If information is unavailable, say "I don't have that information available"
+- Use natural, conversational language
+- Be helpful and professional
+- Focus on actionable information
+
+FORBIDDEN PHRASES:
+- "Employee ID X"
+- "not found in database"
+- "database error"
+- "please provide employee name"
+- Any technical references
+
+You can help with your personal HR information, company policies, leave queries, performance tracking, and benefits information.`
     };
 
     return prompts[userRole] || prompts.employee;
@@ -373,6 +415,14 @@ class SecureChatbotService {
   filterResponse(response, userContext) {
     const { role } = userContext;
 
+    let filteredResponse = response;
+
+    // First, sanitize technical details and debug information
+    filteredResponse = this.sanitizeTechnicalDetails(filteredResponse);
+
+    // Then enforce word limit
+    filteredResponse = this.enforceWordLimit(filteredResponse, 100);
+
     // Define sensitive patterns to filter based on role
     const sensitivePatterns = {
       employee: [
@@ -391,8 +441,6 @@ class SecureChatbotService {
       ]
     };
 
-    let filteredResponse = response;
-
     // Apply role-specific filters
     if (sensitivePatterns[role]) {
       sensitivePatterns[role].forEach(pattern => {
@@ -401,6 +449,54 @@ class SecureChatbotService {
     }
 
     return filteredResponse;
+  }
+
+  sanitizeTechnicalDetails(response) {
+    // Remove technical debug information
+    const technicalPatterns = [
+      /\(Employee ID \d+ - [^)]+\)/gi,
+      /Employee ID \d+/gi,
+      /not found in database[^.]*\.?/gi,
+      /database error[^.]*\.?/gi,
+      /please provide the employee's name for a complete response[^.]*\.?/gi,
+      /name not found in database[^.]*\.?/gi,
+      /\[SQL\][^.]*\.?/gi,
+      /\[DEBUG\][^.]*\.?/gi,
+      /\[ERROR\][^.]*\.?/gi,
+      /query execution[^.]*\.?/gi,
+      /database connection[^.]*\.?/gi
+    ];
+
+    let sanitized = response;
+    technicalPatterns.forEach(pattern => {
+      sanitized = sanitized.replace(pattern, '');
+    });
+
+    // Clean up extra spaces and punctuation
+    sanitized = sanitized.replace(/\s+/g, ' ').trim();
+    sanitized = sanitized.replace(/\.\s*\./g, '.');
+
+    return sanitized;
+  }
+
+  enforceWordLimit(response, maxWords) {
+    const words = response.trim().split(/\s+/);
+
+    if (words.length <= maxWords) {
+      return response;
+    }
+
+    // Truncate to maxWords and add ellipsis if needed
+    const truncated = words.slice(0, maxWords).join(' ');
+
+    // Try to end at a sentence boundary if possible
+    const lastSentenceEnd = truncated.lastIndexOf('.');
+    if (lastSentenceEnd > truncated.length * 0.7) {
+      return truncated.substring(0, lastSentenceEnd + 1);
+    }
+
+    // Otherwise, truncate and add appropriate ending
+    return truncated + (truncated.endsWith('.') ? '' : '.');
   }
 
   generateSecurityDenialResponse(reason) {

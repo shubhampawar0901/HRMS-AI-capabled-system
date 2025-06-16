@@ -25,10 +25,26 @@ class EnhancedAIController {
 
     try {
       const { message } = req.body;
+
+      // Fetch employee name from database since it's not in JWT token
+      let employeeName = 'User';
+      if (req.user.employeeId) {
+        try {
+          const { Employee } = require('../models');
+          const employee = await Employee.findById(req.user.employeeId);
+          if (employee) {
+            employeeName = `${employee.firstName} ${employee.lastName}`;
+          }
+        } catch (dbError) {
+          console.warn('Could not fetch employee name:', dbError.message);
+          // Continue with default name
+        }
+      }
+
       const userContext = {
         userId: req.user.id,
         employeeId: req.user.employeeId,
-        employeeName: `${req.user.firstName} ${req.user.lastName}`,
+        employeeName: employeeName,
         role: req.user.role || 'employee',
         departmentId: req.user.departmentId
       };

@@ -47,13 +47,7 @@ const AnimatedAvatar = ({ size = "default", className, isTyping = false }) => {
         </AvatarFallback>
       </Avatar>
       
-      {/* Online status indicator */}
-      <div className={cn(
-        "absolute -bottom-0.5 -right-0.5 rounded-full bg-green-500 border-2 border-white shadow-sm",
-        size === "sm" ? "w-2 h-2" : size === "lg" ? "w-4 h-4" : size === "xl" ? "w-5 h-5" : "w-3 h-3"
-      )}>
-        <div className="w-full h-full bg-green-400 rounded-full animate-pulse" />
-      </div>
+
 
       {/* Subtle glow effect */}
       <div className={cn(

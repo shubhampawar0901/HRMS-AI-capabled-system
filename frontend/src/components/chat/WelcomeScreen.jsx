@@ -51,24 +51,24 @@ const WelcomeScreen = ({ onQuickAction }) => {
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-full p-4 text-center relative overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-full p-2 text-center relative overflow-hidden">
       {/* Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/40 via-purple-50/30 to-pink-50/40 pointer-events-none" />
 
       {/* Content Container */}
       <div className="relative z-10 w-full max-w-2xl mx-auto">
         {/* Avatar */}
-        <div className="mb-6">
-          <AnimatedAvatar size="xl" className="mx-auto" />
+        <div className="mb-4">
+          <AnimatedAvatar size="lg" className="mx-auto" />
         </div>
 
         {/* Welcome Message */}
-        <Card className="mb-6 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+        <Card className="mb-4 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-3">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
               Hello! I'm Shubh 👋
             </h2>
-            <p className="text-gray-700 leading-relaxed text-lg mb-4">
+            <p className="text-gray-700 leading-relaxed text-base mb-3">
               Your intelligent HR assistant. I can help you with leave balances, company policies,
               attendance queries, payroll information, and much more.
             </p>
@@ -79,7 +79,7 @@ const WelcomeScreen = ({ onQuickAction }) => {
         </Card>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
           {quickActions.map((action, index) => {
             const IconComponent = action.icon;
             return (
@@ -88,11 +88,11 @@ const WelcomeScreen = ({ onQuickAction }) => {
                 className="group cursor-pointer border-0 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-white/70 backdrop-blur-sm"
                 onClick={() => onQuickAction(action.text)}
               >
-                <CardContent className="p-4 flex flex-col items-center gap-3">
-                  <div className={`p-3 rounded-full bg-gradient-to-r ${action.gradient} shadow-lg group-hover:shadow-xl transition-all duration-300`}>
-                    <IconComponent className="h-6 w-6 text-white" />
+                <CardContent className="p-3 flex flex-col items-center gap-2">
+                  <div className={`p-2 rounded-full bg-gradient-to-r ${action.gradient} shadow-lg group-hover:shadow-xl transition-all duration-300`}>
+                    <IconComponent className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">
+                  <span className="text-xs font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">
                     {action.label}
                   </span>
                 </CardContent>
@@ -103,11 +103,11 @@ const WelcomeScreen = ({ onQuickAction }) => {
 
         {/* Additional Help Text */}
         <div className="text-center">
-          <p className="text-sm text-gray-500 mb-2">
+          <p className="text-xs text-gray-500 mb-1">
             💬 You can also type your questions directly in the chat box below
           </p>
           <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
             <span>Ready to assist you</span>
           </div>
         </div>
