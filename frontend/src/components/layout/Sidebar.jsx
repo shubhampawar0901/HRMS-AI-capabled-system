@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   BarChart3,
   TrendingUp,
-  FileText
+  FileText,
+  Building2
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -166,7 +167,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
     <>
       {/* Sidebar */}
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-full bg-card border-r border-border transition-all duration-300 lg:translate-x-0",
+        "fixed top-0 left-0 z-50 h-full bg-card border-r border-border transition-all duration-300 lg:translate-x-0 hrms-sidebar-gradient",
         isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0 lg:w-16"
       )}>
         <div className="flex flex-col h-full">
@@ -174,16 +175,18 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
           <div className="flex items-center justify-between p-4 border-b border-border">
             <div className="flex items-center space-x-2">
               {!isOpen && (
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm">HR</span>
+                <div className="w-8 h-8 hrms-icon-bg-gradient rounded-lg flex items-center justify-center hrms-icon-hover shadow-lg">
+                  <Building2 className="h-4 w-4 text-white" />
                 </div>
               )}
               {isOpen && (
                 <>
-                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-sm">HR</span>
+                  <div className="w-8 h-8 hrms-icon-bg-gradient rounded-lg flex items-center justify-center hrms-icon-hover shadow-lg">
+                    <Building2 className="h-4 w-4 text-white" />
                   </div>
-                  <span className="font-bold text-foreground">HRMS</span>
+                  <span className="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    HRMS
+                  </span>
                 </>
               )}
             </div>
@@ -194,7 +197,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                 variant="ghost"
                 size="sm"
                 onClick={onToggle}
-                className="hidden lg:flex hover:bg-accent"
+                className="hidden lg:flex hrms-smooth-hover hover:hrms-nav-hover-gradient"
                 title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
               >
                 <ChevronLeft className={`h-4 w-4 transition-transform duration-200 ${isOpen ? '' : 'rotate-180'}`} />
@@ -205,7 +208,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="lg:hidden"
+                className="lg:hidden hrms-smooth-hover hover:hrms-nav-hover-gradient"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -232,8 +235,8 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                         }
                       }}
                       className={cn(
-                        "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:bg-accent hover:text-accent-foreground group",
-                        "text-muted-foreground hover:text-foreground",
+                        "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium hrms-nav-item-enhanced group",
+                        "text-muted-foreground hover:text-foreground hover:hrms-nav-hover-gradient",
                         !isOpen && "lg:justify-center"
                       )}
                     >
@@ -246,7 +249,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                           <span className="truncate">{item.name}</span>
                           <div className="flex items-center space-x-2">
                             {item.badge && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium hrms-gradient-blue-purple text-white shadow-sm">
                                 {item.badge}
                               </span>
                             )}
@@ -282,10 +285,10 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                                 }}
                                 className={({ isActive }) =>
                                   cn(
-                                    "flex items-center px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground group",
+                                    "flex items-center px-3 py-2 rounded-md text-xs font-medium hrms-nav-item-enhanced group",
                                     isActive
-                                      ? "bg-primary text-primary-foreground"
-                                      : "text-muted-foreground hover:text-foreground"
+                                      ? "hrms-nav-active-gradient text-white shadow-lg"
+                                      : "text-muted-foreground hover:text-foreground hover:hrms-nav-hover-gradient"
                                   )
                                 }
                               >
@@ -320,10 +323,10 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                   }}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground group",
+                      "flex items-center px-3 py-2 rounded-md text-sm font-medium hrms-nav-item-enhanced group",
                       isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground",
+                        ? "hrms-nav-active-gradient text-white shadow-lg"
+                        : "text-muted-foreground hover:text-foreground hover:hrms-nav-hover-gradient",
                       !isOpen && "lg:justify-center"
                     )
                   }
@@ -336,7 +339,7 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
                     <div className="flex items-center justify-between flex-1 min-w-0">
                       <span className="truncate">{item.name}</span>
                       {item.badge && (
-                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium hrms-gradient-blue-purple text-white shadow-sm">
                           {item.badge}
                         </span>
                       )}
@@ -360,8 +363,8 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
               "flex items-center",
               isOpen ? "space-x-3" : "justify-center"
             )}>
-              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                <span className="text-xs font-medium text-muted-foreground">
+              <div className="w-8 h-8 hrms-icon-bg-gradient rounded-full flex items-center justify-center hrms-icon-hover shadow-lg">
+                <span className="text-xs font-medium text-white">
                   {user?.name?.charAt(0) || 'U'}
                 </span>
               </div>

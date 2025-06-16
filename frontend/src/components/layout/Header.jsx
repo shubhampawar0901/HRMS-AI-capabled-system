@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, LogOut, User } from 'lucide-react';
+import { Menu, LogOut, User, Building2 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +19,7 @@ const Header = ({ onMenuClick, sidebarOpen }) => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+    <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50 hrms-header-gradient">
       <div className="flex items-center justify-between px-6 py-4">
         {/* Left side - Menu button and logo */}
         <div className="flex items-center space-x-4">
@@ -27,12 +27,20 @@ const Header = ({ onMenuClick, sidebarOpen }) => {
             variant="ghost"
             size="sm"
             onClick={onMenuClick}
-            className="hover:bg-gray-100 transition-colors"
+            className="hrms-smooth-hover hover:hrms-nav-hover-gradient transition-all duration-200"
           >
             <Menu className="h-5 w-5" />
           </Button>
 
-
+          {/* HRMS Logo */}
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 hrms-icon-bg-gradient rounded-lg flex items-center justify-center hrms-icon-hover">
+              <Building2 className="h-5 w-5 text-white" />
+            </div>
+            <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              HRMS
+            </span>
+          </div>
         </div>
 
         {/* Right side - User menu */}
@@ -40,8 +48,8 @@ const Header = ({ onMenuClick, sidebarOpen }) => {
           {/* User menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100 transition-colors">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <Button variant="ghost" className="flex items-center space-x-2 hrms-smooth-hover hover:hrms-nav-hover-gradient transition-all duration-200">
+                <div className="w-8 h-8 hrms-icon-bg-gradient rounded-full flex items-center justify-center hrms-icon-hover shadow-lg">
                   <User className="h-4 w-4 text-white" />
                 </div>
                 <div className="hidden sm:block text-left">
