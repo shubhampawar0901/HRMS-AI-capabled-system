@@ -256,7 +256,7 @@ describe('AI API Integration', () => {
 ```javascript
 // Use Gemini API (as per user preference)
 const llmConfig = {
-  model: "gemini-1.5-pro", // Better than gemini-pro
+  model: "gemini-1.5-flash", // Fast and efficient, avoids quota issues
   temperature: 0.1,        // Low for consistency
   maxTokens: 1000,
   apiKey: process.env.GEMINI_API_KEY

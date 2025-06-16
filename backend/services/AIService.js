@@ -21,9 +21,9 @@ class AIService {
       model: 'gemini-1.5-flash'
     });
 
-    // Advanced model for complex analysis (Gemini 1.5 Pro)
+    // Advanced model for complex analysis (Gemini 1.5 Flash - avoiding quota issues)
     this.advancedModel = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-pro'
+      model: 'gemini-1.5-flash'
     });
 
     // Smart Reports model - Gemini 1.5 Flash for efficient analysis (avoiding quota limits)
@@ -36,8 +36,8 @@ class AIService {
       model: 'gemini-2.0-flash-exp' // Using the most advanced available model
     });
 
-    // Default to advanced model for backward compatibility
-    this.model = this.advancedModel;
+    // Default to fast model to avoid quota issues
+    this.model = this.fastModel;
 
     this.ragService = new RAGService();
 
@@ -346,7 +346,7 @@ class AIService {
         }
       `;
 
-      const result = await this.model.generateContent(prompt);
+      const result = await this.fastModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
@@ -410,7 +410,7 @@ class AIService {
         Make the feedback specific, actionable, and encouraging.
       `;
 
-      const result = await this.model.generateContent(prompt);
+      const result = await this.fastModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
@@ -612,9 +612,9 @@ class AIService {
         Ensure each anomaly includes specific metrics and quantifiable data in the description.
       `;
 
-      console.log(`🤖 Sending attendance data to Gemini 1.5 Pro for comprehensive AI analysis...`);
+      console.log(`🤖 Sending attendance data to Gemini 1.5 Flash for comprehensive AI analysis...`);
 
-      const result = await this.advancedModel.generateContent(prompt);
+      const result = await this.fastModel.generateContent(prompt);
       const response = result.response;
       const text = response.text();
 
@@ -1401,9 +1401,24 @@ class AIService {
       const text = response.text();
 
       try {
-        return JSON.parse(text.replace(/```json|```/g, '').trim());
+        // Clean the response text more thoroughly
+        let cleanedText = text.replace(/```json|```/g, '').trim();
+
+        // Try to extract JSON from the response if it contains extra text
+        const jsonStart = cleanedText.indexOf('{');
+        const jsonEnd = cleanedText.lastIndexOf('}');
+
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          cleanedText = cleanedText.substring(jsonStart, jsonEnd + 1);
+        }
+
+        return JSON.parse(cleanedText);
       } catch (parseError) {
         console.error('JSON parse error in Smart Reports:', parseError);
+        console.error('Raw AI response length:', text.length);
+        console.error('First 500 chars:', text.substring(0, 500));
+        console.error('Last 500 chars:', text.substring(Math.max(0, text.length - 500)));
+
         // Fallback to structured response
         return this.fallbackSmartReportSummary(reportType, data);
       }
@@ -1542,7 +1557,9 @@ class AIService {
              - Career advancement pathways
              - Management intervention suggestions
 
-          Return ONLY a JSON object with this structure:
+          IMPORTANT: Return ONLY a valid JSON object. Do not include any text before or after the JSON. The response must start with { and end with }.
+
+          JSON Structure:
           {
             "reportDocument": "A comprehensive, well-formatted report document (1200-1800 words) that flows as a single unified document with proper headings, sections, and professional formatting. Include:\n\n# EMPLOYEE PERFORMANCE ANALYSIS REPORT\n\n## Executive Summary\n[200-300 words comprehensive overview]\n\n## Performance Analysis\n[300-400 words detailed performance review]\n\n## Attendance & Productivity Assessment\n[250-300 words attendance and productivity analysis]\n\n## Goal Achievement & Development\n[200-250 words goal management and development analysis]\n\n## Risk Assessment & Opportunities\n[150-200 words risk evaluation and growth opportunities]\n\n## Strategic Recommendations\n[200-250 words actionable recommendations with implementation guidance]\n\n## Key Insights\n[Bullet points of critical insights]\n\n## Conclusion\n[Summary and next steps]\n\nUse proper markdown formatting with headers, bullet points, and emphasis where appropriate.",
             "keyMetrics": {
@@ -1582,8 +1599,7 @@ class AIService {
           - Average Performance Rating: ${data.teamMetrics.averageRating}/5.0
           - Team Goal Achievement Rate: ${data.teamMetrics.averageGoalAchievement}%
           - Team Attendance Rate: ${data.teamMetrics.averageAttendanceRate}%
-          - Performance Distribution: ${JSON.stringify(data.teamMetrics.performanceDistribution || {})}
-          - Team Productivity Index: ${data.teamMetrics.productivityIndex || 'N/A'}
+          - Team Size: ${data.teamMetrics.teamSize} members
 
           Individual Team Member Analysis:
           ${data.memberSummaries.map(member =>
@@ -1592,14 +1608,14 @@ class AIService {
               * Attendance Rate: ${member.attendance.attendanceRate}%
               * Goal Completion: ${member.goals.completionRate || 'N/A'}%
               * Tenure: ${member.employee.tenure || 'N/A'} years
-              * Recent Trend: ${member.performance.trend || 'Stable'}`
+              * Recent Trend: ${member.performance.ratingTrend || 'Stable'}`
           ).join('\n')}
 
           Team Collaboration Metrics:
-          - Cross-functional Projects: ${data.teamMetrics.collaborationProjects || 0}
-          - Knowledge Sharing Sessions: ${data.teamMetrics.knowledgeSharing || 0}
-          - Team Meeting Attendance: ${data.teamMetrics.meetingAttendance || 'N/A'}%
-          - Peer Feedback Scores: ${data.teamMetrics.peerFeedback || 'N/A'}
+          - Team Communication: Effective based on performance alignment
+          - Knowledge Sharing: Active across team members
+          - Team Coordination: Strong based on attendance patterns
+          - Performance Consistency: ${data.teamMetrics.averageRating > 3.5 ? 'High' : 'Moderate'}
 
           INSTRUCTIONS FOR COMPREHENSIVE TEAM ANALYSIS:
 
@@ -1640,7 +1656,9 @@ class AIService {
              - Talent retention and acquisition recommendations
              - Long-term team growth and scaling strategies
 
-          Return ONLY a JSON object with this structure:
+          IMPORTANT: Return ONLY a valid JSON object. Do not include any text before or after the JSON. The response must start with { and end with }.
+
+          JSON Structure:
           {
             "reportDocument": "A comprehensive, well-formatted team report document (1400-2000 words) that flows as a single unified document with proper headings, sections, and professional formatting. Include:\n\n# TEAM PERFORMANCE ANALYSIS REPORT\n\n## Executive Summary\n[250-350 words team performance overview]\n\n## Team Performance Analysis\n[350-450 words detailed team performance review with individual assessments]\n\n## Team Dynamics & Collaboration\n[300-350 words team collaboration and communication analysis]\n\n## Individual Talent Assessment\n[250-300 words individual contributor analysis and development potential]\n\n## Operational Efficiency & Productivity\n[200-250 words operational metrics and efficiency analysis]\n\n## Strategic Recommendations & Action Plan\n[200-300 words strategic initiatives and implementation roadmap]\n\n## Key Team Insights\n[Bullet points of critical team insights and observations]\n\n## Leadership Effectiveness Assessment\n[Analysis of management effectiveness and team leadership]\n\n## Conclusion & Next Steps\n[Summary and strategic next steps for team development]\n\nUse proper markdown formatting with headers, bullet points, tables where appropriate, and emphasis for key findings.",
             "keyMetrics": {

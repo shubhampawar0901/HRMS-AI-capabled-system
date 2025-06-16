@@ -182,6 +182,47 @@
     transform: translateY(-1px);
   }
 
+  /* Smooth Tab Transitions */
+  .tab-content-container {
+    position: relative;
+    min-height: 500px;
+    overflow: visible;
+    transition: min-height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .tab-content-panel {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    pointer-events: none;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform-origin: center top;
+  }
+
+  .tab-content-panel.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    transition-delay: 0.05s;
+  }
+
+  /* Enhanced tab trigger transitions */
+  .tabs-trigger-enhanced {
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateZ(0);
+  }
+
+  .tabs-trigger-enhanced:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .tabs-trigger-enhanced[data-state="active"] {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
   .hrms-card-interactive {
     @apply hrms-card cursor-pointer;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);

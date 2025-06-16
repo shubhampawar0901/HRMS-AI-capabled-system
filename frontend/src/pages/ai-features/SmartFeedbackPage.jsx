@@ -24,7 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { canAccessSmartFeedback, getSmartFeedbackAccessDeniedMessage } from '@/utils/roleUtils';
 import smartFeedbackService from '@/services/smartFeedbackService';
 import employeeService from '@/services/employeeService';
-import { formatDate } from '@/utils/dateUtils';
+import { toast } from 'sonner';
 
 const SmartFeedbackPage = () => {
   const { user } = useAuth();
@@ -50,13 +50,19 @@ const SmartFeedbackPage = () => {
   const [isSending, setIsSending] = useState(false); // ✅ NEW: Add sending state
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [feedbackHistory, setFeedbackHistory] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
+
 
   // Callback functions
   const loadEmployees = useCallback(async () => {
     try {
-      const response = await employeeService.getEmployees({ limit: 100 });
+      const params = { limit: 100 };
+
+      // Managers should only see their own team members
+      if (user?.role === 'manager') {
+        params.managerId = user.employeeId || user.employee?.id;
+      }
+
+      const response = await employeeService.getEmployees(params);
       console.log('Employee service response:', response);
 
       // Handle the expected response structure: { success: true, data: { employees: [...] } }
@@ -71,21 +77,9 @@ const SmartFeedbackPage = () => {
       setError('Failed to load employees');
       setEmployees([]);
     }
-  }, []);
+  }, [user?.role, user?.employeeId, user?.employee?.id]);
 
-  const loadFeedbackHistory = useCallback(async () => {
-    if (!selectedEmployee) return;
 
-    setLoadingHistory(true);
-    try {
-      const response = await smartFeedbackService.getFeedbackHistory(selectedEmployee.id, { limit: 5 });
-      setFeedbackHistory(response.data || []);
-    } catch (error) {
-      console.error('Error loading feedback history:', error);
-    } finally {
-      setLoadingHistory(false);
-    }
-  }, [selectedEmployee]);
 
   // Effects
   useEffect(() => {
@@ -94,11 +88,7 @@ const SmartFeedbackPage = () => {
     }
   }, [user?.role, loadEmployees]);
 
-  useEffect(() => {
-    if (selectedEmployee && canAccessSmartFeedback(user?.role)) {
-      loadFeedbackHistory();
-    }
-  }, [selectedEmployee, user?.role, loadFeedbackHistory]);
+
 
   // Check access permissions
   if (!canAccessSmartFeedback(user?.role)) {
@@ -149,9 +139,6 @@ const SmartFeedbackPage = () => {
       setGeneratedFeedback(feedbackResult);
       setEditedFeedback(feedbackResult.generatedFeedback || '');
       setSuccess('Smart feedback generated successfully!');
-      
-      // Reload feedback history
-      loadFeedbackHistory();
     } catch (error) {
       console.error('Error generating feedback:', error);
       setError(error.message || 'Failed to generate feedback');
@@ -199,14 +186,29 @@ const SmartFeedbackPage = () => {
 
           // ✅ NEW: Check email result
           if (response.data?.emailSent) {
-            setSuccess('✅ Feedback sent to employee via email! They will receive it shortly.');
+            const successMessage = `🎉 Feedback email sent successfully to ${selectedEmployee?.firstName} ${selectedEmployee?.lastName} (${selectedEmployee?.email})! They will receive it shortly.`;
+            setSuccess(successMessage);
+            toast.success('Feedback Email Sent!', {
+              description: `Successfully sent to ${selectedEmployee?.firstName} ${selectedEmployee?.lastName}`,
+              duration: 5000,
+            });
           } else {
-            setSuccess('✅ Feedback updated but email could not be sent. Please contact the employee directly.');
+            const warningMessage = `⚠️ Feedback updated but email could not be sent to ${selectedEmployee?.firstName} ${selectedEmployee?.lastName}. Please contact them directly.`;
+            setSuccess(warningMessage);
+            toast.warning('Email Failed', {
+              description: `Could not send email to ${selectedEmployee?.firstName} ${selectedEmployee?.lastName}`,
+              duration: 5000,
+            });
           }
 
         } catch (updateError) {
           console.error('Could not send feedback:', updateError);
-          setError('Failed to send feedback. Please try again.');
+          const errorMessage = 'Failed to send feedback. Please try again.';
+          setError(errorMessage);
+          toast.error('Send Failed', {
+            description: 'Could not send feedback email. Please try again.',
+            duration: 5000,
+          });
           return;
         }
       } else {
@@ -221,13 +223,28 @@ const SmartFeedbackPage = () => {
             }, true); // ✅ sendEmail = true
 
             if (response.data?.emailSent) {
-              setSuccess('✅ Feedback sent to employee via email! They will receive it shortly.');
+              const successMessage = `🎉 Feedback email sent successfully to ${selectedEmployee?.firstName} ${selectedEmployee?.lastName} (${selectedEmployee?.email})! They will receive it shortly.`;
+              setSuccess(successMessage);
+              toast.success('Feedback Email Sent!', {
+                description: `Successfully sent to ${selectedEmployee?.firstName} ${selectedEmployee?.lastName}`,
+                duration: 5000,
+              });
             } else {
-              setSuccess('✅ Feedback processed but email could not be sent. Please contact the employee directly.');
+              const warningMessage = `⚠️ Feedback processed but email could not be sent to ${selectedEmployee?.firstName} ${selectedEmployee?.lastName}. Please contact them directly.`;
+              setSuccess(warningMessage);
+              toast.warning('Email Failed', {
+                description: `Could not send email to ${selectedEmployee?.firstName} ${selectedEmployee?.lastName}`,
+                duration: 5000,
+              });
             }
           } catch (emailError) {
             console.error('Could not send feedback email:', emailError);
-            setError('Failed to send feedback email. Please try again.');
+            const errorMessage = 'Failed to send feedback email. Please try again.';
+            setError(errorMessage);
+            toast.error('Email Failed', {
+              description: 'Could not send feedback email. Please try again.',
+              duration: 5000,
+            });
             return;
           }
         }
@@ -254,7 +271,12 @@ const SmartFeedbackPage = () => {
 
     } catch (error) {
       console.error('Error sending feedback:', error);
-      setError('Failed to send feedback. Please try again.');
+      const errorMessage = 'Failed to send feedback. Please try again.';
+      setError(errorMessage);
+      toast.error('Send Failed', {
+        description: 'An unexpected error occurred. Please try again.',
+        duration: 5000,
+      });
     } finally {
       setIsSending(false); // ✅ Reset sending state
     }
@@ -445,16 +467,30 @@ const SmartFeedbackPage = () => {
               <div className="w-1/2 p-6 overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 shadow-inner">
                 {/* Status Messages */}
                 {error && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
-                    <AlertCircle className="h-4 w-4" />
-                    {error}
+                  <div className="mb-4 p-4 bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl shadow-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-rose-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <AlertCircle className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-red-800 mb-1">Error</h4>
+                        <p className="text-red-700 text-sm leading-relaxed">{error}</p>
+                      </div>
+                    </div>
                   </div>
                 )}
                 
                 {success && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700">
-                    <CheckCircle className="h-4 w-4" />
-                    {success}
+                  <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl shadow-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-green-800 mb-1">Success!</h4>
+                        <p className="text-green-700 text-sm leading-relaxed">{success}</p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -678,40 +714,7 @@ const SmartFeedbackPage = () => {
                   </div>
                 )}
 
-                {/* Feedback History */}
-                {selectedEmployee && (
-                  <div className="mt-6">
-                    <Separator className="mb-4" />
-                    <h3 className="font-medium text-gray-800 mb-3">Recent Feedback History</h3>
-                    {loadingHistory ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                      </div>
-                    ) : feedbackHistory.length > 0 ? (
-                      <div className="space-y-3">
-                        {feedbackHistory.map((feedback, index) => (
-                          <div key={index} className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-gray-200/50">
-                            <div className="flex items-center justify-between mb-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {feedback.feedbackType}
-                              </Badge>
-                              <span className="text-xs text-gray-500">
-                                {formatDate(feedback.createdAt)}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-700 line-clamp-2">
-                              {feedback.generatedFeedback}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 text-center py-4">
-                        No previous feedback found for this employee.
-                      </p>
-                    )}
-                  </div>
-                )}
+
               </div>
             </div>
           </CardContent>

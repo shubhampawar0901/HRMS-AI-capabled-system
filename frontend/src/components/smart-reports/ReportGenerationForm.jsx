@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   UserIcon,
   UsersIcon,
@@ -36,19 +36,26 @@ const ReportGenerationForm = ({
   // Available report types based on user role
   const availableReportTypes = [
     { value: 'employee', label: 'Employee Report' },
-    { value: 'team', label: 'Team Report' }
+    { value: 'team', label: user?.role === 'manager' ? 'My Team Report' : 'Team Report' }
   ];
 
   /**
    * Load employee options for selection
    */
-  const loadEmployeeOptions = async () => {
+  const loadEmployeeOptions = useCallback(async () => {
     setLoadingEmployees(true);
     try {
-      const response = await employeeService.getEmployees({
+      const params = {
         limit: 100,
         status: 'active'
-      });
+      };
+
+      // Managers should only see their own team members
+      if (user?.role === 'manager') {
+        params.managerId = user.employeeId || user.employee?.id;
+      }
+
+      const response = await employeeService.getEmployees(params);
 
       if (response.success) {
         setEmployeeOptions(response.data.employees || []);
@@ -58,12 +65,12 @@ const ReportGenerationForm = ({
     } finally {
       setLoadingEmployees(false);
     }
-  };
+  }, [user?.role, user?.employeeId, user?.employee?.id]);
 
   /**
    * Load manager options for team reports
    */
-  const loadManagerOptions = async () => {
+  const loadManagerOptions = useCallback(async () => {
     setLoadingEmployees(true);
     try {
       // Get employees who have team members (managers)
@@ -77,7 +84,7 @@ const ReportGenerationForm = ({
     } finally {
       setLoadingEmployees(false);
     }
-  };
+  }, []);
 
   /**
    * Simplified form submission - synchronous generation
@@ -85,8 +92,14 @@ const ReportGenerationForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // For managers generating team reports, auto-set targetId to their employeeId
+    let targetId = formData.targetId;
+    if (formData.reportType === 'team' && user?.role === 'manager') {
+      targetId = user.employeeId;
+    }
+
     // Validate form
-    if (!formData.reportType || !formData.targetId) {
+    if (!formData.reportType || (!targetId && formData.reportType === 'employee')) {
       setError('Please select both report type and target.');
       return;
     }
@@ -98,7 +111,7 @@ const ReportGenerationForm = ({
       // Prepare submission data with system defaults
       const submissionData = {
         reportType: formData.reportType,
-        targetId: parseInt(formData.targetId),
+        targetId: parseInt(targetId),
         // System defaults - no user input required
         reportName: `${formData.reportType === 'employee' ? 'Employee' : 'Team'} Report - ${new Date().toLocaleDateString()}`,
         dateRange: {
@@ -179,14 +192,14 @@ const ReportGenerationForm = ({
    */
   const canGenerateReports = ['admin', 'manager'].includes(user?.role);
 
-  // Load initial data
+  // Load initial data when report type changes
   useEffect(() => {
     if (formData.reportType === 'employee') {
       loadEmployeeOptions();
     } else if (formData.reportType === 'team') {
       loadManagerOptions();
     }
-  }, []);
+  }, [formData.reportType, loadEmployeeOptions, loadManagerOptions]);
 
   if (!canGenerateReports) {
     return (
@@ -293,7 +306,9 @@ const ReportGenerationForm = ({
                     }`}>
                       {type.value === 'employee'
                         ? 'Individual performance analysis'
-                        : 'Team performance overview'
+                        : user?.role === 'manager'
+                          ? 'Your team performance overview'
+                          : 'Team performance overview'
                       }
                     </p>
                   </div>
@@ -311,8 +326,8 @@ const ReportGenerationForm = ({
           </div>
         </div>
 
-        {/* Target Selection */}
-        {formData.reportType && (
+        {/* Target Selection - Only show for employee reports or admin users */}
+        {formData.reportType && (formData.reportType === 'employee' || user?.role === 'admin') && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {formData.reportType === 'employee' ? 'Select Employee' : 'Select Manager'}
@@ -340,6 +355,21 @@ const ReportGenerationForm = ({
                 </option>
               ))}
             </select>
+          </div>
+        )}
+
+        {/* Manager Team Report Info */}
+        {formData.reportType === 'team' && user?.role === 'manager' && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <UsersIcon className="h-5 w-5 text-green-600 mr-2" />
+              <div>
+                <h3 className="text-sm font-medium text-green-900">Your Team Report</h3>
+                <p className="text-sm text-green-700 mt-1">
+                  This report will analyze the performance of all team members under your direct supervision.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -381,7 +411,12 @@ const ReportGenerationForm = ({
 
           <button
             type="submit"
-            disabled={!formData.reportType || !formData.targetId || loadingEmployees}
+            disabled={
+              !formData.reportType ||
+              (formData.reportType === 'employee' && !formData.targetId) ||
+              (formData.reportType === 'team' && user?.role === 'admin' && !formData.targetId) ||
+              loadingEmployees
+            }
             className="
               px-8 py-3 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600
               border border-transparent rounded-md hover:from-indigo-700 hover:to-purple-700

@@ -59,25 +59,39 @@ class SmartReportsDataService {
   
   async getTeamPerformanceData(managerId, dateRange = {}) {
     try {
+      console.log('🔍 TEAM REPORTS DEBUG - SmartReportsDataService.getTeamPerformanceData called');
+      console.log('- managerId:', managerId);
+      console.log('- dateRange:', dateRange);
+
       const startDate = dateRange.startDate || new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
       const endDate = dateRange.endDate || new Date();
-      
+
+      console.log('📅 Date range processed:', { startDate, endDate });
+
       // Get manager info
+      console.log('👤 Getting manager info...');
       const manager = await Employee.findById(managerId);
       if (!manager) {
         throw new Error('Manager not found');
       }
-      
+      console.log('✅ Manager found:', manager.firstName, manager.lastName);
+
       // Get team members
+      console.log('👥 Getting team members...');
       const teamMembers = await this.getTeamMembers(managerId);
-      
+      console.log('✅ Team members found:', teamMembers.length);
+
       // Get team metrics aggregation
+      console.log('📊 Getting team metrics...');
       const teamMetrics = await this.getTeamMetrics(managerId, startDate, endDate);
-      
+      console.log('✅ Team metrics collected:', teamMetrics);
+
       // Get individual member summaries
+      console.log('📋 Getting individual member summaries...');
       const memberSummaries = await Promise.all(
         teamMembers.map(member => this.getEmployeePerformanceData(member.id, { startDate, endDate }))
       );
+      console.log('✅ Member summaries collected:', memberSummaries.length);
       
       return {
         manager: {

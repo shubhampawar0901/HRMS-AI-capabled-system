@@ -22,10 +22,19 @@ class SmartReportsController {
         return sendError(res, 'Invalid report type. Must be "employee" or "team".', 400);
       }
 
-      // For team reports, ensure targetId is the manager's employee ID
+      // For team reports, enforce role-based access control
       if (reportType === 'team') {
-        if (role === 'manager' && targetId !== employeeId) {
-          return sendError(res, 'Managers can only generate reports for their own team.', 403);
+        if (role === 'manager') {
+          // Managers can only generate reports for their own team
+          // Override targetId to ensure it's their employeeId
+          targetId = employeeId;
+        } else if (role === 'admin') {
+          // Admin can generate reports for any manager's team
+          // Verify the targetId is a valid manager
+          const targetManager = await Employee.findById(targetId);
+          if (!targetManager) {
+            return sendError(res, 'Target manager not found.', 404);
+          }
         }
       }
 
@@ -36,7 +45,7 @@ class SmartReportsController {
           return sendError(res, 'Employee not found.', 404);
         }
         if (employee.managerId !== employeeId) {
-          return sendError(res, 'Managers can only generate reports for their team members.', 403);
+          return sendError(res, 'Managers can only generate reports for their direct team members.', 403);
         }
       }
 
@@ -72,18 +81,43 @@ class SmartReportsController {
   // SYNCHRONOUS REPORT GENERATION
   // ==========================================
   static async generateSmartReportSync(req, res) {
+    const startTime = Date.now();
+    console.log('🔍 SYNC REPORT DEBUG - Starting generation');
+    console.log('- Request body:', JSON.stringify(req.body, null, 2));
+    console.log('- User info:', JSON.stringify(req.user, null, 2));
+
     try {
-      const { reportType, targetId, reportName, dateRange } = req.body;
+      const { reportType, targetId: requestedTargetId, reportName, dateRange } = req.body;
       const { role, userId, employeeId } = req.user;
 
       // Validate required fields
-      if (!reportType || !targetId) {
+      if (!reportType || !requestedTargetId) {
         return sendError(res, 'Report type and target ID are required', 400);
       }
 
       // Check permissions
       if (role !== 'admin' && role !== 'manager') {
         return sendError(res, 'Access denied', 403);
+      }
+
+      // Determine the actual targetId based on role and report type
+      let targetId = requestedTargetId;
+
+      // For team reports, enforce role-based access control
+      if (reportType === 'team') {
+        if (role === 'manager') {
+          // Managers can only generate reports for their own team
+          // Override targetId to ensure it's their employeeId
+          targetId = employeeId;
+        } else if (role === 'admin') {
+          // Admin can generate reports for any manager's team
+          // Verify the targetId is a valid manager
+          const targetManager = await Employee.findById(requestedTargetId);
+          if (!targetManager) {
+            return sendError(res, 'Target manager not found.', 404);
+          }
+          targetId = requestedTargetId;
+        }
       }
 
       // For employee reports, check if manager can access this employee
@@ -93,11 +127,16 @@ class SmartReportsController {
           return sendError(res, 'Employee not found.', 404);
         }
         if (employee.managerId !== employeeId) {
-          return sendError(res, 'Managers can only generate reports for their team members.', 403);
+          return sendError(res, 'Managers can only generate reports for their direct team members.', 403);
         }
       }
 
       // Generate report synchronously
+      console.log('📊 SYNC REPORT DEBUG - Starting AI generation');
+      console.log('- Report type:', reportType);
+      console.log('- Target ID:', targetId);
+      console.log('- Date range:', dateRange);
+
       const aiService = new AIService();
       const reportData = await aiService.generateSmartReport(reportType, {
         targetId,
@@ -105,6 +144,9 @@ class SmartReportsController {
         reportName,
         userId
       });
+
+      console.log('✅ SYNC REPORT DEBUG - AI generation completed');
+      console.log('- Report data keys:', Object.keys(reportData || {}));
 
       // Create completed report in database
       const completedReport = await AISmartReport.create({
@@ -119,9 +161,14 @@ class SmartReportsController {
         status: 'completed'
       });
 
+      const totalTime = Date.now() - startTime;
+      console.log(`🎉 SYNC REPORT DEBUG - Report completed in ${totalTime}ms`);
+      console.log('- Report ID:', completedReport.id);
+
       return sendCreated(res, completedReport, 'Smart report generated successfully');
     } catch (error) {
-      console.error('Generate smart report sync error:', error);
+      const totalTime = Date.now() - startTime;
+      console.error(`❌ SYNC REPORT DEBUG - Error after ${totalTime}ms:`, error);
 
       // Handle specific API quota errors
       if (error.status === 429 || error.message?.includes('quota')) {

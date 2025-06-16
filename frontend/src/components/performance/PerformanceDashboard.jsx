@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Target, 
-  FileText, 
-  Users, 
-  TrendingUp,
+import {
+  Target,
+  FileText,
   Star,
-  Award,
-  BarChart3,
   Plus
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +15,40 @@ import ReviewList from './ReviewList';
 import GoalsList from './GoalsList';
 import LoadingSpinner from '@/components/layout/LoadingSpinner';
 
+
+// Custom SmoothTabsContent component for smooth transitions
+const SmoothTabsContent = ({ value, activeTab, children, className = "" }) => {
+  const isActive = value === activeTab;
+  const [isVisible, setIsVisible] = useState(isActive);
+
+  React.useEffect(() => {
+    if (isActive) {
+      setIsVisible(true);
+    } else {
+      // Delay hiding to allow exit animation
+      const timer = setTimeout(() => setIsVisible(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive]);
+
+  return (
+    <div
+      className={`tab-content-panel ${isActive ? 'active' : ''} ${className}`}
+      style={{
+        position: isActive ? 'relative' : 'absolute',
+        width: '100%',
+        top: isActive ? 'auto' : 0,
+        left: isActive ? 'auto' : 0,
+        right: isActive ? 'auto' : 0,
+        zIndex: isActive ? 1 : 0,
+        visibility: isVisible ? 'visible' : 'hidden'
+      }}
+      aria-hidden={!isActive}
+    >
+      {children}
+    </div>
+  );
+};
 
 const PerformanceDashboard = () => {
   const { user, isAdmin, isManager, isEmployee } = useAuth();
@@ -36,6 +66,8 @@ const PerformanceDashboard = () => {
     if (isAdmin) return 'overview';
     return 'overview';
   });
+
+
 
   // Calculate summary stats for employee
   const employeeSummary = React.useMemo(() => {
@@ -227,35 +259,52 @@ const PerformanceDashboard = () => {
         <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-lg">
           <TabsTrigger
             value="overview"
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
+            className="tabs-trigger-enhanced data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
           >
             Overview
           </TabsTrigger>
           <TabsTrigger
             value="reviews"
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
+            className="tabs-trigger-enhanced data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
           >
             {isEmployee ? 'My Reviews' : 'Reviews'}
           </TabsTrigger>
           <TabsTrigger
             value="goals"
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
+            className="tabs-trigger-enhanced data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
           >
             {isEmployee ? 'My Goals' : 'Goals'}
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          {isEmployee ? renderEmployeeOverview() : renderManagerOverview()}
-        </TabsContent>
+        <div className="tab-content-container">
+          <SmoothTabsContent
+            key="overview-tab"
+            value="overview"
+            activeTab={activeTab}
+            className="space-y-6"
+          >
+            {isEmployee ? renderEmployeeOverview() : renderManagerOverview()}
+          </SmoothTabsContent>
 
-        <TabsContent value="reviews" className="space-y-6">
-          <ReviewList />
-        </TabsContent>
+          <SmoothTabsContent
+            key="reviews-tab"
+            value="reviews"
+            activeTab={activeTab}
+            className="space-y-6"
+          >
+            <ReviewList key="reviews-list" />
+          </SmoothTabsContent>
 
-        <TabsContent value="goals" className="space-y-6">
-          <GoalsList />
-        </TabsContent>
+          <SmoothTabsContent
+            key="goals-tab"
+            value="goals"
+            activeTab={activeTab}
+            className="space-y-6"
+          >
+            <GoalsList key="goals-list" />
+          </SmoothTabsContent>
+        </div>
       </Tabs>
     </div>
   );
