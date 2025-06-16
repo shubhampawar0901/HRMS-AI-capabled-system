@@ -3,22 +3,10 @@ import { API_ENDPOINTS } from '@/api/endpoints';
 import { apiRequest } from '@/api/interceptors';
 
 class EmployeeService {
-  // Get all employees without pagination (using maximum allowed limit)
-  async getAllEmployees() {
-    // Use the working /employees endpoint with maximum allowed limit
-    const params = {
-      page: 1,
-      limit: 100, // Maximum allowed by backend validation
-      status: 'active'
-    };
-
-    const queryParams = new URLSearchParams(params).toString();
-    const url = `${API_ENDPOINTS.EMPLOYEES.BASE}?${queryParams}`;
-
-    return apiRequest(
-      () => axiosInstance.get(url),
-      'employees-all'
-    );
+  // Get all employees with pagination and filters
+  async getAllEmployees(params = {}) {
+    // Use the getEmployees method with proper parameters
+    return this.getEmployees(params);
   }
 
   // Get all employees with pagination and filters

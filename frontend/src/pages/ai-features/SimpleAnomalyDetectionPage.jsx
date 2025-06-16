@@ -174,11 +174,8 @@ const SimpleAnomalyDetectionPage = () => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
-                  AI Attendance Anomaly Detection
+                  AI Anomaly Detection
                 </h1>
-                <p className="text-gray-600">
-                  Intelligent analysis of attendance patterns with clear explanations
-                </p>
               </div>
             </div>
 

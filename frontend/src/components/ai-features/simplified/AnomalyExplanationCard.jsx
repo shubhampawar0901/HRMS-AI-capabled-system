@@ -99,7 +99,7 @@ const AnomalyExplanationCard = () => {
                 How AI Detects Anomalies
               </h2>
               <p className="text-sm text-gray-600">
-                Clear thresholds and calculations for each anomaly type
+                Advanced AI-powered detection using Gemini 1.5 Flash model
               </p>
             </div>
           </div>
@@ -162,56 +162,45 @@ const AnomalyExplanationCard = () => {
         )}
       </div>
 
-      {/* Detailed Explanations */}
+      {/* Enhanced AI Analysis Process */}
       {isExpanded && (
         <div className="border-t border-gray-200 bg-gray-50">
           <div className="p-6">
-            <div className="space-y-4">
-              {anomalyTypes.map((anomaly, index) => {
-                const IconComponent = anomaly.icon;
-                return (
-                  <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-start space-x-3">
-                      <div className={`p-2 ${anomaly.bgColor} rounded-lg`}>
-                        <IconComponent className={`w-5 h-5 ${anomaly.color}`} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <h3 className="font-semibold text-gray-900">
-                            {anomaly.type}
-                          </h3>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${anomaly.bgColor} ${anomaly.color}`}>
-                            {anomaly.threshold}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {anomaly.description}
-                        </p>
-                        <div className="flex items-center space-x-2">
-                          <Info className="w-4 h-4 text-blue-500" />
-                          <span className="text-xs text-blue-600 font-medium">
-                            Example: {anomaly.example}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
 
-            {/* AI Process Explanation */}
-            <div className="mt-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-900 mb-2 flex items-center space-x-2">
-                <Brain className="w-5 h-5 text-purple-600" />
-                <span>AI Analysis Process</span>
-              </h3>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>• <strong>Data Collection:</strong> Gathers attendance records for the selected period</p>
-                <p>• <strong>Pattern Analysis:</strong> Uses Gemini 1.5 Pro to identify unusual patterns</p>
-                <p>• <strong>Threshold Checking:</strong> Applies the above thresholds to detect anomalies</p>
-                <p>• <strong>Recommendations:</strong> Generates actionable insights for each anomaly</p>
-                <p>• <strong>Fallback:</strong> Uses rule-based detection if AI is unavailable</p>
+            {/* Enhanced AI Analysis Process */}
+            <div className="space-y-6">
+              {/* Key Features */}
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                  <TrendingUp className="w-6 h-6 text-green-600" />
+                  <span>Advanced AI Capabilities</span>
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Brain className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Intelligent Detection</h4>
+                    <p className="text-sm text-gray-600">AI understands context and adapts to individual patterns</p>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <AlertTriangle className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <h4 className="font-semibold text-gray-900 mb-2">High Accuracy</h4>
+                    <p className="text-sm text-gray-600">Only reports anomalies with high confidence scores</p>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Clock className="w-6 h-6 text-green-600" />
+                    </div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Real-time Analysis</h4>
+                    <p className="text-sm text-gray-600">Fast processing with Gemini 1.5 Flash model</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

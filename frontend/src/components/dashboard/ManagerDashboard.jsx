@@ -53,7 +53,7 @@ const ManagerDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">
-              Good day, {user?.name || 'Manager'}! 🎯
+              Good day, {user?.name || user?.email?.split('@')[0] || 'Manager'}! 🎯
             </h1>
             <p className="text-green-100 text-lg">
               Manage your team effectively with insights and tools.

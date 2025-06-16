@@ -416,101 +416,42 @@ class AIController {
     try {
       const { employeeId, dateRange } = req.body;
 
-      console.log(`🔍 Starting anomaly detection for employeeId: ${employeeId}, dateRange:`, dateRange);
+      console.log(`🚀 Starting optimized AI-only anomaly detection for employeeId: ${employeeId}, dateRange:`, dateRange);
 
-      // Run anomaly detection
-      const aiService = AIController.getAIService();
-      const anomalies = await aiService.detectAttendanceAnomalies(employeeId, dateRange);
+      // Use optimized anomaly service
+      const OptimizedAnomalyService = require('../services/OptimizedAnomalyService');
+      const optimizedService = new OptimizedAnomalyService();
 
-      console.log(`🤖 AI detected ${anomalies.length} potential anomalies`);
+      // Determine employee list
+      const employeeIds = employeeId ? [employeeId] : null; // null = all employees for admin
 
-      // Enhanced duplicate detection with data range and content comparison
-      const savedAnomalies = [];
-      const skippedDuplicates = [];
-      const updatedAnomalies = [];
+      // Run optimized detection
+      const result = await optimizedService.detectAnomaliesOptimized(employeeIds, dateRange);
 
-      for (const anomaly of anomalies) {
-        // Create a unique identifier for this anomaly based on employee, type, and date range
-        const crypto = require('crypto');
-        const hashData = `${anomaly.employeeId}-${anomaly.type}-${dateRange.startDate}-${dateRange.endDate}`;
-        const anomalyHash = crypto.createHash('md5').update(hashData).digest('hex');
+      if (result.success) {
+        console.log(`✅ Optimized detection completed successfully`);
+        console.log(`📊 Performance metrics:`, optimizedService.getMetrics());
 
-        // Check if similar anomaly already exists for this employee, type, and similar data
-        const existingAnomaly = await AIAttendanceAnomaly.findExistingWithDateRange({
-          employeeId: anomaly.employeeId,
-          anomalyType: anomaly.type,
-          dateRangeStart: dateRange.startDate,
-          dateRangeEnd: dateRange.endDate,
-          status: 'active'
-        });
-
-        if (existingAnomaly) {
-          // Compare anomaly data to see if it's truly a duplicate or an update
-          const crypto = require('crypto');
-          const existingDataString = JSON.stringify(existingAnomaly.anomalyData || {}, Object.keys(existingAnomaly.anomalyData || {}).sort());
-          const newDataString = JSON.stringify(anomaly.data || {}, Object.keys(anomaly.data || {}).sort());
-          const existingDataHash = crypto.createHash('md5').update(existingDataString).digest('hex');
-          const newDataHash = crypto.createHash('md5').update(newDataString).digest('hex');
-
-          if (existingDataHash === newDataHash) {
-            console.log(`⚠️ Skipping exact duplicate anomaly for employee ${anomaly.employeeId}, type: ${anomaly.type}`);
-            skippedDuplicates.push({
-              employeeId: anomaly.employeeId,
-              type: anomaly.type,
-              reason: 'Exact duplicate anomaly already exists',
-              existingId: existingAnomaly.id
-            });
-            continue;
-          } else {
-            // Update existing anomaly with new data
-            console.log(`🔄 Updating existing anomaly for employee ${anomaly.employeeId}, type: ${anomaly.type} with new data`);
-            const updatedRecord = await AIAttendanceAnomaly.update(existingAnomaly.id, {
-              anomalyData: anomaly.data,
-              severity: anomaly.severity,
-              description: anomaly.description,
-              recommendations: anomaly.recommendations,
-              detectedDate: new Date().toISOString().split('T')[0],
-              status: 'active'
-            });
-            updatedAnomalies.push(updatedRecord);
-            continue;
+        return sendCreated(res, {
+          data: result.data,
+          metrics: optimizedService.getMetrics(),
+          summary: {
+            totalProcessed: result.metrics.totalProcessed,
+            created: result.data.created,
+            updated: result.data.updated,
+            skipped: result.data.skipped,
+            processingTime: result.processingTime,
+            aiCalls: result.metrics.aiCalls,
+            sqlQueries: result.metrics.sqlQueries,
+            duplicatesAvoided: result.metrics.duplicatesAvoided
           }
-        }
-
-        // Create new anomaly record
-        const record = await AIAttendanceAnomaly.create({
-          employeeId: anomaly.employeeId,
-          anomalyType: anomaly.type,
-          detectedDate: new Date().toISOString().split('T')[0],
-          anomalyData: anomaly.data,
-          severity: anomaly.severity,
-          description: anomaly.description,
-          recommendations: anomaly.recommendations,
-          status: 'active',
-          dateRangeAnalyzed: `${dateRange.startDate} to ${dateRange.endDate}`
-        });
-
-        console.log(`✅ Created new anomaly record for employee ${anomaly.employeeId}, type: ${anomaly.type}`);
-        savedAnomalies.push(record);
+        }, `AI-only anomaly detection completed. ${result.data.created} created, ${result.data.updated} updated, ${result.data.skipped} skipped in ${result.processingTime}ms.`);
+      } else {
+        console.error(`❌ Optimized detection failed:`, result.error);
+        return sendError(res, result.error, 500);
       }
-
-      const result = {
-        newAnomalies: savedAnomalies,
-        updatedAnomalies: updatedAnomalies,
-        skippedDuplicates: skippedDuplicates,
-        summary: {
-          totalDetected: anomalies.length,
-          newCreated: savedAnomalies.length,
-          updated: updatedAnomalies.length,
-          duplicatesSkipped: skippedDuplicates.length
-        }
-      };
-
-      console.log(`📊 Anomaly detection completed:`, result.summary);
-
-      return sendCreated(res, result, `Anomaly detection completed. ${savedAnomalies.length} new anomalies created, ${updatedAnomalies.length} updated, ${skippedDuplicates.length} duplicates skipped.`);
     } catch (error) {
-      console.error('Anomaly detection error:', error);
+      console.error('❌ Optimized anomaly detection error:', error);
       return sendError(res, error.message, 500);
     }
   }

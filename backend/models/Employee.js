@@ -2,6 +2,10 @@ const { executeQuery } = require('../config/database');
 
 class Employee {
   constructor(data) {
+    // Debug: Log the raw data being passed to constructor
+    console.log('🔍 Employee constructor received data keys:', Object.keys(data));
+    console.log('🔍 Employee constructor department_name value:', data.department_name);
+
     this.id = data.id;
     this.userId = data.user_id;
     this.employeeCode = data.employee_code;
@@ -13,15 +17,20 @@ class Employee {
     this.gender = data.gender;
     this.address = data.address;
     this.departmentId = data.department_id;
+    this.departmentName = data.department_name; // Added missing field
     this.position = data.position;
     this.hireDate = data.hire_date;
     this.basicSalary = data.basic_salary;
     this.status = data.status;
     this.managerId = data.manager_id;
+    this.managerName = data.manager_name; // Added missing field
     this.emergencyContact = data.emergency_contact;
     this.emergencyPhone = data.emergency_phone;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
+
+    // Debug: Log the final departmentName value
+    console.log('🔍 Employee constructor final departmentName:', this.departmentName);
   }
 
   // Static methods for database operations
@@ -227,7 +236,19 @@ class Employee {
     const rows = await executeQuery(query, params);
     console.log('🔍 Employee.findAll results:', rows.length, 'rows');
 
-    return rows.map(row => new Employee(row));
+    // Debug: Check if department_name is in the raw data
+    if (rows.length > 0) {
+      console.log('🔍 First row raw data keys:', Object.keys(rows[0]));
+      console.log('🔍 First row department_name:', rows[0].department_name);
+    }
+
+    const employees = rows.map(row => {
+      const employee = new Employee(row);
+      console.log('🔍 Employee after constructor - departmentName:', employee.departmentName);
+      return employee;
+    });
+
+    return employees;
   }
 
   static async generateEmployeeCode() {

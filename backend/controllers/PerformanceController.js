@@ -100,8 +100,8 @@ class PerformanceController {
         reviews = await PerformanceReview.findByManager(employeeId, options);
         total = await PerformanceReview.countByManager(employeeId, options);
       } else {
-        // Employee can see their own reviews
-        const options = { employeeId, status: cleanStatus, page: parseInt(page), limit: parseInt(limit) };
+        // Employee can see only their approved reviews
+        const options = { employeeId, status: 'approved', page: parseInt(page), limit: parseInt(limit) };
         reviews = await PerformanceReview.findByEmployee(employeeId, options);
         total = await PerformanceReview.countByEmployee(employeeId, options);
       }

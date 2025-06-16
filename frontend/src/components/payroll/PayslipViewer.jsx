@@ -1,18 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   X,
-  Download,
   Printer,
   Building,
   User,
   Calendar,
   DollarSign
 } from 'lucide-react';
-import usePayroll from '@/hooks/usePayroll';
-import LoadingSpinner from '@/components/layout/LoadingSpinner';
 import { 
   formatCurrency, 
   formatPayrollPeriod, 
@@ -22,19 +19,7 @@ import {
 } from '@/utils/payrollUtils';
 
 const PayslipViewer = ({ payslip, onClose }) => {
-  const { downloadPayslip } = usePayroll();
-  const [downloading, setDownloading] = useState(false);
-
   if (!payslip) return null;
-
-  const handleDownload = async () => {
-    setDownloading(true);
-    try {
-      await downloadPayslip(payslip.id);
-    } finally {
-      setDownloading(false);
-    }
-  };
 
   const handlePrint = () => {
     window.print();
@@ -248,18 +233,6 @@ const PayslipViewer = ({ payslip, onClose }) => {
           >
             <Printer className="h-4 w-4 mr-2" />
             Print
-          </Button>
-          <Button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="bg-blue-600 hover:bg-blue-700 transition-colors duration-300"
-          >
-            {downloading ? (
-              <LoadingSpinner size="sm" className="mr-2" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            Download PDF
           </Button>
         </div>
       </div>

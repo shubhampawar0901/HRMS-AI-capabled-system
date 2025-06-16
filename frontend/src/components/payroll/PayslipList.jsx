@@ -12,9 +12,8 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Download, 
-  Eye, 
+import {
+  Eye,
   Search,
   Filter,
   ChevronLeft,
@@ -44,14 +43,12 @@ const PayslipList = () => {
     filters,
     updateFilters,
     updatePagination,
-    downloadPayslip,
     fetchPayslip
   } = usePayroll();
 
   const [selectedPayslip, setSelectedPayslip] = useState(null);
   const [showPayslipViewer, setShowPayslipViewer] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [downloading, setDownloading] = useState(null);
 
   // Get the appropriate data based on user role
   const payrollData = isEmployee ? payslips : payrollRecords;
@@ -76,15 +73,6 @@ const PayslipList = () => {
     if (payslipData) {
       setSelectedPayslip(payslipData);
       setShowPayslipViewer(true);
-    }
-  };
-
-  const handleDownloadPayslip = async (payroll) => {
-    setDownloading(payroll.id);
-    try {
-      await downloadPayslip(payroll.id);
-    } finally {
-      setDownloading(null);
     }
   };
 
@@ -244,19 +232,6 @@ const PayslipList = () => {
                               className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-300"
                             >
                               <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownloadPayslip(payroll)}
-                              disabled={downloading === payroll.id}
-                              className="hover:bg-green-50 hover:border-green-300 transition-all duration-300"
-                            >
-                              {downloading === payroll.id ? (
-                                <LoadingSpinner size="sm" />
-                              ) : (
-                                <Download className="h-4 w-4" />
-                              )}
                             </Button>
                           </div>
                         </TableCell>

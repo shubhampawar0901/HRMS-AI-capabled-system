@@ -55,7 +55,7 @@ const EmployeeDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">
-              Hello, {user?.name || 'Employee'}! 🌟
+              Hello, {user?.name || user?.email?.split('@')[0] || 'Employee'}! 🌟
             </h1>
             <p className="text-purple-100 text-lg">
               Your personal workspace for productivity and growth.

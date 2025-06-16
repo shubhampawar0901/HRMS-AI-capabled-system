@@ -172,14 +172,12 @@ export const usePayroll = () => {
       
       const response = await payrollService.getPayslip(payrollId);
 
-      // Handle wrapped response from apiRequest
-      const apiData = response.data || response;
-
-      if (apiData.success) {
-        setCurrentPayslip(apiData.data);
-        return apiData.data;
+      // Check success on the response object
+      if (response.success) {
+        setCurrentPayslip(response.data);
+        return response.data;
       } else {
-        throw new Error(apiData.message || 'Failed to fetch payslip');
+        throw new Error(response.message || 'Failed to fetch payslip');
       }
     } catch (err) {
       console.error('Fetch payslip error:', err);
@@ -197,17 +195,24 @@ export const usePayroll = () => {
       setError(null);
 
       const targetEmployeeId = paramEmployeeId || employeeId;
+      console.log('🔍 fetchSalaryStructure called with:', {
+        paramEmployeeId,
+        employeeId,
+        targetEmployeeId,
+        userRole: user?.role,
+        isAdmin,
+        isEmployee
+      });
 
       // For admin users, allow fetching any employee's salary structure
       if (isAdmin && paramEmployeeId) {
         const response = await payrollService.getSalaryStructure(paramEmployeeId);
-        const apiData = response.data || response;
 
-        if (apiData.success) {
-          setSalaryStructure(apiData.data);
-          return apiData.data;
+        if (response.success) {
+          setSalaryStructure(response.data);
+          return response.data;
         } else {
-          throw new Error(apiData.message || 'Failed to fetch salary structure');
+          throw new Error(response.message || 'Failed to fetch salary structure');
         }
       }
 
@@ -222,17 +227,29 @@ export const usePayroll = () => {
         return null;
       }
 
+      console.log('🔍 About to call payrollService.getSalaryStructure with employeeId:', targetEmployeeId);
       const response = await payrollService.getSalaryStructure(targetEmployeeId);
-      const apiData = response.data || response;
+      console.log('🔍 Raw API response:', response);
 
-      if (apiData.success) {
-        setSalaryStructure(apiData.data);
-        return apiData.data;
+      // Check success on the response object, not the data object
+      if (response.success) {
+        console.log('✅ API success, setting salary structure:', response.data);
+        setSalaryStructure(response.data);
+        return response.data;
       } else {
-        throw new Error(apiData.message || 'Failed to fetch salary structure');
+        console.error('❌ API returned success=false:', response);
+        throw new Error(response.message || 'Failed to fetch salary structure');
       }
     } catch (err) {
       console.error('Fetch salary structure error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status,
+        data: err.response?.data,
+        type: err.type,
+        name: err.name
+      });
       setError(err.message || 'Failed to fetch salary structure');
       return null;
     } finally {
@@ -302,21 +319,21 @@ export const usePayroll = () => {
     }
   }, [isAdmin, fetchPayrollRecords]);
 
-  // Download payslip PDF
+  // Download payslip CSV
   const downloadPayslip = useCallback(async (payrollId) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await payrollService.downloadPayslip(payrollId);
-      
+
       if (response) {
         // Create blob URL and trigger download
-        const blob = new Blob([response], { type: 'application/pdf' });
+        const blob = new Blob([response], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `payslip-${payrollId}.pdf`;
+        link.download = `payslip-${payrollId}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

@@ -261,20 +261,6 @@ const PayrollDashboard = () => {
         <AuthRefreshPrompt message="Your session is missing employee information. Please logout and login again to access all payroll features." />
       )}
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payroll Management</h1>
-          <p className="text-gray-600 mt-1">
-            {isEmployee && "View your payslips and salary information"}
-            {isManager && "View team payroll information"}
-            {isAdmin && "Manage payroll for all employees"}
-          </p>
-        </div>
-        <Badge variant="outline" className="text-sm">
-          {user?.role?.toUpperCase()} ACCESS
-        </Badge>
-      </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-gray-100 p-1 rounded-lg">
           <TabsTrigger 

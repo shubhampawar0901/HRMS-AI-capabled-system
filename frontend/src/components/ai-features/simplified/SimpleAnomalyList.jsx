@@ -90,27 +90,106 @@ const SimpleAnomalyList = ({
     }
   };
 
-  // Get main metric from anomaly data
+  // Get main metric from anomaly data with meaningful formatting
   const getMainMetric = (anomaly) => {
     const data = anomaly.anomalyData || {};
-    
-    switch (anomaly.anomalyType) {
+    const type = anomaly.anomalyType;
+
+    // Helper function to safely convert to number and format
+    const safeToFixed = (value, decimals = 1) => {
+      const num = parseFloat(value) || 0;
+      return num.toFixed(decimals);
+    };
+
+    const safeRound = (value) => {
+      const num = parseFloat(value) || 0;
+      return Math.round(num);
+    };
+
+    // Extract meaningful metrics based on anomaly type
+    switch (type) {
       case 'late_pattern':
-        return `${Math.round(data.latePercentage || 0)}% late`;
+        if (data.latePercentage) {
+          const threshold = data.typicalLatePercentage || '20%';
+          return `${safeToFixed(data.latePercentage)}% late vs ${threshold} normal`;
+        }
+        if (data.frequency) {
+          const threshold = data.threshold || '20%';
+          return `${data.frequency} vs ${threshold} threshold`;
+        }
+        if (data.deviation) {
+          return `${data.deviation} above normal`;
+        }
+        return 'Late arrival pattern detected';
+
       case 'irregular_hours':
-        return `${(data.stdDev || 0).toFixed(1)}h variation`;
+        // Try multiple field names for variance
+        const variance = data.hours_variance || data.variance || data.std_dev_hours;
+        if (variance) {
+          const varianceNum = parseFloat(variance);
+          const threshold = parseFloat(data.acceptable_variance_threshold || data.threshold || 2);
+          return `${safeToFixed(varianceNum)}h variance vs ${threshold}h normal`;
+        }
+
+        // Check for standard deviation
+        if (data.metric === 'std_dev_hours' && data.deviation) {
+          return `${data.deviation} hour variation`;
+        }
+
+        // Check for Hours Standard Deviation
+        if (data.metric === 'Hours Standard Deviation') {
+          return `${data.deviation} vs ${data.threshold} threshold`;
+        }
+
+        // Fallback to average hours if available
+        if (data.average_hours) {
+          return `${safeToFixed(data.average_hours)}h avg working time`;
+        }
+
+        return 'Irregular working hours detected';
+
       case 'absence_pattern':
-        return `${Math.round(data.absentPercentage || 0)}% absent`;
-      case 'early_departure':
-        return `${data.earlyDeparturePercentage || 0}% early`;
-      case 'overtime_anomalies':
-        return `${data.overtimePercentage || 0}% overtime`;
-      case 'location_anomalies':
-        return `${data.inconsistencyPercentage || 0}% inconsistent`;
+        if (data.absentPercentage) {
+          return `${safeToFixed(data.absentPercentage)}% absent rate`;
+        }
+        if (data.threshold) {
+          return `Above ${data.threshold} threshold`;
+        }
+        return 'High absence rate';
+
       case 'weekend_holiday_work':
-        return `${data.weekendDays || 0} weekend days`;
+        if (data.weekendWorkDays) {
+          const threshold = data.typicalWeekendWorkDays || '0-1';
+          return `${safeRound(data.weekendWorkDays)} weekend days vs ${threshold} typical`;
+        }
+        if (data.frequency) {
+          const threshold = data.threshold || '0';
+          return `${data.frequency} vs ${threshold} threshold`;
+        }
+        if (data.deviation) {
+          return `${data.deviation} above normal weekend work`;
+        }
+        return 'Weekend work pattern detected';
+
+      case 'overtime_anomalies':
+        if (data.long_work_days) {
+          return `${safeRound(data.long_work_days)} long days`;
+        }
+        if (data.max_hours) {
+          return `${safeToFixed(data.max_hours)}h max`;
+        }
+        return 'Excessive overtime';
+
       default:
-        return 'Detected';
+        // Fallback to first meaningful value found
+        const meaningfulKeys = ['percentage', 'rate', 'hours', 'days', 'count', 'frequency'];
+        for (const key of meaningfulKeys) {
+          const foundKey = Object.keys(data).find(k => k.toLowerCase().includes(key));
+          if (foundKey && data[foundKey]) {
+            return `${safeToFixed(data[foundKey])} ${key}`;
+          }
+        }
+        return 'Anomaly detected';
     }
   };
 

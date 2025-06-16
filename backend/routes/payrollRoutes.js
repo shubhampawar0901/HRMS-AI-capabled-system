@@ -93,11 +93,11 @@ router.get('/payslip/:id',
   PayrollController.getPayslip
 );
 
-// GET /api/payroll/payslip/:id/download (PDF download)
+// GET /api/payroll/payslip/:id/download (CSV download)
 router.get('/payslip/:id/download',
   param('id').isInt().withMessage('Valid payroll ID is required'),
   validateRequest,
-  PayrollController.downloadPayslipPDF
+  PayrollController.downloadPayslipCSV
 );
 
 // GET /api/payroll/payslips (Employee route for their own payslips)
@@ -128,6 +128,7 @@ router.get('/health', (req, res) => {
       'POST /bulk-generate': 'Bulk generate payroll (admin)',
       'GET /records': 'Get payroll records',
       'GET /payslip/:id': 'Get payslip',
+      'GET /payslip/:id/download': 'Download payslip CSV',
       'GET /payslips': 'Get employee payslips',
       'GET /salary-structure/:employeeId': 'Get salary structure',
       'PUT /:id/process': 'Process payroll (admin)',

@@ -64,8 +64,8 @@ export const isEmployee = (user) => {
  */
 export const getDisplayName = (user) => {
   if (!user) return 'Guest';
-  
-  return user.name || user.email || 'Unknown User';
+
+  return user.name || user.email?.split('@')[0] || 'Unknown User';
 };
 
 /**

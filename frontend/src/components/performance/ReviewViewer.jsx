@@ -13,8 +13,10 @@ import {
   Award,
   AlertCircle
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const ReviewViewer = ({ review, onClose }) => {
+  const { isEmployee } = useAuth();
   // Get status badge color
   const getStatusBadgeColor = (status) => {
     switch (status) {
@@ -118,11 +120,14 @@ const ReviewViewer = ({ review, onClose }) => {
                   <p className="text-green-800 font-medium">
                     {review.reviewPeriod || 'Review Period'}
                   </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge className={getStatusBadgeColor(review.status)}>
-                      {review.status?.replace('_', ' ').toUpperCase()}
-                    </Badge>
-                  </div>
+                  {/* Only show status badge for admin and manager roles */}
+                  {!isEmployee && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className={getStatusBadgeColor(review.status)}>
+                        {review.status?.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

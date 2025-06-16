@@ -38,8 +38,16 @@ export const AuthProvider = ({ children }) => {
         const storedUser = safeParseJSON('user');
 
         if (storedToken && storedUser) {
+          // Ensure the user object has a name field
+          const enrichedUser = {
+            ...storedUser,
+            name: storedUser.name ||
+                  (storedUser.employee ? `${storedUser.employee.firstName} ${storedUser.employee.lastName}`.trim() :
+                   storedUser.email?.split('@')[0] || 'User')
+          };
+
           setToken(storedToken);
-          setUser(storedUser);
+          setUser(enrichedUser);
           setIsAuthenticated(true);
         } else {
           // Clear any incomplete auth data
@@ -81,7 +89,9 @@ export const AuthProvider = ({ children }) => {
       const enrichedUserData = {
         ...userData,
         employeeId: employeeData?.id || null,
-        employee: employeeData || null
+        employee: employeeData || null,
+        // Create a name field from employee data
+        name: employeeData ? `${employeeData.firstName} ${employeeData.lastName}`.trim() : userData.email?.split('@')[0] || 'User'
       };
 
       // Store in localStorage

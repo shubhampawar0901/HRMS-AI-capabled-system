@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { employeeService } from '@/services/employeeService';
 
 export const useEmployees = (initialFilters = {}) => {
-  const [allEmployees, setAllEmployees] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -19,103 +18,52 @@ export const useEmployees = (initialFilters = {}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Filter and paginate employees client-side
-  const filterAndPaginateEmployees = () => {
-    console.log('🔄 Filtering employees:', {
-      allEmployeesCount: allEmployees.length,
-      filters,
-      pagination
-    });
-
-    let filteredEmployees = [...allEmployees];
-
-    // Apply filters
-    if (filters.search && filters.search.trim()) {
-      const searchTerm = filters.search.trim().toLowerCase();
-      filteredEmployees = filteredEmployees.filter(emp =>
-        emp.firstName?.toLowerCase().includes(searchTerm) ||
-        emp.lastName?.toLowerCase().includes(searchTerm) ||
-        emp.email?.toLowerCase().includes(searchTerm) ||
-        emp.employeeCode?.toLowerCase().includes(searchTerm) ||
-        emp.position?.toLowerCase().includes(searchTerm)
-      );
-      console.log('🔍 After search filter:', filteredEmployees.length);
-    }
-
-    if (filters.departmentId && filters.departmentId !== '') {
-      filteredEmployees = filteredEmployees.filter(emp =>
-        emp.departmentId === parseInt(filters.departmentId)
-      );
-      console.log('🏢 After department filter:', filteredEmployees.length);
-    }
-
-    // Remove status filter since API already filters by status
-    // if (filters.status && filters.status !== '') {
-    //   filteredEmployees = filteredEmployees.filter(emp =>
-    //     emp.status === filters.status
-    //   );
-    // }
-
-    // Calculate pagination
-    const total = filteredEmployees.length;
-    const pages = Math.ceil(total / pagination.limit);
-    const startIndex = (pagination.page - 1) * pagination.limit;
-    const endIndex = startIndex + pagination.limit;
-    const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
-
-    console.log('📄 Final result:', {
-      filteredTotal: total,
-      pages,
-      currentPage: pagination.page,
-      paginatedCount: paginatedEmployees.length,
-      employees: paginatedEmployees.slice(0, 2) // Log first 2
-    });
-
-    setEmployees(paginatedEmployees);
-    setPagination(prev => ({
-      ...prev,
-      total,
-      pages
-    }));
-  };
-
-  // Fetch all employees from API
+  // Fetch employees from API with pagination and filters
   const fetchEmployees = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await employeeService.getAllEmployees();
+      // Prepare query parameters
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        search: filters.search || '',
+        departmentId: filters.departmentId || '',
+        status: filters.status || 'active'
+      };
+
+      const response = await employeeService.getAllEmployees(params);
 
       // The response structure is: { success: true, data: { employees: [...], pagination: {...} }, message: "..." }
       if (response && response.success) {
         const employees = response.data.employees || [];
-        setAllEmployees(employees);
+        const paginationData = response.data.pagination || {};
+
+
+
+        setEmployees(employees);
+        setPagination(prev => ({
+          ...prev,
+          total: paginationData.total || 0,
+          pages: paginationData.pages || 0
+        }));
       } else {
         setError(response.message || 'Failed to fetch employees');
-        setAllEmployees([]);
+        setEmployees([]);
+        setPagination(prev => ({ ...prev, total: 0, pages: 0 }));
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
       setError(error.message || 'Failed to fetch employees');
-      setAllEmployees([]);
+      setEmployees([]);
+      setPagination(prev => ({ ...prev, total: 0, pages: 0 }));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [pagination.page, pagination.limit, filters.search, filters.departmentId, filters.status]);
 
-  // Apply filtering and pagination when data or filters change
-  useEffect(() => {
-    if (allEmployees.length > 0) {
-      filterAndPaginateEmployees();
-    } else {
-      // Clear employees if no data
-      setEmployees([]);
-      setPagination(prev => ({ ...prev, total: 0, pages: 0 }));
-    }
-  }, [allEmployees, filters, pagination.page, pagination.limit]);
-
-  // Fetch employees on mount
+  // Fetch employees when filters or pagination change
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);

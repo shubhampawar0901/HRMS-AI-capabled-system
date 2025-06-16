@@ -1,7 +1,7 @@
 const axios = require('axios');
 require('dotenv').config();
 
-const API_BASE_URL = 'http://localhost:5004/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
 async function testAttritionAPI() {
   try {

@@ -259,7 +259,8 @@ Return JSON:
 
   async getPerformanceData(employeeId, timeframe) {
     try {
-      return await PerformanceReview.findByEmployee(employeeId);
+      // Only return approved reviews for employees
+      return await PerformanceReview.findByEmployee(employeeId, { status: 'approved' });
     } catch (error) {
       console.error('Performance data retrieval error:', error);
       return null;

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import EmployeeCard from './EmployeeCard';
+import EmployeeTable from './EmployeeTable';
 import EmployeeSearch from './EmployeeSearch';
 import { useEmployees, useEmployeeMutations, useDepartments } from '@/hooks/useEmployees';
 import {
@@ -12,12 +13,15 @@ import {
   ChevronRight,
   AlertCircle,
   Loader2,
-  Trash2
+  Trash2,
+  List,
+  LayoutGrid
 } from 'lucide-react';
 
 const EmployeeList = () => {
   const navigate = useNavigate();
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [viewMode, setViewMode] = useState('table'); // 'card' or 'table'
 
   // Use hooks for employee management
   const {
@@ -148,7 +152,7 @@ const EmployeeList = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center space-x-3">
           <Users className="h-8 w-8 text-blue-600" />
           <div>
@@ -156,13 +160,45 @@ const EmployeeList = () => {
             <p className="text-gray-600">Manage your organization's employees</p>
           </div>
         </div>
-        <Button 
-          onClick={handleAddEmployee}
-          className="bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Employee
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1 ${
+                viewMode === 'table'
+                  ? 'bg-white shadow-sm text-gray-900 font-medium'
+                  : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+              }`}
+            >
+              <List className="h-4 w-4 mr-1" />
+              Table
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('card')}
+              className={`px-3 py-1 ${
+                viewMode === 'card'
+                  ? 'bg-white shadow-sm text-gray-900 font-medium'
+                  : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4 mr-1" />
+              Cards
+            </Button>
+          </div>
+
+          <Button
+            onClick={handleAddEmployee}
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Employee
+          </Button>
+        </div>
       </div>
 
       {/* Success/Error Messages */}
@@ -218,7 +254,7 @@ const EmployeeList = () => {
         </div>
       )}
 
-      {/* Employee Grid */}
+      {/* Employee Display */}
       {!isLoading && (
         <>
           {employees.length === 0 ? (
@@ -235,22 +271,35 @@ const EmployeeList = () => {
                 Add Employee
               </Button>
             </div>
+          ) : viewMode === 'table' ? (
+            <EmployeeTable
+              employees={employees}
+              pagination={pagination}
+              isLoading={isLoading}
+              onView={handleViewEmployee}
+              onEdit={handleEditEmployee}
+              onDelete={handleDeleteEmployee}
+              onPageChange={goToPage}
+              showActions={true}
+            />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {employees.map((employee) => (
-                <EmployeeCard
-                  key={employee.id}
-                  employee={employee}
-                  onView={handleViewEmployee}
-                  onEdit={handleEditEmployee}
-                  onDelete={handleDeleteEmployee}
-                />
-              ))}
-            </div>
-          )}
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {employees.map((employee) => (
+                  <EmployeeCard
+                    key={employee.id}
+                    employee={employee}
+                    onView={handleViewEmployee}
+                    onEdit={handleEditEmployee}
+                    onDelete={handleDeleteEmployee}
+                  />
+                ))}
+              </div>
 
-          {/* Pagination */}
-          {renderPagination()}
+              {/* Pagination for Card View */}
+              {renderPagination()}
+            </>
+          )}
         </>
       )}
 

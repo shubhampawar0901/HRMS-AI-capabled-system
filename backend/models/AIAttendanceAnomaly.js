@@ -90,17 +90,18 @@ class AIAttendanceAnomaly {
   static async findExistingWithDateRange(criteria) {
     const { employeeId, anomalyType, dateRangeStart, dateRangeEnd, status } = criteria;
 
+    // Fixed query - simplified and more reliable duplicate detection
+    // Look for same employee + anomaly type + overlapping time period
     const query = `
       SELECT * FROM ai_attendance_anomalies
       WHERE employee_id = ?
         AND anomaly_type = ?
         AND status = ?
         AND (
-          (JSON_EXTRACT(anomaly_data, '$.dateRange.startDate') = ? AND JSON_EXTRACT(anomaly_data, '$.dateRange.endDate') = ?)
-          OR
-          (DATE(detected_date) BETWEEN ? AND ?)
+          DATE(detected_date) BETWEEN DATE(?) AND DATE(?)
+          OR DATE(detected_date) = DATE(?)
         )
-      ORDER BY detected_date DESC
+      ORDER BY detected_date DESC, created_at DESC
       LIMIT 1
     `;
 
@@ -110,8 +111,7 @@ class AIAttendanceAnomaly {
       status,
       dateRangeStart,
       dateRangeEnd,
-      dateRangeStart,
-      dateRangeEnd
+      dateRangeStart // Also check for exact date match
     ]);
     return rows.length > 0 ? new AIAttendanceAnomaly(rows[0]) : null;
   }
@@ -119,16 +119,15 @@ class AIAttendanceAnomaly {
   static async findExistingEnhanced(criteria) {
     const { employeeId, anomalyType, dateRangeStart, dateRangeEnd, status } = criteria;
 
+    // Enhanced method with better duplicate detection logic
     const query = `
       SELECT * FROM ai_attendance_anomalies
       WHERE employee_id = ?
         AND anomaly_type = ?
         AND status = ?
-        AND (
-          JSON_EXTRACT(anomaly_data, '$.dateRange.startDate') = ?
-          AND JSON_EXTRACT(anomaly_data, '$.dateRange.endDate') = ?
-        )
-      ORDER BY detected_date DESC
+        AND DATE(detected_date) >= DATE(?)
+        AND DATE(detected_date) <= DATE(?)
+      ORDER BY detected_date DESC, created_at DESC
       LIMIT 1
     `;
 
@@ -140,6 +139,87 @@ class AIAttendanceAnomaly {
       dateRangeEnd
     ]);
     return rows.length > 0 ? new AIAttendanceAnomaly(rows[0]) : null;
+  }
+
+  // New method to find and clean up duplicate anomalies
+  static async findDuplicates(employeeId, anomalyType, dateRangeStart, dateRangeEnd) {
+    const query = `
+      SELECT * FROM ai_attendance_anomalies
+      WHERE employee_id = ?
+        AND anomaly_type = ?
+        AND status = 'active'
+        AND DATE(detected_date) BETWEEN DATE(?) AND DATE(?)
+      ORDER BY created_at ASC
+    `;
+
+    const rows = await executeQuery(query, [
+      employeeId,
+      anomalyType,
+      dateRangeStart,
+      dateRangeEnd
+    ]);
+    return rows.map(row => new AIAttendanceAnomaly(row));
+  }
+
+  // Method to clean up duplicate anomalies (keep the latest, remove older ones)
+  static async cleanupDuplicates(employeeId, anomalyType, dateRangeStart, dateRangeEnd) {
+    const duplicates = await this.findDuplicates(employeeId, anomalyType, dateRangeStart, dateRangeEnd);
+
+    if (duplicates.length <= 1) {
+      return { cleaned: 0, kept: duplicates.length };
+    }
+
+    // Keep the most recent one (last in array after sorting by created_at ASC)
+    const toKeep = duplicates[duplicates.length - 1];
+    const toDelete = duplicates.slice(0, -1);
+
+    console.log(`🧹 Cleaning up ${toDelete.length} duplicate anomalies for employee ${employeeId}, type: ${anomalyType}`);
+
+    // Delete older duplicates
+    for (const duplicate of toDelete) {
+      await executeQuery('DELETE FROM ai_attendance_anomalies WHERE id = ?', [duplicate.id]);
+    }
+
+    return {
+      cleaned: toDelete.length,
+      kept: 1,
+      keptRecord: toKeep,
+      deletedIds: toDelete.map(d => d.id)
+    };
+  }
+
+  // Method to check if an anomaly is a true duplicate (same data content)
+  static async isDuplicateContent(existingAnomaly, newAnomalyData) {
+    if (!existingAnomaly || !newAnomalyData) return false;
+
+    const existingData = typeof existingAnomaly.anomalyData === 'string'
+      ? JSON.parse(existingAnomaly.anomalyData)
+      : existingAnomaly.anomalyData;
+
+    // Compare key metrics to determine if it's the same anomaly
+    const compareFields = [
+      'lateCount', 'totalDays', 'latePercentage',
+      'absentCount', 'absentPercentage',
+      'earlyDepartures', 'earlyDeparturePercentage',
+      'overtimeDays', 'overtimePercentage',
+      'stdDev', 'avgHours',
+      'weekendWorkDays', 'weekendWorkPercentage'
+    ];
+
+    let matchingFields = 0;
+    let totalFields = 0;
+
+    for (const field of compareFields) {
+      if (existingData[field] !== undefined || newAnomalyData[field] !== undefined) {
+        totalFields++;
+        if (Math.abs((existingData[field] || 0) - (newAnomalyData[field] || 0)) < 0.1) {
+          matchingFields++;
+        }
+      }
+    }
+
+    // Consider it a duplicate if 80% or more of the fields match
+    return totalFields > 0 && (matchingFields / totalFields) >= 0.8;
   }
 
   static async getActiveAnomalies() {
@@ -160,21 +240,62 @@ class AIAttendanceAnomaly {
   }
 
   static async update(id, updateData) {
+    // Build dynamic update query based on provided fields
+    const updateFields = [];
+    const params = [];
+
+    if (updateData.status !== undefined) {
+      updateFields.push('status = ?');
+      params.push(updateData.status);
+    }
+    if (updateData.resolution !== undefined) {
+      updateFields.push('resolution = ?');
+      params.push(updateData.resolution);
+    }
+    if (updateData.ignoreReason !== undefined) {
+      updateFields.push('ignore_reason = ?');
+      params.push(updateData.ignoreReason);
+    }
+    if (updateData.resolvedAt !== undefined) {
+      updateFields.push('resolved_at = ?');
+      params.push(updateData.resolvedAt);
+    }
+    if (updateData.ignoredAt !== undefined) {
+      updateFields.push('ignored_at = ?');
+      params.push(updateData.ignoredAt);
+    }
+    if (updateData.anomalyData !== undefined) {
+      updateFields.push('anomaly_data = ?');
+      params.push(JSON.stringify(updateData.anomalyData));
+    }
+    if (updateData.severity !== undefined) {
+      updateFields.push('severity = ?');
+      params.push(updateData.severity);
+    }
+    if (updateData.description !== undefined) {
+      updateFields.push('description = ?');
+      params.push(updateData.description);
+    }
+    if (updateData.recommendations !== undefined) {
+      updateFields.push('recommendations = ?');
+      params.push(JSON.stringify(updateData.recommendations));
+    }
+    if (updateData.detectedDate !== undefined) {
+      updateFields.push('detected_date = ?');
+      params.push(updateData.detectedDate);
+    }
+
+    // Always update the updated_at timestamp
+    updateFields.push('updated_at = NOW()');
+    params.push(id);
+
     const query = `
       UPDATE ai_attendance_anomalies
-      SET status = ?, resolution = ?, ignore_reason = ?, resolved_at = ?, ignored_at = ?, updated_at = NOW()
+      SET ${updateFields.join(', ')}
       WHERE id = ?
     `;
 
-    await executeQuery(query, [
-      updateData.status || null,
-      updateData.resolution || null,
-      updateData.ignoreReason || null,
-      updateData.resolvedAt || null,
-      updateData.ignoredAt || null,
-      id
-    ]);
-
+    await executeQuery(query, params);
     return await AIAttendanceAnomaly.findById(id);
   }
 
@@ -306,6 +427,25 @@ class AIAttendanceAnomaly {
     if (typeof obj.recommendations === 'string') {
       obj.recommendations = JSON.parse(obj.recommendations);
     }
+
+    // Ensure numeric fields in anomalyData are properly converted to numbers
+    if (obj.anomalyData && typeof obj.anomalyData === 'object') {
+      const numericFields = [
+        'stdDev', 'avgHours', 'variance', 'latePercentage', 'absentPercentage',
+        'earlyDeparturePercentage', 'overtimePercentage', 'inconsistencyPercentage',
+        'weekendDays', 'totalOvertimeHours', 'mostCommonLocationPercentage'
+      ];
+
+      numericFields.forEach(field => {
+        if (obj.anomalyData[field] !== undefined && obj.anomalyData[field] !== null) {
+          const numValue = parseFloat(obj.anomalyData[field]);
+          if (!isNaN(numValue)) {
+            obj.anomalyData[field] = numValue;
+          }
+        }
+      });
+    }
+
     return obj;
   }
 

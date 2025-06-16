@@ -146,7 +146,7 @@ const ProfileForm = () => {
             <Avatar className="w-24 h-24">
               <AvatarImage src={user?.avatar} alt={user?.name} />
               <AvatarFallback className="text-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                {getInitials(user?.name || 'User')}
+                {getInitials(user?.name || user?.email?.split('@')[0] || 'User')}
               </AvatarFallback>
             </Avatar>
             {isEditing && (
@@ -161,7 +161,7 @@ const ProfileForm = () => {
           </div>
           <div>
             <CardTitle className="text-2xl">
-              {isEditing ? 'Edit Profile' : formatName(user?.name || 'User Profile')}
+              {isEditing ? 'Edit Profile' : formatName(user?.name || user?.email?.split('@')[0] || 'User Profile')}
             </CardTitle>
             <p className="text-gray-600 capitalize">{user?.role || 'Employee'}</p>
           </div>

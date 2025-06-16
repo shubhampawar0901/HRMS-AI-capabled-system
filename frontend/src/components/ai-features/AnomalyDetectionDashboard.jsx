@@ -136,7 +136,7 @@ const AnomalyDetectionDashboard = React.memo(() => {
               Loading Anomaly Detection
             </h2>
             <p className="text-gray-600 mb-4">
-              Initializing AI-powered attendance analysis...
+              Initializing AI-powered analysis...
             </p>
             <LoadingSpinner size="sm" />
           </div>
@@ -164,10 +164,10 @@ const AnomalyDetectionDashboard = React.memo(() => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold ai-gradient-text">
-                  Attendance Anomaly Detection
+                  AI Anomaly Detection
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  AI-powered analysis to identify unusual attendance patterns
+                  AI-powered analysis to identify unusual patterns
                 </p>
               </div>
             </div>

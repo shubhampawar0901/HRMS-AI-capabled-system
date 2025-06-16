@@ -305,7 +305,8 @@ class AIService {
       });
 
       const performanceData = await PerformanceReview.findByEmployee(employeeId, {
-        limit: 3
+        limit: 3,
+        status: 'approved'
       });
 
       // Prepare data for AI analysis
@@ -503,31 +504,25 @@ class AIService {
       // Use AI-powered anomaly detection instead of hardcoded rules
       const aiAnomalies = await this.detectAnomaliesWithAI(employeeId, attendanceData);
 
-      // Convert AI results to our format
+      // Convert AI results to our format with validation
       for (const aiAnomaly of aiAnomalies) {
-        anomalies.push({
-          employeeId,
-          type: aiAnomaly.type,
-          date: new Date(),
-          data: aiAnomaly.data,
-          severity: aiAnomaly.severity,
-          description: aiAnomaly.description,
-          recommendations: aiAnomaly.recommendations
-        });
+        // Validate and sanitize anomaly data
+        const validatedAnomaly = this.validateAndSanitizeAnomaly(aiAnomaly, employeeId);
+        if (validatedAnomaly) {
+          anomalies.push(validatedAnomaly);
+        } else {
+          console.warn(`⚠️ Skipping invalid anomaly for employee ${employeeId}:`, aiAnomaly);
+        }
       }
 
       console.log(`🎯 Employee ${employeeId}: AI detected ${anomalies.length} anomalies`);
       return anomalies;
     } catch (error) {
-      console.error(`Anomaly detection error for employee ${employeeId}:`, error);
+      console.error(`❌ AI anomaly detection failed for employee ${employeeId}:`, error);
 
-      // Fallback to rule-based detection if AI fails
-      console.log(`🔄 Falling back to rule-based detection for employee ${employeeId}`);
-      const attendanceData = await Attendance.findByEmployee(employeeId, {
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate
-      });
-      return await this.detectEmployeeAnomaliesFallback(employeeId, attendanceData);
+      // Return empty array instead of fallback - AI-only approach
+      console.log(`⚠️ Skipping employee ${employeeId} due to AI detection failure`);
+      return [];
     }
   }
 
@@ -640,7 +635,17 @@ class AIService {
 
         console.log(`✅ ${highConfidenceAnomalies.length} high-confidence anomalies after filtering`);
 
-        return highConfidenceAnomalies;
+        // Validate and sanitize each anomaly
+        const validatedAnomalies = [];
+        for (const anomaly of highConfidenceAnomalies) {
+          const validated = this.validateAndSanitizeAnomalyData(anomaly);
+          if (validated) {
+            validatedAnomalies.push(validated);
+          }
+        }
+
+        console.log(`✅ ${validatedAnomalies.length} validated anomalies ready for processing`);
+        return validatedAnomalies;
 
       } catch (parseError) {
         console.error('Failed to parse AI response:', parseError);
@@ -652,6 +657,179 @@ class AIService {
       console.error('AI anomaly detection failed:', error);
       throw error;
     }
+  }
+
+  // Validate and sanitize anomaly data from AI
+  validateAndSanitizeAnomalyData(anomaly) {
+    if (!anomaly || typeof anomaly !== 'object') {
+      console.warn('Invalid anomaly object:', anomaly);
+      return null;
+    }
+
+    // Define valid anomaly types
+    const validTypes = [
+      'late_pattern',
+      'irregular_hours',
+      'absence_pattern',
+      'early_departure',
+      'overtime_anomalies',
+      'location_anomalies',
+      'weekend_holiday_work'
+    ];
+
+    // Validate and fix anomaly type
+    let type = anomaly.type;
+    if (!type || typeof type !== 'string' || type.trim() === '') {
+      console.warn('Missing or empty anomaly type, attempting to infer from description');
+      type = this.inferAnomalyTypeFromDescription(anomaly.description);
+    }
+
+    // Ensure type is valid
+    if (!validTypes.includes(type)) {
+      console.warn(`Invalid anomaly type: ${type}, defaulting to 'irregular_hours'`);
+      type = 'irregular_hours';
+    }
+
+    // Validate severity
+    const validSeverities = ['low', 'medium', 'high'];
+    let severity = anomaly.severity;
+    if (!severity || !validSeverities.includes(severity)) {
+      console.warn(`Invalid severity: ${severity}, defaulting to 'medium'`);
+      severity = 'medium';
+    }
+
+    // Validate confidence
+    let confidence = parseFloat(anomaly.confidence);
+    if (isNaN(confidence) || confidence < 0 || confidence > 1) {
+      console.warn(`Invalid confidence: ${anomaly.confidence}, defaulting to 0.8`);
+      confidence = 0.8;
+    }
+
+    // Validate description
+    let description = anomaly.description;
+    if (!description || typeof description !== 'string' || description.trim() === '') {
+      description = `${type.replace('_', ' ')} detected for employee`;
+    }
+
+    // Validate recommendations
+    let recommendations = anomaly.recommendations;
+    if (!Array.isArray(recommendations) || recommendations.length === 0) {
+      recommendations = this.getDefaultRecommendations(type);
+    }
+
+    // Validate data object
+    let data = anomaly.data;
+    if (!data || typeof data !== 'object') {
+      data = { metric: 'unknown', threshold: 'standard', deviation: 'detected' };
+    }
+
+    return {
+      type,
+      severity,
+      confidence,
+      description,
+      recommendations,
+      data
+    };
+  }
+
+  // Infer anomaly type from description text
+  inferAnomalyTypeFromDescription(description) {
+    if (!description || typeof description !== 'string') {
+      return 'irregular_hours';
+    }
+
+    const desc = description.toLowerCase();
+
+    if (desc.includes('late') || desc.includes('tardiness') || desc.includes('punctuality')) {
+      return 'late_pattern';
+    }
+    if (desc.includes('absent') || desc.includes('absence')) {
+      return 'absence_pattern';
+    }
+    if (desc.includes('early departure') || desc.includes('leaving early')) {
+      return 'early_departure';
+    }
+    if (desc.includes('overtime') || desc.includes('extra hours')) {
+      return 'overtime_anomalies';
+    }
+    if (desc.includes('location') || desc.includes('work from')) {
+      return 'location_anomalies';
+    }
+    if (desc.includes('weekend') || desc.includes('holiday')) {
+      return 'weekend_holiday_work';
+    }
+    if (desc.includes('irregular') || desc.includes('hours') || desc.includes('variance')) {
+      return 'irregular_hours';
+    }
+
+    return 'irregular_hours'; // Default fallback
+  }
+
+  // Get default recommendations for anomaly types
+  getDefaultRecommendations(type) {
+    const defaultRecommendations = {
+      'late_pattern': [
+        'Schedule discussion about punctuality',
+        'Review work schedule flexibility',
+        'Investigate potential causes'
+      ],
+      'irregular_hours': [
+        'Review workload distribution',
+        'Discuss work-life balance',
+        'Monitor time management'
+      ],
+      'absence_pattern': [
+        'Investigate absence reasons',
+        'Provide support if needed',
+        'Review attendance policy'
+      ],
+      'early_departure': [
+        'Review work schedule expectations',
+        'Discuss workload and time management',
+        'Clarify working hours policy'
+      ],
+      'overtime_anomalies': [
+        'Review workload distribution',
+        'Consider additional resources',
+        'Monitor work-life balance'
+      ],
+      'location_anomalies': [
+        'Verify location tracking accuracy',
+        'Review remote work policies',
+        'Confirm work location requirements'
+      ],
+      'weekend_holiday_work': [
+        'Verify weekend work authorization',
+        'Review work-life balance',
+        'Check overtime compensation'
+      ]
+    };
+
+    return defaultRecommendations[type] || [
+      'Review employee performance',
+      'Discuss with manager',
+      'Monitor situation'
+    ];
+  }
+
+  // Validate and sanitize anomaly for final processing
+  validateAndSanitizeAnomaly(aiAnomaly, employeeId) {
+    const validated = this.validateAndSanitizeAnomalyData(aiAnomaly);
+    if (!validated) {
+      return null;
+    }
+
+    return {
+      employeeId,
+      type: validated.type,
+      date: new Date(),
+      data: validated.data,
+      severity: validated.severity,
+      description: validated.description,
+      recommendations: validated.recommendations,
+      confidence: validated.confidence
+    };
   }
 
   // Helper methods for AI analysis

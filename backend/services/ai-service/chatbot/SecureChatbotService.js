@@ -239,7 +239,7 @@ class SecureChatbotService {
   async getPerformanceData(userId, userRole, employeeId) {
     const whereClause = userRole === 'admin' ? {} :
                        userRole === 'manager' ? { '$Employee.managerId$': userId } :
-                       { employeeId: employeeId };
+                       { employeeId: employeeId, status: 'approved' }; // Only approved reviews for employees
 
     return await Performance.findAll({
       where: whereClause,
@@ -431,7 +431,12 @@ You can help with your personal HR information, company policies, leave queries,
         /confidential.*hr/gi,
         /termination.*process/gi,
         /hiring.*decision/gi,
-        /company.*revenue/gi
+        /company.*revenue/gi,
+        /status.*approved/gi,
+        /status.*draft/gi,
+        /status.*submitted/gi,
+        /review.*status/gi,
+        /performance.*status/gi
       ],
       manager: [
         /company.*revenue/gi,

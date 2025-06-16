@@ -365,13 +365,13 @@ const Sidebar = ({ isOpen, onClose, onToggle }) => {
             )}>
               <div className="w-8 h-8 hrms-icon-bg-gradient rounded-full flex items-center justify-center hrms-icon-hover shadow-lg">
                 <span className="text-xs font-medium text-white">
-                  {user?.name?.charAt(0) || 'U'}
+                  {(user?.name || user?.email?.split('@')[0] || 'User').charAt(0).toUpperCase()}
                 </span>
               </div>
               {isOpen && (
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">
-                    {user?.name || 'User'}
+                    {user?.name || user?.email?.split('@')[0] || 'User'}
                   </p>
                   <p className="text-xs text-muted-foreground capitalize">
                     {user?.role || 'Role'}

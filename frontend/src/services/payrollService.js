@@ -108,12 +108,12 @@ class PayrollService {
     );
   }
 
-  // Download payslip PDF
+  // Download payslip CSV
   async downloadPayslip(payrollId) {
     return apiRequest(
       () => axiosInstance.get(API_ENDPOINTS.PAYROLL.PAYSLIP_DOWNLOAD(payrollId), {
         responseType: 'blob',
-        headers: { 'Accept': 'application/pdf' }
+        headers: { 'Accept': 'text/csv' }
       }),
       `payslip-download-${payrollId}`
     );
@@ -156,6 +156,10 @@ class PayrollService {
 
   // Get salary structure for an employee
   async getSalaryStructure(employeeId) {
+    if (!employeeId) {
+      throw new Error('Employee ID is required to fetch salary structure');
+    }
+
     return apiRequest(
       () => axiosInstance.get(API_ENDPOINTS.PAYROLL.SALARY_STRUCTURE(employeeId)),
       `salary-structure-${employeeId}`

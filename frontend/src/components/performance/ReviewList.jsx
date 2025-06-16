@@ -139,9 +139,12 @@ const ReviewList = () => {
                       <h3 className="text-lg font-semibold text-gray-900">
                         {review.review_period || review.reviewPeriod || 'Performance Review'}
                       </h3>
-                      <Badge className={getStatusBadgeColor(review.status)}>
-                        {review.status?.replace('_', ' ').toUpperCase()}
-                      </Badge>
+                      {/* Only show status badge for admin and manager roles */}
+                      {!isEmployee && (
+                        <Badge className={getStatusBadgeColor(review.status)}>
+                          {review.status?.replace('_', ' ').toUpperCase()}
+                        </Badge>
+                      )}
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">

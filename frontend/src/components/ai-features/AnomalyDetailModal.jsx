@@ -21,7 +21,7 @@ import {
   CheckCircle,
   XCircle,
   MessageSquare,
-  TrendingUp,
+
   Activity,
   Brain,
   Lightbulb
@@ -64,21 +64,48 @@ const ModalBackdrop = React.memo(({ isOpen, onClose, children }) => {
 ModalBackdrop.displayName = 'ModalBackdrop';
 
 /**
- * Recommendation Item Component
+ * Enhanced Recommendation Item Component
  */
 const RecommendationItem = React.memo(({ recommendation, index }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isLongText = recommendation.length > 100;
+
   return (
     <div
-      className="flex items-center space-x-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200 ai-fade-in"
+      className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200 ai-fade-in hover:shadow-md transition-all duration-200"
       style={{ animationDelay: `${index * 100}ms` }}
     >
-      <div className="p-1 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full">
-        <Lightbulb className="w-4 h-4 text-blue-600" />
-      </div>
-      <div className="flex-1">
-        <p className="text-sm text-blue-900 leading-relaxed line-clamp-1">
-          {recommendation}
-        </p>
+      <div className="flex items-start space-x-3">
+        <div className="p-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex-shrink-0 mt-1">
+          <Lightbulb className="w-4 h-4 text-blue-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <p className={`text-sm text-blue-900 leading-relaxed ${
+              isLongText && !isExpanded ? 'line-clamp-2' : ''
+            }`}>
+              {recommendation}
+            </p>
+            {isLongText && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="ml-2 text-xs text-blue-600 hover:text-blue-800 font-medium flex-shrink-0"
+              >
+                {isExpanded ? 'Show Less' : 'Show More'}
+              </button>
+            )}
+          </div>
+
+          {/* Action buttons for recommendations */}
+          <div className="flex items-center space-x-2 mt-3">
+            <button className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors duration-200">
+              📋 Schedule Meeting
+            </button>
+            <button className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium hover:bg-green-200 transition-colors duration-200">
+              ✅ Mark as Done
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -184,6 +211,188 @@ const AnomalyDetailModal = React.memo(({ anomaly, isOpen, onClose }) => {
     });
   };
 
+  // Render meaningful metric cards instead of raw JSON
+  const renderMetricCards = (data, anomalyType) => {
+    const metrics = extractMeaningfulMetrics(data, anomalyType);
+
+    return metrics.map((metric, index) => (
+      <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700">{metric.label}</span>
+          {metric.severity && (
+            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSeverityBadgeClass(metric.severity)}`}>
+              {metric.severity.toUpperCase()}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-end space-x-2 mb-2">
+          <span className="text-2xl font-bold text-gray-900">{metric.value}</span>
+          <span className="text-sm text-gray-500 mb-1">{metric.unit}</span>
+        </div>
+
+        {metric.comparison && (
+          <div className="text-xs text-gray-600 mb-2">
+            vs {metric.comparison}
+          </div>
+        )}
+
+        {metric.progressPercentage !== undefined && (
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className={`h-2 rounded-full transition-all duration-500 ${getProgressBarColor(metric.severity)}`}
+              style={{ width: `${Math.min(metric.progressPercentage, 100)}%` }}
+            />
+          </div>
+        )}
+
+        {metric.description && (
+          <p className="text-xs text-gray-600 mt-2">{metric.description}</p>
+        )}
+      </div>
+    ));
+  };
+
+  // Extract meaningful metrics from raw data
+  const extractMeaningfulMetrics = (data, anomalyType) => {
+    switch (anomalyType) {
+      case 'irregular_hours':
+        return [
+          {
+            label: 'Hours Variance',
+            value: parseFloat(data.hours_variance || data.variance || 0).toFixed(1),
+            unit: 'hours',
+            comparison: `${data.expected_variance || data.acceptable_variance_threshold || '2'} hours normal`,
+            progressPercentage: Math.min((parseFloat(data.hours_variance || 0) / 10) * 100, 100),
+            severity: parseFloat(data.hours_variance || 0) > 5 ? 'high' : 'medium',
+            description: 'Daily work hour variation from average'
+          },
+          {
+            label: 'Average Hours',
+            value: parseFloat(data.average_hours || 0).toFixed(1),
+            unit: 'hours/day',
+            comparison: '8 hours standard',
+            progressPercentage: (parseFloat(data.average_hours || 0) / 12) * 100,
+            description: 'Average daily working hours'
+          },
+          {
+            label: 'Range',
+            value: `${data.minimum_hours || 'N/A'} - ${data.maximum_hours || 'N/A'}`,
+            unit: 'hours',
+            description: 'Minimum to maximum daily hours worked'
+          }
+        ];
+
+      case 'late_pattern':
+        return [
+          {
+            label: 'Late Percentage',
+            value: parseFloat(data.latePercentage || 0).toFixed(1),
+            unit: '%',
+            comparison: `${data.typicalLatePercentage || '20%'} normal`,
+            progressPercentage: Math.min(parseFloat(data.latePercentage || 0), 100),
+            severity: parseFloat(data.latePercentage || 0) > 30 ? 'high' : 'medium',
+            description: 'Percentage of days arriving late'
+          },
+          {
+            label: 'Frequency',
+            value: data.frequency || 'Multiple days',
+            unit: '',
+            description: 'Pattern frequency description'
+          }
+        ];
+
+      case 'absence_pattern':
+        return [
+          {
+            label: 'Absence Rate',
+            value: parseFloat(data.absentPercentage || 0).toFixed(1),
+            unit: '%',
+            comparison: `${data.threshold || '10%'} threshold`,
+            progressPercentage: Math.min(parseFloat(data.absentPercentage || 0), 100),
+            severity: parseFloat(data.absentPercentage || 0) > 20 ? 'high' : 'medium',
+            description: 'Percentage of absent days'
+          }
+        ];
+
+      case 'weekend_holiday_work':
+        return [
+          {
+            label: 'Weekend Days',
+            value: parseInt(data.weekendWorkDays || 0),
+            unit: 'days',
+            comparison: `${data.typicalWeekendWorkDays || '0-1'} typical`,
+            progressPercentage: Math.min((parseInt(data.weekendWorkDays || 0) / 7) * 100, 100),
+            severity: parseInt(data.weekendWorkDays || 0) > 2 ? 'high' : 'low',
+            description: 'Weekend working days detected'
+          }
+        ];
+
+      default:
+        // Fallback for unknown types - show key-value pairs
+        return Object.entries(data)
+          .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+          .slice(0, 4) // Limit to 4 metrics
+          .map(([key, value]) => ({
+            label: key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim(),
+            value: typeof value === 'number' ? value.toFixed(2) : value.toString(),
+            unit: '',
+            description: `${key} measurement`
+          }));
+    }
+  };
+
+  // Get severity badge styling
+  const getSeverityBadgeClass = (severity) => {
+    const classes = {
+      high: 'bg-red-100 text-red-800',
+      medium: 'bg-amber-100 text-amber-800',
+      low: 'bg-blue-100 text-blue-800'
+    };
+    return classes[severity] || classes.medium;
+  };
+
+  // Get progress bar color based on severity
+  const getProgressBarColor = (severity) => {
+    const colors = {
+      high: 'bg-red-500',
+      medium: 'bg-amber-500',
+      low: 'bg-blue-500'
+    };
+    return colors[severity] || colors.medium;
+  };
+
+  // Get key metric summary for header
+  const getKeyMetricSummary = (anomaly) => {
+    const data = anomaly.anomalyData || {};
+    const type = anomaly.anomalyType;
+
+    switch (type) {
+      case 'irregular_hours':
+        const variance = parseFloat(data.hours_variance || data.variance || 0);
+        return `${variance.toFixed(1)}h variance`;
+
+      case 'late_pattern':
+        const latePercentage = parseFloat(data.latePercentage || 0);
+        return `${latePercentage.toFixed(1)}% late rate`;
+
+      case 'absence_pattern':
+        const absentPercentage = parseFloat(data.absentPercentage || 0);
+        return `${absentPercentage.toFixed(1)}% absent rate`;
+
+      case 'weekend_holiday_work':
+        const weekendDays = parseInt(data.weekendWorkDays || 0);
+        return `${weekendDays} weekend days`;
+
+      case 'overtime_anomalies':
+        const overtimeDays = parseInt(data.long_work_days || 0);
+        return `${overtimeDays} overtime days`;
+
+      default:
+        return 'Pattern detected';
+    }
+  };
+
   const getSeverityColor = (severity) => {
     const colors = {
       high: 'text-purple-700 bg-gradient-to-r from-purple-100 to-blue-100 border-purple-200',
@@ -210,13 +419,25 @@ const AnomalyDetailModal = React.memo(({ anomaly, isOpen, onClose }) => {
             <div className="p-2 bg-white rounded-lg shadow-sm">
               <AlertTriangle className="w-6 h-6 text-blue-600" />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-xl font-bold text-gray-900">
                 Anomaly Details
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 mb-2">
                 {anomaly.anomalyType?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </p>
+
+              {/* Key Metric Summary */}
+              <div className="flex items-center space-x-4">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-3 py-1 rounded-full border border-blue-200">
+                  <span className="text-sm font-medium text-blue-900">
+                    {getKeyMetricSummary(anomaly)}
+                  </span>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSeverityBadgeClass(anomaly.severity)}`}>
+                  {anomaly.severity?.toUpperCase()}
+                </span>
+              </div>
             </div>
           </div>
           
@@ -312,13 +533,11 @@ const AnomalyDetailModal = React.memo(({ anomaly, isOpen, onClose }) => {
                 
                 {anomaly.anomalyData && (
                   <div>
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Pattern Analysis
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3 block">
+                      📊 Pattern Analysis
                     </label>
-                    <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                      <pre className="text-xs text-gray-700 whitespace-pre-wrap">
-                        {JSON.stringify(anomaly.anomalyData, null, 2)}
-                      </pre>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {renderMetricCards(anomaly.anomalyData, anomaly.anomalyType)}
                     </div>
                   </div>
                 )}

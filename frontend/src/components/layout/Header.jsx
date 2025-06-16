@@ -54,7 +54,7 @@ const Header = ({ onMenuClick, sidebarOpen }) => {
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-medium text-gray-900">
-                    {formatName(user?.name || 'User')}
+                    {formatName(user?.name || user?.email?.split('@')[0] || 'User')}
                   </p>
                   <p className="text-xs text-gray-500 capitalize">
                     {user?.role || 'Role'}

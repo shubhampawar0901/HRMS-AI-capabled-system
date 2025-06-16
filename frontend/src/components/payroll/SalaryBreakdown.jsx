@@ -23,11 +23,11 @@ import {
 
 const SalaryBreakdown = () => {
   const { user, isAdmin, isManager, isEmployee } = useAuth();
-  const { 
-    salaryStructure, 
-    loading, 
-    error, 
-    fetchSalaryStructure 
+  const {
+    salaryStructure,
+    loading,
+    error,
+    fetchSalaryStructure
   } = usePayroll();
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
@@ -45,6 +45,13 @@ const SalaryBreakdown = () => {
       ]);
     }
   }, [isAdmin, isManager]);
+
+  // Auto-fetch salary structure for employees
+  useEffect(() => {
+    if (isEmployee && (user?.employeeId || user?.employee?.id)) {
+      fetchSalaryStructure();
+    }
+  }, [isEmployee, user?.employeeId, user?.employee?.id, fetchSalaryStructure]);
 
   const handleEmployeeSelect = async (employeeId) => {
     setSelectedEmployeeId(employeeId);
@@ -66,6 +73,17 @@ const SalaryBreakdown = () => {
           <div className="text-center">
             <div className="text-red-600 mb-2">⚠️ Error Loading Salary Structure</div>
             <p className="text-red-700">{error}</p>
+            {isEmployee && (
+              <div className="mt-4">
+                <Button
+                  onClick={() => fetchSalaryStructure()}
+                  variant="outline"
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
