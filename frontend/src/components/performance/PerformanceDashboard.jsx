@@ -44,19 +44,27 @@ const PerformanceDashboard = () => {
     const userGoals = goals || [];
 
     const completedReviews = reviews.filter(review => review.status === 'completed').length;
-    const averageRating = reviews.length > 0
-      ? reviews.reduce((sum, review) => sum + (review.overall_rating || review.overallRating || 0), 0) / reviews.length
-      : 0;
+
+    // Fix NaN issue: Only calculate average if there are reviews with valid ratings
+    const reviewsWithRatings = reviews.filter(review => {
+      const rating = review.overall_rating || review.overallRating;
+      return rating !== null && rating !== undefined && !isNaN(rating);
+    });
+
+    const averageRating = reviewsWithRatings.length > 0
+      ? reviewsWithRatings.reduce((sum, review) => sum + (review.overall_rating || review.overallRating || 0), 0) / reviewsWithRatings.length
+      : null; // Use null instead of 0 to indicate no data
+
     const completedGoals = userGoals.filter(goal => goal.status === 'completed').length;
-    const goalCompletionRate = userGoals.length > 0 ? (completedGoals / userGoals.length * 100).toFixed(1) : 0;
+    const goalCompletionRate = userGoals.length > 0 ? (completedGoals / userGoals.length * 100) : 0;
 
     return {
       totalReviews: reviews.length,
       completedReviews,
-      averageRating: averageRating.toFixed(1),
+      averageRating: averageRating !== null ? Number(averageRating.toFixed(1)) : null,
       totalGoals: userGoals.length,
       completedGoals,
-      goalCompletionRate
+      goalCompletionRate: Number(goalCompletionRate.toFixed(1))
     };
   }, [performanceReviews, goals]);
 
@@ -101,7 +109,7 @@ const PerformanceDashboard = () => {
               {employeeSummary?.totalReviews || 0}
             </div>
             <p className="text-xs text-blue-600 mt-1">
-              Avg Rating: {employeeSummary?.averageRating !== '0' ? employeeSummary?.averageRating : 'No ratings yet'}
+              Avg Rating: {employeeSummary?.averageRating !== null ? employeeSummary?.averageRating : 'No ratings yet'}
             </p>
           </CardContent>
         </Card>
@@ -128,7 +136,7 @@ const PerformanceDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-900">
-              {employeeSummary?.averageRating !== '0' ? employeeSummary?.averageRating : 'N/A'}
+              {employeeSummary?.averageRating !== null ? employeeSummary?.averageRating : 'N/A'}
             </div>
             <p className="text-xs text-purple-600 mt-1">My average rating</p>
           </CardContent>
