@@ -255,6 +255,9 @@ backend/sessions/
 # Project planning and documentation
 Final plan/
 "Final plan/"
+docs/planning/
+planning/
+**/planning/
 
 # Test authentication files
 test-auth.html
