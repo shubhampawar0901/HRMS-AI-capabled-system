@@ -64,8 +64,16 @@ export const usePayroll = () => {
       setLoading(true);
       setError(null);
 
+      // Clean filters to remove null values before sending to API
+      const cleanFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+          acc[key] = value;
+        }
+        return acc;
+      }, {});
+
       const queryParams = {
-        ...filters,
+        ...cleanFilters,
         ...params,
         page: pagination.page,
         limit: pagination.limit
@@ -100,9 +108,14 @@ export const usePayroll = () => {
       setLoading(true);
       setError(null);
 
+      // Clean filters to remove null values before sending to API
+      const cleanFilters = {
+        ...(filters.year && { year: filters.year }),
+        ...(filters.month && { month: filters.month })
+      };
+
       const queryParams = {
-        year: filters.year,
-        month: filters.month,
+        ...cleanFilters,
         ...params,
         page: pagination.page,
         limit: pagination.limit

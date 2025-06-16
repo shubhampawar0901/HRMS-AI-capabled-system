@@ -72,8 +72,16 @@ router.get('/summary',
 // GET /api/payroll/records
 router.get('/records',
   paginationValidation,
-  query('month').optional().isInt({ min: 1, max: 12 }).withMessage('Month must be between 1 and 12'),
+  query('month').optional().custom((value) => {
+    if (value === 'all') return true;
+    const monthNum = parseInt(value);
+    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      throw new Error('Month must be between 1 and 12 or "all"');
+    }
+    return true;
+  }),
   query('year').optional().isInt({ min: 2020 }).withMessage('Year must be valid'),
+  query('status').optional().isIn(['draft', 'processed', 'paid']).withMessage('Status must be draft, processed, or paid'),
   validateRequest,
   PayrollController.getPayrollRecords
 );

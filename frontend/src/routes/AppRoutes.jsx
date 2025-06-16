@@ -44,6 +44,7 @@ import GoalsPage from '@/pages/performance/GoalsPage';
 import AIFeaturesPage from '@/pages/ai-features/AIFeaturesPage';
 import AttritionPage from '@/pages/ai-features/AttritionPage';
 import AnomalyDetectionPage from '@/pages/ai-features/AnomalyDetectionPage';
+import SimpleAnomalyDetectionPage from '@/pages/ai-features/SimpleAnomalyDetectionPage';
 import SmartFeedbackPage from '@/pages/ai-features/SmartFeedbackPage';
 import ResumeParserPage from '@/pages/ai-features/ResumeParserPage';
 
@@ -174,9 +175,19 @@ const AppRoutes = () => {
           }
         />
 
-        {/* AI Features - Anomaly Detection (Admin Only) */}
+        {/* AI Features - Anomaly Detection (Admin Only) - Simplified Version */}
         <Route
           path="ai-features/anomaly-detection"
+          element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <SimpleAnomalyDetectionPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* AI Features - Anomaly Detection (Admin Only) - Complex Version (Legacy) */}
+        <Route
+          path="ai-features/anomaly-detection-advanced"
           element={
             <ProtectedRoute requiredRoles={['admin']}>
               <AnomalyDetectionPage />

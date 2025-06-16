@@ -336,7 +336,28 @@ class AIController {
   static async getAttendanceAnomalies(req, res) {
     try {
       const { status = 'active' } = req.query;
-      const anomalies = await AIAttendanceAnomaly.getActiveAnomalies();
+
+      let anomalies;
+      if (status === 'active') {
+        anomalies = await AIAttendanceAnomaly.getActiveAnomalies();
+      } else {
+        // For other statuses, use a more general query
+        const query = `
+          SELECT aa.*,
+                 CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+                 e.employee_code,
+                 d.name as department_name
+          FROM ai_attendance_anomalies aa
+          JOIN employees e ON aa.employee_id = e.id
+          LEFT JOIN departments d ON e.department_id = d.id
+          WHERE aa.status = ?
+          ORDER BY aa.severity DESC, aa.detected_date DESC
+        `;
+        const { executeQuery } = require('../config/database');
+        const rows = await executeQuery(query, [status]);
+        anomalies = rows.map(row => new AIAttendanceAnomaly(row));
+      }
+
       return sendSuccess(res, anomalies, 'Attendance anomalies retrieved');
     } catch (error) {
       return sendError(res, error.message, 500);
@@ -403,27 +424,57 @@ class AIController {
 
       console.log(`🤖 AI detected ${anomalies.length} potential anomalies`);
 
-      // Check for existing anomalies to prevent duplicates
+      // Enhanced duplicate detection with data range and content comparison
       const savedAnomalies = [];
       const skippedDuplicates = [];
+      const updatedAnomalies = [];
 
       for (const anomaly of anomalies) {
-        // Check if similar anomaly already exists for this employee and date range
-        const existingAnomaly = await AIAttendanceAnomaly.findExisting({
+        // Create a unique identifier for this anomaly based on employee, type, and date range
+        const crypto = require('crypto');
+        const hashData = `${anomaly.employeeId}-${anomaly.type}-${dateRange.startDate}-${dateRange.endDate}`;
+        const anomalyHash = crypto.createHash('md5').update(hashData).digest('hex');
+
+        // Check if similar anomaly already exists for this employee, type, and similar data
+        const existingAnomaly = await AIAttendanceAnomaly.findExistingWithDateRange({
           employeeId: anomaly.employeeId,
           anomalyType: anomaly.type,
-          detectedDate: new Date().toISOString().split('T')[0],
+          dateRangeStart: dateRange.startDate,
+          dateRangeEnd: dateRange.endDate,
           status: 'active'
         });
 
         if (existingAnomaly) {
-          console.log(`⚠️ Skipping duplicate anomaly for employee ${anomaly.employeeId}, type: ${anomaly.type}`);
-          skippedDuplicates.push({
-            employeeId: anomaly.employeeId,
-            type: anomaly.type,
-            reason: 'Duplicate anomaly already exists'
-          });
-          continue;
+          // Compare anomaly data to see if it's truly a duplicate or an update
+          const crypto = require('crypto');
+          const existingDataString = JSON.stringify(existingAnomaly.anomalyData || {}, Object.keys(existingAnomaly.anomalyData || {}).sort());
+          const newDataString = JSON.stringify(anomaly.data || {}, Object.keys(anomaly.data || {}).sort());
+          const existingDataHash = crypto.createHash('md5').update(existingDataString).digest('hex');
+          const newDataHash = crypto.createHash('md5').update(newDataString).digest('hex');
+
+          if (existingDataHash === newDataHash) {
+            console.log(`⚠️ Skipping exact duplicate anomaly for employee ${anomaly.employeeId}, type: ${anomaly.type}`);
+            skippedDuplicates.push({
+              employeeId: anomaly.employeeId,
+              type: anomaly.type,
+              reason: 'Exact duplicate anomaly already exists',
+              existingId: existingAnomaly.id
+            });
+            continue;
+          } else {
+            // Update existing anomaly with new data
+            console.log(`🔄 Updating existing anomaly for employee ${anomaly.employeeId}, type: ${anomaly.type} with new data`);
+            const updatedRecord = await AIAttendanceAnomaly.update(existingAnomaly.id, {
+              anomalyData: anomaly.data,
+              severity: anomaly.severity,
+              description: anomaly.description,
+              recommendations: anomaly.recommendations,
+              detectedDate: new Date().toISOString().split('T')[0],
+              status: 'active'
+            });
+            updatedAnomalies.push(updatedRecord);
+            continue;
+          }
         }
 
         // Create new anomaly record
@@ -435,7 +486,8 @@ class AIController {
           severity: anomaly.severity,
           description: anomaly.description,
           recommendations: anomaly.recommendations,
-          status: 'active'
+          status: 'active',
+          dateRangeAnalyzed: `${dateRange.startDate} to ${dateRange.endDate}`
         });
 
         console.log(`✅ Created new anomaly record for employee ${anomaly.employeeId}, type: ${anomaly.type}`);
@@ -444,17 +496,19 @@ class AIController {
 
       const result = {
         newAnomalies: savedAnomalies,
+        updatedAnomalies: updatedAnomalies,
         skippedDuplicates: skippedDuplicates,
         summary: {
           totalDetected: anomalies.length,
           newCreated: savedAnomalies.length,
+          updated: updatedAnomalies.length,
           duplicatesSkipped: skippedDuplicates.length
         }
       };
 
       console.log(`📊 Anomaly detection completed:`, result.summary);
 
-      return sendCreated(res, result, `Anomaly detection completed. ${savedAnomalies.length} new anomalies created, ${skippedDuplicates.length} duplicates skipped.`);
+      return sendCreated(res, result, `Anomaly detection completed. ${savedAnomalies.length} new anomalies created, ${updatedAnomalies.length} updated, ${skippedDuplicates.length} duplicates skipped.`);
     } catch (error) {
       console.error('Anomaly detection error:', error);
       return sendError(res, error.message, 500);
@@ -638,7 +692,21 @@ class AIController {
   // ==========================================
   // UTILITY METHODS
   // ==========================================
-  
+
+  // Generate unique hash for anomaly to prevent duplicates
+  static generateAnomalyHash(anomaly, dateRange) {
+    const crypto = require('crypto');
+    const hashData = `${anomaly.employeeId}-${anomaly.type}-${dateRange.startDate}-${dateRange.endDate}`;
+    return crypto.createHash('md5').update(hashData).digest('hex');
+  }
+
+  // Generate hash for anomaly data to detect content changes
+  static generateDataHash(data) {
+    const crypto = require('crypto');
+    const dataString = JSON.stringify(data, Object.keys(data).sort());
+    return crypto.createHash('md5').update(dataString).digest('hex');
+  }
+
   static async getAIFeatureStatus(req, res) {
     try {
       const status = {

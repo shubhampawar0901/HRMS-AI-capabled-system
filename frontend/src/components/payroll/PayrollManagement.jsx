@@ -24,12 +24,14 @@ import {
   Users,
   Calendar,
   RefreshCw,
-  X
+  X,
+  Eye
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import usePayroll from '@/hooks/usePayroll';
 import LoadingSpinner from '@/components/layout/LoadingSpinner';
 import { employeeService } from '@/services/employeeService';
+import PayrollDetailModal from './PayrollDetailModal';
 import {
   formatCurrency,
   formatPayrollPeriod,
@@ -66,6 +68,8 @@ const PayrollManagement = () => {
   const [generating, setGenerating] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [selectedPayroll, setSelectedPayroll] = useState(null);
+  const [showPayrollModal, setShowPayrollModal] = useState(false);
 
   // Fetch employees for payroll generation
   React.useEffect(() => {
@@ -143,6 +147,11 @@ const PayrollManagement = () => {
     } finally {
       setProcessing(null);
     }
+  };
+
+  const handleViewPayroll = (payroll) => {
+    setSelectedPayroll(payroll);
+    setShowPayrollModal(true);
   };
 
   const handleFilterChange = (key, value) => {
@@ -390,7 +399,7 @@ const PayrollManagement = () => {
               </SelectContent>
             </Select>
 
-            <Select value={filters.month?.toString() || 'all'} onValueChange={(value) => handleFilterChange('month', value === 'all' ? null : parseInt(value))}>
+            <Select value={filters.month?.toString() || 'all'} onValueChange={(value) => handleFilterChange('month', value === 'all' ? 'all' : parseInt(value))}>
               <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
                 <SelectValue placeholder="Filter by month..." />
               </SelectTrigger>
@@ -457,7 +466,12 @@ const PayrollManagement = () => {
                   {filteredData.map((payroll) => (
                     <TableRow key={payroll.id} className="hover:bg-gradient-to-r hover:from-gray-50/50 hover:to-gray-100/30 transition-all duration-300 ease-in-out hover:shadow-sm">
                       <TableCell className="font-medium text-gray-900">
-                        {payroll.employeeName || payroll.employee?.name || 'Unknown'}
+                        <div className="flex flex-col">
+                          <span className="font-medium">{payroll.employee_name || 'Unknown'}</span>
+                          {payroll.employee_code && (
+                            <span className="text-xs text-gray-500">Code: {payroll.employee_code}</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-gray-700">
                         {formatPayrollPeriod(payroll.month, payroll.year)}
@@ -475,6 +489,15 @@ const PayrollManagement = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewPayroll(payroll)}
+                            className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-300 ease-in-out hover:scale-[1.05] hover:shadow-sm border-gray-200"
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           {canProcessPayroll(payroll, user.role) && (
                             <Button
                               variant="outline"
@@ -482,6 +505,7 @@ const PayrollManagement = () => {
                               onClick={() => handleProcessPayroll(payroll.id)}
                               disabled={processing === payroll.id}
                               className="hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all duration-300 ease-in-out hover:scale-[1.05] hover:shadow-sm border-gray-200"
+                              title="Process Payroll"
                             >
                               {processing === payroll.id ? (
                                 <LoadingSpinner size="sm" />
@@ -500,6 +524,13 @@ const PayrollManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Payroll Detail Modal */}
+      <PayrollDetailModal
+        payroll={selectedPayroll}
+        isOpen={showPayrollModal}
+        onClose={() => setShowPayrollModal(false)}
+      />
     </div>
   );
 };

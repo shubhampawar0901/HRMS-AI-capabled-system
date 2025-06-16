@@ -562,7 +562,7 @@ class PerformanceController {
       SELECT
         e.id as employeeId,
         CONCAT(e.first_name, ' ', e.last_name) as employeeName,
-        COALESCE(AVG(pr.overall_rating), 0) as overallRating,
+        AVG(pr.overall_rating) as overallRating,
         COUNT(DISTINCT pg.id) as goalsCompleted,
         COUNT(DISTINCT pg2.id) as totalGoals,
         MAX(pr.created_at) as lastReviewDate
@@ -585,7 +585,7 @@ class PerformanceController {
       SELECT
         e.id as employeeId,
         CONCAT(e.first_name, ' ', e.last_name) as employeeName,
-        COALESCE(AVG(pr.overall_rating), 0) as overallRating,
+        AVG(pr.overall_rating) as overallRating,
         COUNT(DISTINCT pg.id) as goalsCompleted,
         COUNT(DISTINCT pg2.id) as totalGoals,
         MAX(pr.created_at) as lastReviewDate

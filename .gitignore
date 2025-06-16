@@ -252,12 +252,13 @@ backend/sessions/
 # =============================================
 # PROJECT DOCUMENTATION AND TEST FILES (DO NOT COMMIT)
 # =============================================
-# Project planning and documentation
+# Project planning and documentation with sensitive information
+docs/
+docs/planning/
+docs/fixes/
+planning/
 Final plan/
 "Final plan/"
-docs/planning/
-planning/
-**/planning/
 
 # Test authentication files
 test-auth.html
@@ -280,3 +281,20 @@ backend/scripts/verify-data-status.js
 # AI Feature Implementation Plans
 Attrition_Predictor_Frontend_Implementation_Plan.md
 **/Attrition_Predictor_Frontend_Implementation_Plan.md
+
+# =============================================
+# SENSITIVE CONFIGURATION FILES (NEVER COMMIT)
+# =============================================
+# AWS credentials and configuration
+**/aws-credentials.txt
+**/aws-config.txt
+# API keys and secrets
+**/api-keys.txt
+**/secrets.txt
+# Any file containing credentials
+*credentials*
+*secrets*
+*keys*
+# S3 configuration files
+**/s3-config.json
+**/s3-credentials.json

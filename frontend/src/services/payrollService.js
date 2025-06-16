@@ -8,8 +8,8 @@ class PayrollService {
     // Clean params to remove null/undefined values, but keep meaningful values
     const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
       // Keep all non-null, non-undefined, non-empty values
-      // Special handling: don't include month if it's null (means "All Months")
-      if (value !== null && value !== undefined && value !== '') {
+      // Special handling: don't include month if it's null or "all" (means "All Months")
+      if (value !== null && value !== undefined && value !== '' && value !== 'all') {
         acc[key] = value;
       }
       return acc;

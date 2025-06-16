@@ -13,6 +13,11 @@ class AIAttendanceAnomaly {
     this.status = data.status;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
+    // Include employee details if available
+    this.employee_name = data.employee_name;
+    this.employeeName = data.employee_name; // Alias for frontend compatibility
+    this.employee_code = data.employee_code;
+    this.department_name = data.department_name;
   }
 
   // Static methods for database operations
@@ -79,6 +84,61 @@ class AIAttendanceAnomaly {
     `;
 
     const rows = await executeQuery(query, [employeeId, anomalyType, detectedDate, status]);
+    return rows.length > 0 ? new AIAttendanceAnomaly(rows[0]) : null;
+  }
+
+  static async findExistingWithDateRange(criteria) {
+    const { employeeId, anomalyType, dateRangeStart, dateRangeEnd, status } = criteria;
+
+    const query = `
+      SELECT * FROM ai_attendance_anomalies
+      WHERE employee_id = ?
+        AND anomaly_type = ?
+        AND status = ?
+        AND (
+          (JSON_EXTRACT(anomaly_data, '$.dateRange.startDate') = ? AND JSON_EXTRACT(anomaly_data, '$.dateRange.endDate') = ?)
+          OR
+          (DATE(detected_date) BETWEEN ? AND ?)
+        )
+      ORDER BY detected_date DESC
+      LIMIT 1
+    `;
+
+    const rows = await executeQuery(query, [
+      employeeId,
+      anomalyType,
+      status,
+      dateRangeStart,
+      dateRangeEnd,
+      dateRangeStart,
+      dateRangeEnd
+    ]);
+    return rows.length > 0 ? new AIAttendanceAnomaly(rows[0]) : null;
+  }
+
+  static async findExistingEnhanced(criteria) {
+    const { employeeId, anomalyType, dateRangeStart, dateRangeEnd, status } = criteria;
+
+    const query = `
+      SELECT * FROM ai_attendance_anomalies
+      WHERE employee_id = ?
+        AND anomaly_type = ?
+        AND status = ?
+        AND (
+          JSON_EXTRACT(anomaly_data, '$.dateRange.startDate') = ?
+          AND JSON_EXTRACT(anomaly_data, '$.dateRange.endDate') = ?
+        )
+      ORDER BY detected_date DESC
+      LIMIT 1
+    `;
+
+    const rows = await executeQuery(query, [
+      employeeId,
+      anomalyType,
+      status,
+      dateRangeStart,
+      dateRangeEnd
+    ]);
     return rows.length > 0 ? new AIAttendanceAnomaly(rows[0]) : null;
   }
 

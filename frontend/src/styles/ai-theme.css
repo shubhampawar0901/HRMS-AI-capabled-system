@@ -315,6 +315,14 @@
   animation: fadeIn 400ms var(--ai-ease-out) forwards;
 }
 
+/* Line Clamp Utility */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

@@ -209,17 +209,46 @@ class AnomalyDetectionService {
   async getAnomalyDetails(anomalyId) {
     try {
       console.log('🔍 Fetching anomaly details:', anomalyId);
-      
+
       const response = await axiosInstance.get(
         `${API_ENDPOINTS.AI.ATTENDANCE_ANOMALIES}/${anomalyId}`
       );
-      
+
       console.log('✅ Anomaly details fetched successfully');
-      
+
       return response.data;
     } catch (error) {
       console.error('❌ Error fetching anomaly details:', error);
       throw this._handleError(error, 'Failed to fetch anomaly details');
+    }
+  }
+
+  /**
+   * Update anomaly status (resolve or ignore)
+   * @param {number} anomalyId - Anomaly ID
+   * @param {string} status - New status ('resolved' or 'ignored')
+   * @param {string} note - Optional note/reason
+   * @returns {Promise<Object>} API response
+   */
+  async updateAnomalyStatus(anomalyId, status, note = '') {
+    try {
+      console.log('🔄 Updating anomaly status:', { anomalyId, status, note });
+
+      let response;
+      if (status === 'resolved') {
+        response = await this.resolveAnomaly(anomalyId, note);
+      } else if (status === 'ignored') {
+        response = await this.ignoreAnomaly(anomalyId, note);
+      } else {
+        throw new Error(`Invalid status: ${status}. Must be 'resolved' or 'ignored'.`);
+      }
+
+      console.log('✅ Anomaly status updated successfully');
+
+      return response;
+    } catch (error) {
+      console.error('❌ Error updating anomaly status:', error);
+      throw this._handleError(error, 'Failed to update anomaly status');
     }
   }
 

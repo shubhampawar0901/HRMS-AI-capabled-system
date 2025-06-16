@@ -68,15 +68,15 @@ ModalBackdrop.displayName = 'ModalBackdrop';
  */
 const RecommendationItem = React.memo(({ recommendation, index }) => {
   return (
-    <div 
-      className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200 ai-fade-in"
+    <div
+      className="flex items-center space-x-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200 ai-fade-in"
       style={{ animationDelay: `${index * 100}ms` }}
     >
-      <div className="p-1 bg-blue-100 rounded-full">
+      <div className="p-1 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full">
         <Lightbulb className="w-4 h-4 text-blue-600" />
       </div>
       <div className="flex-1">
-        <p className="text-sm text-blue-900 leading-relaxed">
+        <p className="text-sm text-blue-900 leading-relaxed line-clamp-1">
           {recommendation}
         </p>
       </div>
@@ -186,9 +186,9 @@ const AnomalyDetailModal = React.memo(({ anomaly, isOpen, onClose }) => {
 
   const getSeverityColor = (severity) => {
     const colors = {
-      high: 'text-red-600 bg-red-100 border-red-200',
-      medium: 'text-yellow-600 bg-yellow-100 border-yellow-200',
-      low: 'text-blue-600 bg-blue-100 border-blue-200'
+      high: 'text-purple-700 bg-gradient-to-r from-purple-100 to-blue-100 border-purple-200',
+      medium: 'text-blue-700 bg-gradient-to-r from-blue-100 to-indigo-100 border-blue-200',
+      low: 'text-indigo-700 bg-gradient-to-r from-indigo-100 to-cyan-100 border-indigo-200'
     };
     return colors[severity] || colors.low;
   };
@@ -359,20 +359,20 @@ const AnomalyDetailModal = React.memo(({ anomaly, isOpen, onClose }) => {
 
         {/* Footer Actions */}
         {anomaly.status === 'active' && (
-          <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
             <button
               onClick={handleClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 hover:shadow-sm"
             >
               Close
             </button>
-            
-            <button className="ai-button px-4 py-2 text-sm flex items-center space-x-2">
+
+            <button className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-200 flex items-center space-x-2 shadow-sm hover:shadow-md">
               <MessageSquare className="w-4 h-4" />
               <span>Schedule Meeting</span>
             </button>
-            
-            <button className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2">
+
+            <button className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2 shadow-sm hover:shadow-md">
               <CheckCircle className="w-4 h-4" />
               <span>Mark Resolved</span>
             </button>

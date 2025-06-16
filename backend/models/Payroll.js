@@ -23,6 +23,12 @@ class Payroll {
     this.processedAt = data.processed_at;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
+
+    // Employee information from JOIN
+    this.employee_name = data.employee_name;
+    this.employee_code = data.employee_code;
+    this.department_name = data.department_name;
+    this.processed_by_name = data.processed_by_name;
   }
 
   // Static methods for database operations
@@ -133,7 +139,7 @@ class Payroll {
     console.log('🔍 Base query:', query);
     console.log('🔍 Base params:', params);
 
-    if (options.month && options.month !== 'null' && options.month !== null) {
+    if (options.month && options.month !== 'null' && options.month !== null && options.month !== 'all') {
       query += ' AND p.month = ?';
       params.push(options.month);
     }
@@ -193,10 +199,12 @@ class Payroll {
       `;
       const params = [];
 
-      if (options.month && options.month !== 'null' && options.month !== null) {
+      if (options.month && options.month !== 'null' && options.month !== null && options.month !== 'all') {
         query += ' AND p.month = ?';
         params.push(parseInt(options.month));
         console.log('🔍 Added month filter:', options.month);
+      } else if (options.month === 'all') {
+        console.log('🔍 All months selected - no month filter applied');
       }
 
       if (options.year) {
@@ -256,10 +264,12 @@ class Payroll {
       let query = 'SELECT COUNT(*) as total FROM payroll_records p LEFT JOIN employees e ON p.employee_id = e.id WHERE 1=1';
       const params = [];
 
-      if (options.month && options.month !== 'null' && options.month !== null) {
+      if (options.month && options.month !== 'null' && options.month !== null && options.month !== 'all') {
         query += ' AND p.month = ?';
         params.push(parseInt(options.month));
         console.log('🔍 Added month filter to count:', options.month);
+      } else if (options.month === 'all') {
+        console.log('🔍 All months selected for count - no month filter applied');
       }
 
       if (options.year) {
@@ -298,7 +308,7 @@ class Payroll {
     let query = 'SELECT COUNT(*) as total FROM payroll_records WHERE employee_id = ?';
     const params = [employeeId];
 
-    if (options.month && options.month !== 'null' && options.month !== null) {
+    if (options.month && options.month !== 'null' && options.month !== null && options.month !== 'all') {
       query += ' AND month = ?';
       params.push(options.month);
     }

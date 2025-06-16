@@ -557,7 +557,7 @@ class AIService {
         }))
       };
 
-      // Create AI prompt for anomaly detection
+      // Create comprehensive AI prompt for anomaly detection with all required types
       const prompt = `
         You are an advanced HR analytics AI specializing in attendance anomaly detection.
         Analyze the following employee attendance data and identify any anomalous patterns that require attention.
@@ -568,32 +568,53 @@ class AIService {
         Instructions:
         1. Look for patterns that deviate significantly from normal attendance behavior
         2. Consider context like gradual changes vs sudden shifts
-        3. Identify different types of anomalies (late patterns, irregular hours, absence patterns, location anomalies)
+        3. Identify ALL types of anomalies from the comprehensive list below
         4. Assess severity based on impact and frequency
         5. Provide actionable recommendations
+
+        ANOMALY TYPES TO DETECT:
+        - late_pattern: Consistent tardiness patterns (>20% late arrivals)
+        - irregular_hours: Significant variations in working hours (standard deviation >2)
+        - absence_pattern: High absence rates (>10% of working days)
+        - early_departure: Consistent early departures from work
+        - overtime_anomalies: Excessive or unusual overtime patterns
+        - location_anomalies: Inconsistent work location patterns
+        - weekend_holiday_work: Unusual work patterns during non-working days
 
         Return a JSON array of anomalies in this exact format:
         [
           {
-            "type": "late_pattern|irregular_hours|absence_pattern|location_anomaly|early_departure",
+            "type": "late_pattern|irregular_hours|absence_pattern|early_departure|overtime_anomalies|location_anomalies|weekend_holiday_work",
             "severity": "low|medium|high",
             "confidence": 0.0-1.0,
-            "description": "Clear description of the anomaly",
+            "description": "Clear description of the anomaly with specific metrics",
             "data": {
               "metric": "specific_value",
               "threshold": "what_constitutes_normal",
-              "deviation": "how_much_it_deviates"
+              "deviation": "how_much_it_deviates",
+              "frequency": "how_often_it_occurs",
+              "impact": "business_impact_assessment"
             },
-            "recommendations": ["actionable_recommendation_1", "actionable_recommendation_2"]
+            "recommendations": ["actionable_recommendation_1", "actionable_recommendation_2", "actionable_recommendation_3"]
           }
         ]
 
+        ANALYSIS CRITERIA:
+        - Late Pattern: >20% of days with late arrival (>15 minutes after standard time)
+        - Irregular Hours: Standard deviation >2 hours from average working hours
+        - Absence Pattern: >10% absence rate in the analyzed period
+        - Early Departure: >15% of days leaving >30 minutes before standard time
+        - Overtime Anomalies: >25% of days with >2 hours overtime OR sudden overtime pattern changes
+        - Location Anomalies: >20% location inconsistency from normal pattern
+        - Weekend/Holiday Work: Any work on weekends/holidays without prior approval patterns
+
         Only return anomalies with confidence > 0.7. If no significant anomalies found, return empty array [].
+        Ensure each anomaly includes specific metrics and quantifiable data in the description.
       `;
 
-      console.log(`🤖 Sending attendance data to Gemini for AI analysis...`);
+      console.log(`🤖 Sending attendance data to Gemini 1.5 Pro for comprehensive AI analysis...`);
 
-      const result = await this.fastModel.generateContent(prompt);
+      const result = await this.advancedModel.generateContent(prompt);
       const response = result.response;
       const text = response.text();
 
@@ -694,52 +715,46 @@ class AIService {
     return numbers.reduce((sum, n) => sum + Math.pow(n - avg, 2), 0) / numbers.length;
   }
 
-  // Fallback rule-based detection (original logic)
+  // Enhanced fallback rule-based detection with all anomaly types
   async detectEmployeeAnomaliesFallback(employeeId, attendanceData) {
     const anomalies = [];
 
-    // Detect patterns using original rule-based logic
+    // Detect all patterns using comprehensive rule-based logic
     const latePattern = this.detectLatePattern(attendanceData);
     const irregularHours = this.detectIrregularHours(attendanceData);
     const absencePattern = this.detectAbsencePattern(attendanceData);
+    const earlyDeparture = this.detectEarlyDeparturePattern(attendanceData);
+    const overtimeAnomalies = this.detectOvertimeAnomalies(attendanceData);
+    const locationAnomalies = this.detectLocationAnomalies(attendanceData);
+    const weekendHolidayWork = this.detectWeekendHolidayWork(attendanceData);
 
-    if (latePattern.isAnomaly) {
-      anomalies.push({
-        employeeId,
-        type: 'late_pattern',
-        date: new Date(),
-        data: latePattern.data,
-        severity: latePattern.severity,
-        description: latePattern.description,
-        recommendations: latePattern.recommendations
-      });
+    // Add detected anomalies to results
+    const detectionResults = [
+      { pattern: latePattern, type: 'late_pattern' },
+      { pattern: irregularHours, type: 'irregular_hours' },
+      { pattern: absencePattern, type: 'absence_pattern' },
+      { pattern: earlyDeparture, type: 'early_departure' },
+      { pattern: overtimeAnomalies, type: 'overtime_anomalies' },
+      { pattern: locationAnomalies, type: 'location_anomalies' },
+      { pattern: weekendHolidayWork, type: 'weekend_holiday_work' }
+    ];
+
+    for (const { pattern, type } of detectionResults) {
+      if (pattern.isAnomaly) {
+        anomalies.push({
+          employeeId,
+          type,
+          date: new Date(),
+          data: pattern.data,
+          severity: pattern.severity,
+          description: pattern.description,
+          recommendations: pattern.recommendations,
+          confidence: pattern.confidence || 0.8
+        });
+      }
     }
 
-    if (irregularHours.isAnomaly) {
-      anomalies.push({
-        employeeId,
-        type: 'irregular_hours',
-        date: new Date(),
-        data: irregularHours.data,
-        severity: irregularHours.severity,
-        description: irregularHours.description,
-        recommendations: irregularHours.recommendations
-      });
-    }
-
-    if (absencePattern.isAnomaly) {
-      anomalies.push({
-        employeeId,
-        type: 'absence_pattern',
-        date: new Date(),
-        data: absencePattern.data,
-        severity: absencePattern.severity,
-        description: absencePattern.description,
-        recommendations: absencePattern.recommendations
-      });
-    }
-
-    console.log(`🔄 Fallback detection found ${anomalies.length} anomalies for employee ${employeeId}`);
+    console.log(`🔄 Enhanced fallback detection found ${anomalies.length} anomalies for employee ${employeeId}`);
     return anomalies;
   }
 
@@ -2006,7 +2021,128 @@ The ${data.manager.department} team under ${data.manager.name}'s leadership demo
       data: { absentCount, totalDays, absentPercentage },
       severity: absentPercentage > 20 ? 'high' : 'medium',
       description: `High absence rate detected: ${absentPercentage.toFixed(1)}%`,
-      recommendations: ['Investigate absence reasons', 'Provide support if needed']
+      recommendations: ['Investigate absence reasons', 'Provide support if needed'],
+      confidence: absentPercentage > 15 ? 0.9 : 0.8
+    };
+  }
+
+  detectEarlyDeparturePattern(attendanceData) {
+    const workingDays = attendanceData.filter(a => a.status === 'present' && a.checkOutTime);
+    if (workingDays.length === 0) {
+      return { isAnomaly: false, data: {}, severity: 'low', description: '', recommendations: [] };
+    }
+
+    // Assume standard work end time is 18:00 (6 PM)
+    const standardEndTime = 18 * 60; // 18:00 in minutes
+    const earlyDepartures = workingDays.filter(day => {
+      if (!day.checkOutTime) return false;
+      const [hours, minutes] = day.checkOutTime.split(':').map(Number);
+      const checkOutMinutes = hours * 60 + minutes;
+      return checkOutMinutes < (standardEndTime - 30); // 30 minutes early
+    });
+
+    const earlyDeparturePercentage = (earlyDepartures.length / workingDays.length) * 100;
+
+    return {
+      isAnomaly: earlyDeparturePercentage > 15,
+      data: {
+        earlyDepartures: earlyDepartures.length,
+        totalWorkingDays: workingDays.length,
+        earlyDeparturePercentage: earlyDeparturePercentage.toFixed(1)
+      },
+      severity: earlyDeparturePercentage > 30 ? 'high' : 'medium',
+      description: `Frequent early departures detected: ${earlyDeparturePercentage.toFixed(1)}% of working days`,
+      recommendations: ['Review work schedule expectations', 'Discuss workload and time management'],
+      confidence: earlyDeparturePercentage > 25 ? 0.9 : 0.8
+    };
+  }
+
+  detectOvertimeAnomalies(attendanceData) {
+    const workingDays = attendanceData.filter(a => a.status === 'present' && a.totalHours);
+    if (workingDays.length === 0) {
+      return { isAnomaly: false, data: {}, severity: 'low', description: '', recommendations: [] };
+    }
+
+    const standardHours = 8;
+    const overtimeDays = workingDays.filter(day => parseFloat(day.totalHours) > (standardHours + 2));
+    const overtimePercentage = (overtimeDays.length / workingDays.length) * 100;
+
+    const totalOvertimeHours = overtimeDays.reduce((sum, day) => {
+      return sum + Math.max(0, parseFloat(day.totalHours) - standardHours);
+    }, 0);
+
+    return {
+      isAnomaly: overtimePercentage > 25,
+      data: {
+        overtimeDays: overtimeDays.length,
+        totalWorkingDays: workingDays.length,
+        overtimePercentage: overtimePercentage.toFixed(1),
+        totalOvertimeHours: totalOvertimeHours.toFixed(1)
+      },
+      severity: overtimePercentage > 50 ? 'high' : 'medium',
+      description: `Excessive overtime detected: ${overtimePercentage.toFixed(1)}% of days with >2 hours overtime`,
+      recommendations: ['Review workload distribution', 'Consider additional resources', 'Monitor work-life balance'],
+      confidence: overtimePercentage > 40 ? 0.9 : 0.8
+    };
+  }
+
+  detectLocationAnomalies(attendanceData) {
+    const locationsData = attendanceData.filter(a => a.location);
+    if (locationsData.length === 0) {
+      return { isAnomaly: false, data: {}, severity: 'low', description: '', recommendations: [] };
+    }
+
+    // Count location frequency
+    const locationCounts = {};
+    locationsData.forEach(day => {
+      locationCounts[day.location] = (locationCounts[day.location] || 0) + 1;
+    });
+
+    const locations = Object.keys(locationCounts);
+    const mostCommonLocation = locations.reduce((a, b) =>
+      locationCounts[a] > locationCounts[b] ? a : b
+    );
+
+    const mostCommonLocationPercentage = (locationCounts[mostCommonLocation] / locationsData.length) * 100;
+    const locationVariability = locations.length;
+
+    return {
+      isAnomaly: mostCommonLocationPercentage < 80 && locationVariability > 3,
+      data: {
+        totalLocations: locationVariability,
+        mostCommonLocation,
+        mostCommonLocationPercentage: mostCommonLocationPercentage.toFixed(1),
+        locationDistribution: locationCounts
+      },
+      severity: mostCommonLocationPercentage < 60 ? 'high' : 'medium',
+      description: `Inconsistent work location pattern: ${locationVariability} different locations, primary location only ${mostCommonLocationPercentage.toFixed(1)}%`,
+      recommendations: ['Verify location tracking accuracy', 'Review remote work policies', 'Confirm work location requirements'],
+      confidence: locationVariability > 5 ? 0.9 : 0.7
+    };
+  }
+
+  detectWeekendHolidayWork(attendanceData) {
+    const weekendWorkDays = attendanceData.filter(day => {
+      const date = new Date(day.date);
+      const dayOfWeek = date.getDay();
+      return (dayOfWeek === 0 || dayOfWeek === 6) && day.status === 'present'; // Sunday = 0, Saturday = 6
+    });
+
+    const totalDays = attendanceData.length;
+    const weekendWorkPercentage = totalDays > 0 ? (weekendWorkDays.length / totalDays) * 100 : 0;
+
+    return {
+      isAnomaly: weekendWorkDays.length > 0,
+      data: {
+        weekendWorkDays: weekendWorkDays.length,
+        totalDays,
+        weekendWorkPercentage: weekendWorkPercentage.toFixed(1),
+        weekendDates: weekendWorkDays.map(day => day.date)
+      },
+      severity: weekendWorkDays.length > 4 ? 'high' : weekendWorkDays.length > 2 ? 'medium' : 'low',
+      description: `Weekend work detected: ${weekendWorkDays.length} weekend days worked (${weekendWorkPercentage.toFixed(1)}% of period)`,
+      recommendations: ['Verify weekend work authorization', 'Review work-life balance', 'Check overtime compensation'],
+      confidence: weekendWorkDays.length > 2 ? 0.9 : 0.8
     };
   }
 }

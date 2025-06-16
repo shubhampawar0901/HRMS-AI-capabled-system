@@ -117,10 +117,10 @@ class PayrollController {
       console.log('Query params:', req.query);
 
       const { role, employeeId } = req.user;
-      const { month, year, page = 1, limit = 100 } = req.query;
+      const { month, year, status, page = 1, limit = 100 } = req.query;
 
       console.log(`Role: ${role}, EmployeeId: ${employeeId}`);
-      console.log(`Filters - Month: ${month}, Year: ${year}, Page: ${page}, Limit: ${limit}`);
+      console.log(`Filters - Month: ${month}, Year: ${year}, Status: ${status}, Page: ${page}, Limit: ${limit}`);
 
       let records;
       let total;
@@ -131,6 +131,7 @@ class PayrollController {
         const options = {
           month: month ? parseInt(month) : null,
           year: year ? parseInt(year) : null,
+          status: status || null,
           page: parseInt(page),
           limit: parseInt(limit)
         };
@@ -148,6 +149,7 @@ class PayrollController {
           employeeId,
           month: month ? parseInt(month) : null,
           year: year ? parseInt(year) : null,
+          status: status || null,
           page: parseInt(page),
           limit: parseInt(limit)
         };
