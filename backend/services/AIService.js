@@ -1072,10 +1072,10 @@ class AIService {
         };
       }
 
-      // Get employee's leave balance
-      const leaveBalances = await LeaveBalance.findByEmployee(userContext.employeeId);
+      // Get employee's leave balance for current year
       const currentYear = new Date().getFullYear();
-      const currentYearBalances = leaveBalances.filter(lb => lb.year === currentYear);
+      const leaveBalances = await LeaveBalance.findByEmployee(userContext.employeeId, currentYear);
+      const currentYearBalances = leaveBalances;
 
       if (currentYearBalances.length === 0) {
         return {

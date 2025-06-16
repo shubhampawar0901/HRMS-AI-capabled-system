@@ -14,6 +14,7 @@ class LeaveBalance {
 
     // Additional fields from joins
     this.leave_type_name = data.leave_type_name;
+    this.leaveTypeName = data.leave_type_name; // Camel case alias for compatibility
     this.maxDaysPerYear = data.max_days_per_year;
     this.employeeName = data.employee_name;
     this.employeeCode = data.employee_code;

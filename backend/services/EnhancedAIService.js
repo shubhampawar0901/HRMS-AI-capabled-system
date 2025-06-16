@@ -20,7 +20,7 @@ class EnhancedAIService {
     
     // Primary model: Gemini 1.5 Flash for all operations
     this.primaryModel = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash'
+      model: 'gemini-2.0-flash'
     });
     
     // Initialize services
@@ -727,6 +727,18 @@ Generate a detailed, helpful response:`;
   buildSQLGenerationPrompt(message, userContext, context, classification) {
     const dateContext = this.generateDateContext();
 
+    // NEW: Add leave-specific requirements
+    let leaveSpecificRequirements = '';
+    if (classification.intent === 'personal_data_leave') {
+      leaveSpecificRequirements = `
+
+CRITICAL FOR LEAVE QUERIES:
+- MUST JOIN leave_balances with leave_types table
+- MUST SELECT lt.name as leave_type_name (not just leave_type_id)
+- MUST use this exact pattern: FROM leave_balances lb JOIN leave_types lt ON lb.leave_type_id = lt.id
+- NEVER return leave_type_id without leave_type_name`;
+    }
+
     return `Generate a secure SQL query for the user's request.
 
 USER QUERY: "${message}"
@@ -743,7 +755,7 @@ SECURITY RULES:
 ${context.securityRules.map(rule => `- ${rule}`).join('\n')}
 
 EXAMPLE QUERIES:
-${context.exampleQueries.slice(0, 2).join('\n\n')}
+${context.exampleQueries.slice(0, 2).join('\n\n')}${leaveSpecificRequirements}
 
 REQUIREMENTS:
 1. Generate ONLY the SQL query (no explanations)
@@ -902,15 +914,60 @@ Generate a helpful response:`;
     return hasEmployeeFilter;
   }
 
+  // NEW: Validate and fix leave-specific SQL queries
+  validateAndFixLeaveQuery(sqlQuery, intentType) {
+    if (intentType !== 'personal_data_leave') {
+      return sqlQuery; // Only process leave queries
+    }
+
+    const lowerQuery = sqlQuery.toLowerCase();
+
+    // Check if query involves leave_balances but missing JOIN with leave_types
+    if (lowerQuery.includes('leave_balances') && !lowerQuery.includes('leave_types')) {
+      console.log('[LEAVE-FIX] Detected leave query without leave_types JOIN, applying fix...');
+
+      // Use the correct template query instead
+      const fixedQuery = `SELECT lb.*, lt.name as leave_type_name
+FROM leave_balances lb
+JOIN leave_types lt ON lb.leave_type_id = lt.id
+WHERE lb.employee_id = ? AND lb.year = YEAR(CURDATE())`;
+
+      console.log('[LEAVE-FIX] Applied fixed query with proper JOIN');
+      return fixedQuery;
+    }
+
+    // Check if query selects from leave_balances but doesn't include leave_type_name
+    if (lowerQuery.includes('from leave_balances') && !lowerQuery.includes('leave_type_name')) {
+      console.log('[LEAVE-FIX] Detected leave query without leave_type_name field, applying fix...');
+
+      // Use the correct template query
+      const fixedQuery = `SELECT lb.*, lt.name as leave_type_name
+FROM leave_balances lb
+JOIN leave_types lt ON lb.leave_type_id = lt.id
+WHERE lb.employee_id = ? AND lb.year = YEAR(CURDATE())`;
+
+      console.log('[LEAVE-FIX] Applied fixed query with leave_type_name');
+      return fixedQuery;
+    }
+
+    return sqlQuery; // Return original if no issues detected
+  }
+
   async executeSecureQuery(sqlQuery, employeeId, intentType) {
     try {
       // Import database connection
       const { executeQuery } = require('../config/database');
 
-      console.log(`[SQL] Executing query for employee ${employeeId}:`, sqlQuery);
+      // NEW: Apply leave-specific query fixes before execution
+      const fixedQuery = this.validateAndFixLeaveQuery(sqlQuery, intentType);
+
+      console.log(`[SQL] Executing query for employee ${employeeId}:`, fixedQuery);
+      if (fixedQuery !== sqlQuery) {
+        console.log(`[SQL] Original query was modified for leave data completeness`);
+      }
 
       // Execute the actual database query
-      const results = await executeQuery(sqlQuery, [employeeId]);
+      const results = await executeQuery(fixedQuery, [employeeId]);
 
       console.log(`[SQL] Query returned ${results.length} records`);
 
@@ -923,6 +980,23 @@ Generate a helpful response:`;
 
     } catch (error) {
       console.error(`[SQL] Query execution error:`, error);
+
+      // NEW: For leave queries, try fallback with template
+      if (intentType === 'personal_data_leave') {
+        console.log(`[SQL] Attempting leave query fallback...`);
+        try {
+          const fallbackQuery = `SELECT lb.*, lt.name as leave_type_name
+FROM leave_balances lb
+JOIN leave_types lt ON lb.leave_type_id = lt.id
+WHERE lb.employee_id = ? AND lb.year = YEAR(CURDATE())`;
+
+          const fallbackResults = await executeQuery(fallbackQuery, [employeeId]);
+          console.log(`[SQL] Fallback query succeeded with ${fallbackResults.length} records`);
+          return fallbackResults;
+        } catch (fallbackError) {
+          console.error(`[SQL] Fallback query also failed:`, fallbackError);
+        }
+      }
 
       // Fallback to empty results instead of mock data
       console.log(`[SQL] Returning empty results due to error`);

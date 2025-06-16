@@ -188,8 +188,8 @@ Return JSON:
   async getLeaveBalance(employeeId, timeframe) {
     try {
       const currentYear = new Date().getFullYear();
-      const leaveBalances = await LeaveBalance.findByEmployee(employeeId);
-      return leaveBalances.filter(lb => lb.year === currentYear && lb.active === 1);
+      const leaveBalances = await LeaveBalance.findByEmployee(employeeId, currentYear);
+      return leaveBalances.filter(lb => lb.active !== 0); // Filter out inactive balances
     } catch (error) {
       console.error('Leave balance retrieval error:', error);
       return null;
