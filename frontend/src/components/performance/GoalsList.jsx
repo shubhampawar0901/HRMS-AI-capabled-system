@@ -1,21 +1,17 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Target, 
-  Plus, 
-  Calendar, 
+
+
+import {
+  Target,
+  Plus,
+  Calendar,
   User,
-  TrendingUp,
   CheckCircle,
   Clock,
   AlertCircle,
-  Search,
-  Filter,
   Edit
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,34 +26,11 @@ const GoalsList = () => {
     loading,
     error,
     pagination,
-    updateFilters,
-    updatePagination,
-    canManagePerformance
+    updatePagination
   } = usePerformance();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-
-  // Handle search
-  const handleSearch = (value) => {
-    setSearchTerm(value);
-    updateFilters({ search: value });
-  };
-
-  // Handle status filter
-  const handleStatusFilter = (value) => {
-    setStatusFilter(value);
-    updateFilters({ status: value === 'all' ? null : value });
-  };
-
-  // Handle priority filter
-  const handlePriorityFilter = (value) => {
-    setPriorityFilter(value);
-    updateFilters({ priority: value === 'all' ? null : value });
-  };
 
   // Handle edit goal
   const handleEditGoal = (goal) => {
@@ -109,12 +82,7 @@ const GoalsList = () => {
     }
   };
 
-  // Calculate progress percentage
-  const getProgressPercentage = (goal) => {
-    if (goal.status === 'completed') return 100;
-    if (goal.status === 'not_started') return 0;
-    return goal.progress || 0;
-  };
+
 
   if (loading) {
     return (
@@ -158,51 +126,7 @@ const GoalsList = () => {
         </Button>
       </div>
 
-      {/* Filters */}
-      <Card className="border-gray-200">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search goals..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={handleStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="not_started">Not Started</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={priorityFilter} onValueChange={handlePriorityFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="high">High Priority</SelectItem>
-                <SelectItem value="medium">Medium Priority</SelectItem>
-                <SelectItem value="low">Low Priority</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Goals List */}
       <div className="grid grid-cols-1 gap-4">
@@ -213,9 +137,9 @@ const GoalsList = () => {
               className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-gray-200"
             >
               <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-3 mb-2">
                       {getStatusIcon(goal.status)}
                       <h3 className="text-lg font-semibold text-gray-900">
                         {goal.title || 'Goal Title'}
@@ -229,49 +153,28 @@ const GoalsList = () => {
                         </Badge>
                       )}
                     </div>
-                    
+
                     {goal.description && (
                       <p className="text-gray-600 mb-4 line-clamp-2">
                         {goal.description}
                       </p>
                     )}
 
-                    {/* Progress Bar */}
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700">Progress</span>
-                        <span className="text-sm text-gray-600">
-                          {getProgressPercentage(goal)}%
-                        </span>
-                      </div>
-                      <Progress 
-                        value={getProgressPercentage(goal)} 
-                        className="h-2"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-500" />
                         <span className="text-sm text-gray-600">
-                          {goal.employee_name || goal.employeeName || 'Employee'}
+                          {goal.employee_name || 'Employee'}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-500" />
                         <span className="text-sm text-gray-600">
-                          Due: {(goal.target_date || goal.targetDate || goal.dueDate) ? new Date(goal.target_date || goal.targetDate || goal.dueDate).toLocaleDateString() : 'No date'}
+                          Due: {(goal.target_date || goal.targetDate) ? new Date(goal.target_date || goal.targetDate).toLocaleDateString() : 'No date'}
                         </span>
                       </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          Progress: {goal.achievement_percentage || goal.achievementPercentage || 0}%
-                        </span>
-                      </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600">
                           Category: {goal.category || 'General'}

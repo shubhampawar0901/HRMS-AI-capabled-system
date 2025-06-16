@@ -30,7 +30,7 @@ const GoalsForm = ({ goal, onClose }) => {
     priority: 'medium',
     targetValue: '',
     currentValue: '',
-    dueDate: '',
+    targetDate: '', // Changed from dueDate to targetDate to match backend
     status: 'not_started'
   });
 
@@ -66,22 +66,26 @@ const GoalsForm = ({ goal, onClose }) => {
         employeeId: user.employeeId || user.employee?.id || ''
       }));
     }
-  }, [isManager, isAdmin, user]);
+  }, [isManager, isAdmin, isEmployee, user]);
 
   // Initialize form data if editing
   useEffect(() => {
     if (goal) {
+      console.log('🎯 Initializing edit form with goal:', goal);
       setFormData({
-        employeeId: goal.employeeId || '',
+        employeeId: goal.employeeId ? goal.employeeId.toString() : '', // Convert to string for Select component
         title: goal.title || '',
         description: goal.description || '',
         category: goal.category || '',
         priority: goal.priority || 'medium',
         targetValue: goal.targetValue || '',
         currentValue: goal.currentValue || '',
-        dueDate: goal.dueDate ? goal.dueDate.split('T')[0] : '',
+        targetDate: goal.targetDate ? goal.targetDate.split('T')[0] : '', // Changed from dueDate to targetDate
         status: goal.status || 'not_started'
       });
+
+      // Clear any existing errors when initializing edit mode
+      setErrors({});
     }
   }, [goal]);
 
@@ -105,18 +109,27 @@ const GoalsForm = ({ goal, onClose }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.employeeId) {
+    // Only validate employee selection for new goals (create mode)
+    // In edit mode, employee is already assigned and field is disabled
+    if (!goal && !formData.employeeId) {
       newErrors.employeeId = 'Employee is required';
     }
+
     if (!formData.title) {
       newErrors.title = 'Goal title is required';
     }
     if (!formData.description) {
       newErrors.description = 'Goal description is required';
     }
-    if (!formData.dueDate) {
-      newErrors.dueDate = 'Due date is required';
+    if (!formData.targetDate) { // Changed from dueDate to targetDate
+      newErrors.targetDate = 'Target date is required'; // Changed error field name
     }
+
+    console.log('🔍 Form validation:', {
+      isEditMode: !!goal,
+      employeeId: formData.employeeId,
+      errors: newErrors
+    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -186,7 +199,8 @@ const GoalsForm = ({ goal, onClose }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <User className="h-4 w-4 inline mr-1" />
-                  Employee *
+                  Employee {!goal && '*'}
+                  {goal && <span className="text-sm text-gray-500 ml-1">(Cannot be changed when editing)</span>}
                 </label>
                 <Select
                   value={formData.employeeId}
@@ -194,9 +208,18 @@ const GoalsForm = ({ goal, onClose }) => {
                   disabled={loadingEmployees || !!goal}
                 >
                   <SelectTrigger className={errors.employeeId ? 'border-red-300' : ''}>
-                    <SelectValue placeholder="Select employee" />
+                    <SelectValue
+                      placeholder={goal ? (goal.employee_name || 'Employee') : "Select employee"}
+                    />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* In edit mode, show the current employee first */}
+                    {goal && goal.employee_name && (
+                      <SelectItem key={goal.employeeId} value={goal.employeeId.toString()}>
+                        {goal.employee_name} - {goal.employee_code || 'Employee'}
+                      </SelectItem>
+                    )}
+                    {/* Show all employees for create mode or if current employee not found */}
                     {employees.map((employee) => (
                       <SelectItem key={employee.id} value={employee.id.toString()}>
                         {employee.firstName} {employee.lastName} - {employee.position}
@@ -321,21 +344,21 @@ const GoalsForm = ({ goal, onClose }) => {
               </div>
             </div>
 
-            {/* Due Date and Status */}
+            {/* Target Date and Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <Calendar className="h-4 w-4 inline mr-1" />
-                  Due Date *
+                  Target Date *
                 </label>
                 <Input
                   type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => handleInputChange('dueDate', e.target.value)}
-                  className={errors.dueDate ? 'border-red-300' : ''}
+                  value={formData.targetDate} // Changed from dueDate to targetDate
+                  onChange={(e) => handleInputChange('targetDate', e.target.value)} // Changed field name
+                  className={errors.targetDate ? 'border-red-300' : ''} // Changed error field name
                 />
-                {errors.dueDate && (
-                  <p className="text-red-600 text-sm mt-1">{errors.dueDate}</p>
+                {errors.targetDate && ( // Changed error field name
+                  <p className="text-red-600 text-sm mt-1">{errors.targetDate}</p>
                 )}
               </div>
 

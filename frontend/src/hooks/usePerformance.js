@@ -29,8 +29,7 @@ export const usePerformance = () => {
   const [currentReview, setCurrentReview] = useState(null);
   const [goals, setGoals] = useState([]);
   const [currentGoal, setCurrentGoal] = useState(null);
-  const [teamPerformance, setTeamPerformance] = useState([]);
-  const [performanceAnalytics, setPerformanceAnalytics] = useState(null);
+  // Removed teamPerformance state as Team tab was removed
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
@@ -251,54 +250,9 @@ export const usePerformance = () => {
     }
   }, [fetchGoals]);
 
-  // Fetch team performance (manager/admin only)
-  const fetchTeamPerformance = useCallback(async (params = {}) => {
-    if (!isManager && !isAdmin) {
-      setError('Access denied: Manager or Admin privileges required');
-      return;
-    }
+  // Removed fetchTeamPerformance function as Team tab was removed
 
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await performanceService.getTeamPerformance(params);
-      
-      if (response.success) {
-        setTeamPerformance(response.data.teamPerformance || []);
-      } else {
-        throw new Error(response.message || 'Failed to fetch team performance');
-      }
-    } catch (err) {
-      console.error('Fetch team performance error:', err);
-      setError(err.message || 'Failed to fetch team performance');
-      setTeamPerformance([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [isManager, isAdmin]);
-
-  // Fetch performance analytics
-  const fetchPerformanceAnalytics = useCallback(async (params = {}) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await performanceService.getPerformanceAnalytics(params);
-      
-      if (response.success) {
-        setPerformanceAnalytics(response.data);
-      } else {
-        throw new Error(response.message || 'Failed to fetch performance analytics');
-      }
-    } catch (err) {
-      console.error('Fetch performance analytics error:', err);
-      setError(err.message || 'Failed to fetch performance analytics');
-      setPerformanceAnalytics(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Removed fetchPerformanceAnalytics function as Analytics feature was removed
 
   // Update filters
   const updateFilters = useCallback((newFilters) => {
@@ -344,8 +298,6 @@ export const usePerformance = () => {
       console.log('👥 Fetching manager/admin data...');
       fetchPerformanceReviews();
       fetchGoals();
-      fetchTeamPerformance();
-      fetchPerformanceAnalytics();
     }
   }, [user, hasPerformanceAccess, isEmployee, isManager, isAdmin]);
 
@@ -355,8 +307,6 @@ export const usePerformance = () => {
     currentReview,
     goals,
     currentGoal,
-    teamPerformance,
-    performanceAnalytics,
     loading,
     error,
     pagination,
@@ -370,8 +320,6 @@ export const usePerformance = () => {
     fetchGoals,
     createGoal,
     updateGoal,
-    fetchTeamPerformance,
-    fetchPerformanceAnalytics,
     updateFilters,
     updatePagination,
     clearError,

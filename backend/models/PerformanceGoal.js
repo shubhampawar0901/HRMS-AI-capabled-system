@@ -12,6 +12,11 @@ class PerformanceGoal {
     this.createdBy = data.created_by;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
+
+    // Include additional fields from JOIN queries
+    this.employee_name = data.employee_name;
+    this.employee_code = data.employee_code;
+    this.created_by_name = data.created_by_name;
   }
 
   // Static methods for database operations
@@ -87,8 +92,11 @@ class PerformanceGoal {
   static async findByEmployee(employeeId, options = {}) {
     let query = `
       SELECT pg.*,
+             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code,
              CONCAT(c.first_name, ' ', c.last_name) as created_by_name
       FROM performance_goals pg
+      LEFT JOIN employees e ON pg.employee_id = e.id
       LEFT JOIN users u ON pg.created_by = u.id
       LEFT JOIN employees c ON u.id = c.user_id
       WHERE pg.employee_id = ?

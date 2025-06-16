@@ -2,23 +2,17 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  FileText, 
-  Star, 
-  Calendar, 
+
+import {
+  FileText,
+  Star,
+  Calendar,
   User,
-  Plus,
-  Eye,
-  Edit,
-  Search,
-  Filter
+  Plus
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import usePerformance from '@/hooks/usePerformance';
 import ReviewForm from './ReviewForm';
-import ReviewViewer from './ReviewViewer';
 import LoadingSpinner from '@/components/layout/LoadingSpinner';
 
 const ReviewList = () => {
@@ -34,37 +28,11 @@ const ReviewList = () => {
   } = usePerformance();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [periodFilter, setPeriodFilter] = useState('all');
 
-  // Handle search
-  const handleSearch = (value) => {
-    setSearchTerm(value);
-    updateFilters({ search: value });
-  };
+  // Removed filter handlers as filters were removed
 
-  // Handle status filter
-  const handleStatusFilter = (value) => {
-    setStatusFilter(value);
-    updateFilters({ status: value === 'all' ? null : value });
-  };
-
-  // Handle period filter
-  const handlePeriodFilter = (value) => {
-    setPeriodFilter(value);
-    updateFilters({ period: value === 'all' ? null : value });
-  };
-
-  // Handle view review
-  const handleViewReview = (review) => {
-    setSelectedReview(review);
-    setShowViewModal(true);
-  };
-
-  // Handle edit review
+  // Handle edit review (for create form)
   const handleEditReview = (review) => {
     setSelectedReview(review);
     setShowCreateForm(true);
@@ -152,53 +120,7 @@ const ReviewList = () => {
         )}
       </div>
 
-      {/* Filters */}
-      <Card className="border-gray-200">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search reviews..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={handleStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={periodFilter} onValueChange={handlePeriodFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Periods</SelectItem>
-                <SelectItem value="current">Current Period</SelectItem>
-                <SelectItem value="q1">Q1 2024</SelectItem>
-                <SelectItem value="q2">Q2 2024</SelectItem>
-                <SelectItem value="q3">Q3 2024</SelectItem>
-                <SelectItem value="q4">Q4 2024</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Reviews List */}
       <div className="grid grid-cols-1 gap-4">
@@ -248,40 +170,12 @@ const ReviewList = () => {
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">
-                          Goals: {review.goalsCompleted || 0}/{review.totalGoals || 0}
-                        </span>
-                      </div>
                     </div>
 
                     {review.comments && (
                       <p className="text-sm text-gray-600 mt-3 line-clamp-2">
                         {review.comments}
                       </p>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewReview(review)}
-                      className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-300"
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                    {canManagePerformance && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditReview(review)}
-                        className="hover:bg-green-50 hover:border-green-300 transition-all duration-300"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
                     )}
                   </div>
                 </div>
@@ -344,16 +238,6 @@ const ReviewList = () => {
           review={selectedReview}
           onClose={() => {
             setShowCreateForm(false);
-            setSelectedReview(null);
-          }}
-        />
-      )}
-
-      {showViewModal && selectedReview && (
-        <ReviewViewer
-          review={selectedReview}
-          onClose={() => {
-            setShowViewModal(false);
             setSelectedReview(null);
           }}
         />

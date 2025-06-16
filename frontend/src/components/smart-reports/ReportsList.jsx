@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
-import { 
-  FunnelIcon, 
+import {
+  FunnelIcon,
   MagnifyingGlassIcon,
   ArrowPathIcon,
-  PlusIcon
+  PlusIcon,
+  DocumentTextIcon,
+  EyeIcon,
+  TrashIcon,
+  CalendarIcon,
+  UserIcon,
+  UsersIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
 import { useSmartReports } from '@/hooks/useSmartReports';
 import { useAuth } from '@/hooks/useAuth';
-import ReportCard, { ReportCardSkeleton, ReportsEmptyState } from './ReportCard';
+import { ReportCardSkeleton, ReportsEmptyState } from './ReportCard';
 
 /**
  * Reports List Component
@@ -331,9 +340,9 @@ const ReportsList = ({
       <div className="bg-gray-50 min-h-96">
         {loading ? (
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, index) => (
-                <ReportCardSkeleton key={index} />
+            <div className="space-y-6">
+              {[...Array(4)].map((_, index) => (
+                <ReportDocumentSkeleton key={index} />
               ))}
             </div>
           </div>
@@ -351,16 +360,16 @@ const ReportsList = ({
           />
         ) : (
           <>
-            {/* Reports Grid */}
+            {/* Reports Document List */}
             <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-6">
                 {reports.map((report) => (
-                  <ReportCard
+                  <ReportDocumentItem
                     key={report.id}
                     report={report}
                     onView={handleViewReport}
                     onDelete={handleDeleteReport}
-                    className="hover:shadow-lg transition-shadow duration-200"
+                    permissions={permissions}
                   />
                 ))}
               </div>
@@ -370,6 +379,398 @@ const ReportsList = ({
             {renderPagination()}
           </>
         )}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Report Document Item Component
+ * Displays a report in document-style format instead of card format
+ */
+const ReportDocumentItem = ({ report, onView, onDelete, permissions }) => {
+  const { user } = useAuth();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  /**
+   * Handle view report
+   */
+  const handleView = () => {
+    if (onView && report.status === 'completed') {
+      onView(report);
+    }
+  };
+
+  /**
+   * Handle delete confirmation
+   */
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+
+    try {
+      if (onDelete) {
+        await onDelete(report.id);
+      }
+    } catch (error) {
+      console.error('Error deleting report:', error);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  /**
+   * Get report type icon
+   */
+  const getReportTypeIcon = () => {
+    switch (report.reportType) {
+      case 'employee':
+        return <UserIcon className="h-6 w-6 text-blue-600" />;
+      case 'team':
+        return <UsersIcon className="h-6 w-6 text-green-600" />;
+      default:
+        return <DocumentTextIcon className="h-6 w-6 text-gray-600" />;
+    }
+  };
+
+  /**
+   * Get report type label
+   */
+  const getReportTypeLabel = () => {
+    switch (report.reportType) {
+      case 'employee':
+        return 'Employee Report';
+      case 'team':
+        return 'Team Report';
+      default:
+        return 'Report';
+    }
+  };
+
+  /**
+   * Get status badge
+   */
+  const getStatusBadge = () => {
+    switch (report.status) {
+      case 'completed':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <CheckCircleIcon className="h-3 w-3 mr-1" />
+            Completed
+          </span>
+        );
+      case 'generating':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+            <ClockIcon className="h-3 w-3 mr-1" />
+            Generating
+          </span>
+        );
+      case 'failed':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            <ExclamationCircleIcon className="h-3 w-3 mr-1" />
+            Failed
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            <ClockIcon className="h-3 w-3 mr-1" />
+            Pending
+          </span>
+        );
+    }
+  };
+
+  /**
+   * Get summary preview
+   */
+  const getSummaryPreview = () => {
+    const content = report.reportDocument || report.aiSummary || '';
+    if (!content) return 'No summary available.';
+
+    // Extract first meaningful paragraph
+    const cleanContent = content.replace(/[#*\-]/g, '').trim();
+    const sentences = cleanContent.split(/[.!?]+/).filter(s => s.trim().length > 20);
+
+    if (sentences.length > 0) {
+      const preview = sentences[0].trim() + '.';
+      return preview.length > 200 ? preview.substring(0, 200) + '...' : preview;
+    }
+
+    return cleanContent.length > 200 ? cleanContent.substring(0, 200) + '...' : cleanContent;
+  };
+
+  /**
+   * Check if user can delete this report
+   */
+  const canDelete = () => {
+    return ['admin', 'manager'].includes(user?.role) &&
+           (user?.role === 'admin' || report.generatedBy === user?.id);
+  };
+
+  /**
+   * Format date
+   */
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className={`
+      bg-white rounded-lg shadow-sm border border-gray-200
+      hover:shadow-md hover:border-gray-300
+      transition-all duration-300 ease-in-out
+      ${report.status === 'completed' ? 'hover:scale-[1.01]' : ''}
+    `}>
+      {/* Document Header */}
+      <div className="p-6 border-b border-gray-100">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-4 flex-1">
+            {/* Report Icon */}
+            <div className="flex-shrink-0 mt-1">
+              {getReportTypeIcon()}
+            </div>
+
+            {/* Report Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-3 mb-2">
+                <h3 className="text-xl font-semibold text-gray-900 truncate">
+                  {report.reportName || `${getReportTypeLabel()} - ${report.targetName}`}
+                </h3>
+                {getStatusBadge()}
+              </div>
+
+              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                <span className="flex items-center">
+                  <CalendarIcon className="h-4 w-4 mr-1" />
+                  Generated {formatDate(report.createdAt)}
+                </span>
+                <span>•</span>
+                <span>{getReportTypeLabel()}</span>
+                <span>•</span>
+                <span className="font-medium">{report.targetName}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center space-x-2 ml-4">
+            {/* View Button */}
+            <button
+              onClick={handleView}
+              disabled={report.status !== 'completed'}
+              className={`
+                inline-flex items-center px-4 py-2 text-sm font-medium rounded-md
+                transition-all duration-200 ease-in-out
+                ${report.status === 'completed'
+                  ? 'text-blue-700 bg-blue-50 hover:bg-blue-100 hover:scale-105 border border-blue-200'
+                  : 'text-gray-400 bg-gray-50 cursor-not-allowed border border-gray-200'
+                }
+              `}
+            >
+              <EyeIcon className="h-4 w-4 mr-2" />
+              View Report
+            </button>
+
+            {/* Delete Button */}
+            {canDelete() && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isDeleting}
+                className="
+                  inline-flex items-center px-3 py-2 text-sm font-medium rounded-md
+                  text-red-700 bg-red-50 hover:bg-red-100 hover:scale-105
+                  border border-red-200 transition-all duration-200 ease-in-out
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                "
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Document Preview */}
+      {report.status === 'completed' && (
+        <div className="p-6">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Executive Summary</h4>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {getSummaryPreview()}
+            </p>
+          </div>
+
+          {/* Key Metrics */}
+          {report.keyMetrics && (
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {report.keyMetrics.overallScore && (
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <div className="text-xs font-medium text-blue-600 uppercase tracking-wide">Overall Score</div>
+                  <div className="text-lg font-semibold text-blue-900">{report.keyMetrics.overallScore}%</div>
+                </div>
+              )}
+              {report.keyMetrics.attendanceRate && (
+                <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                  <div className="text-xs font-medium text-green-600 uppercase tracking-wide">Attendance Rate</div>
+                  <div className="text-lg font-semibold text-green-900">{report.keyMetrics.attendanceRate}%</div>
+                </div>
+              )}
+              {report.keyMetrics.performanceRating && (
+                <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                  <div className="text-xs font-medium text-purple-600 uppercase tracking-wide">Performance</div>
+                  <div className="text-lg font-semibold text-purple-900">{report.keyMetrics.performanceRating}/5</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Insights Count */}
+          {(report.insights || report.recommendations) && (
+            <div className="mt-4 flex items-center space-x-6 text-sm text-gray-600">
+              {report.insights && (
+                <span className="flex items-center">
+                  <DocumentTextIcon className="h-4 w-4 mr-1" />
+                  {Array.isArray(report.insights) ? report.insights.length : 0} insights
+                </span>
+              )}
+              {report.recommendations && (
+                <span className="flex items-center">
+                  <ClockIcon className="h-4 w-4 mr-1" />
+                  {Array.isArray(report.recommendations) ? report.recommendations.length : 0} recommendations
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Generating State */}
+      {report.status === 'generating' && (
+        <div className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+              <p className="text-sm text-gray-600">Generating AI insights...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Failed State */}
+      {report.status === 'failed' && (
+        <div className="p-6">
+          <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+            <div className="flex items-center">
+              <ExclamationCircleIcon className="h-5 w-5 text-red-400 mr-2" />
+              <p className="text-sm text-red-700">
+                Report generation failed. Please try generating a new report.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Report</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to delete this report? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors duration-200 disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Skeleton Report Document Item for loading states
+ */
+const ReportDocumentSkeleton = ({ className = '' }) => {
+  return (
+    <div className={`
+      bg-white rounded-lg shadow-sm border border-gray-200
+      animate-pulse
+      ${className}
+    `}>
+      {/* Header Skeleton */}
+      <div className="p-6 border-b border-gray-100">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-4 flex-1">
+            <div className="w-6 h-6 bg-gray-300 rounded mt-1"></div>
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="h-6 bg-gray-300 rounded w-2/3"></div>
+                <div className="w-20 h-6 bg-gray-300 rounded-full"></div>
+              </div>
+              <div className="flex items-center space-x-4 mb-3">
+                <div className="h-4 bg-gray-200 rounded w-32"></div>
+                <div className="h-4 bg-gray-200 rounded w-24"></div>
+                <div className="h-4 bg-gray-200 rounded w-28"></div>
+              </div>
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            <div className="w-24 h-8 bg-gray-300 rounded"></div>
+            <div className="w-8 h-8 bg-gray-300 rounded"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Skeleton */}
+      <div className="p-6">
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
+          <div className="space-y-2">
+            <div className="h-3 bg-gray-200 rounded w-full"></div>
+            <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+            <div className="h-3 bg-gray-200 rounded w-4/6"></div>
+          </div>
+        </div>
+
+        {/* Metrics Skeleton */}
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, index) => (
+            <div key={index} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div className="h-3 bg-gray-300 rounded w-20 mb-1"></div>
+              <div className="h-5 bg-gray-300 rounded w-12"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Insights Skeleton */}
+        <div className="mt-4 flex items-center space-x-6">
+          <div className="h-4 bg-gray-200 rounded w-24"></div>
+          <div className="h-4 bg-gray-200 rounded w-32"></div>
+        </div>
       </div>
     </div>
   );

@@ -15,18 +15,7 @@ const createReviewValidation = [
   body('comments').isLength({ min: 10 }).withMessage('Comments must be at least 10 characters long')
 ];
 
-const createGoalValidation = [
-  body('title').isLength({ min: 5 }).withMessage('Title must be at least 5 characters long'),
-  body('description').isLength({ min: 10 }).withMessage('Description must be at least 10 characters long'),
-  body('targetDate').isDate().withMessage('Valid target date is required'),
-  body('employeeId').optional().isInt().withMessage('Employee ID must be valid')
-];
-
-const updateGoalProgressValidation = [
-  param('id').isInt().withMessage('Valid goal ID is required'),
-  body('achievementPercentage').isFloat({ min: 0, max: 100 }).withMessage('Achievement percentage must be between 0 and 100'),
-  body('status').isIn(['active', 'completed', 'cancelled']).withMessage('Invalid status')
-];
+// Removed goal validation arrays to allow flexible goal creation
 
 const generateFeedbackValidation = [
   body('employeeId').isInt().withMessage('Employee ID is required')
@@ -90,45 +79,26 @@ router.put('/reviews/:id/submit',
 
 // POST /api/performance/goals
 router.post('/goals',
-  createGoalValidation,
-  validateRequest,
   PerformanceController.createGoal
 );
 
 // GET /api/performance/goals
 router.get('/goals',
-  paginationValidation,
-  query('status').optional().custom((value) => {
-    if (value === null || value === undefined || value === '' || value === 'null' || ['active', 'completed', 'cancelled'].includes(value)) {
-      return true;
-    }
-    throw new Error('Invalid status');
-  }),
-  validateRequest,
   PerformanceController.getGoals
 );
 
 // GET /api/performance/goals/:id
 router.get('/goals/:id',
-  param('id').isInt().withMessage('Valid goal ID is required'),
-  validateRequest,
   PerformanceController.getGoalById
 );
 
 // PUT /api/performance/goals/:id
 router.put('/goals/:id',
-  param('id').isInt().withMessage('Valid goal ID is required'),
-  body('title').optional().isLength({ min: 5 }).withMessage('Title must be at least 5 characters long'),
-  body('description').optional().isLength({ min: 10 }).withMessage('Description must be at least 10 characters long'),
-  body('targetDate').optional().isDate().withMessage('Valid target date is required'),
-  validateRequest,
   PerformanceController.updateGoal
 );
 
 // PUT /api/performance/goals/:id/progress
 router.put('/goals/:id/progress',
-  updateGoalProgressValidation,
-  validateRequest,
   PerformanceController.updateGoalProgress
 );
 

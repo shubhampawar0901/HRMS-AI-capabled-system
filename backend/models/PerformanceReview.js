@@ -11,6 +11,11 @@ class PerformanceReview {
     this.status = data.status;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
+
+    // Include additional fields from JOIN queries
+    this.employee_name = data.employee_name;
+    this.employee_code = data.employee_code;
+    this.reviewer_name = data.reviewer_name;
   }
 
   // Static methods for database operations
@@ -84,9 +89,12 @@ class PerformanceReview {
 
   static async findByEmployee(employeeId, options = {}) {
     let query = `
-      SELECT pr.*, 
+      SELECT pr.*,
+             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+             e.employee_code,
              CONCAT(r.first_name, ' ', r.last_name) as reviewer_name
       FROM performance_reviews pr
+      LEFT JOIN employees e ON pr.employee_id = e.id
       LEFT JOIN users u ON pr.reviewer_id = u.id
       LEFT JOIN employees r ON u.id = r.user_id
       WHERE pr.employee_id = ?
