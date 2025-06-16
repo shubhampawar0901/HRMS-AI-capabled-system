@@ -2,7 +2,6 @@ import React from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import {
   Users,
-  UserCheck,
   Calendar,
   BarChart3,
   CheckCircle,
@@ -14,7 +13,6 @@ import useDashboardData from '@/hooks/useDashboardData';
 import StatsCard from './StatsCard';
 import QuickActions from './QuickActions';
 import AIInsightsWidget from './AIInsightsWidget';
-import AttendanceWidget from './AttendanceWidget';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 const ManagerDashboard = () => {
@@ -82,13 +80,13 @@ const ManagerDashboard = () => {
           changeType="number"
         />
         <StatsCard
-          title="Team Attendance Today"
-          value={stats.teamAttendanceToday}
-          icon={UserCheck}
+          title="Active Projects"
+          value={stats.activeProjects || 8}
+          icon={BarChart3}
           color="green"
           format="number"
           trend="up"
-          change={1}
+          change={2}
           changeType="number"
         />
         <StatsCard
@@ -126,39 +124,33 @@ const ManagerDashboard = () => {
         </div>
       </div>
 
-      {/* Secondary Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Attendance Widget */}
-        <AttendanceWidget />
-
-        {/* Team Performance Summary */}
-        <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <TrendingUp className="w-5 h-5 text-green-600 mr-2" />
-            Team Performance Summary
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
-              <div className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
-                <span className="text-sm font-medium text-gray-700">Goals Completed</span>
-              </div>
-              <span className="text-lg font-bold text-green-700">87%</span>
+      {/* Team Performance Summary */}
+      <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <TrendingUp className="w-5 h-5 text-green-600 mr-2" />
+          Team Performance Summary
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+            <div className="flex items-center">
+              <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
+              <span className="text-sm font-medium text-gray-700">Goals Completed</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-              <div className="flex items-center">
-                <Clock className="w-5 h-5 text-blue-600 mr-3" />
-                <span className="text-sm font-medium text-gray-700">Avg. Response Time</span>
-              </div>
-              <span className="text-lg font-bold text-blue-700">2.3h</span>
+            <span className="text-lg font-bold text-green-700">87%</span>
+          </div>
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+            <div className="flex items-center">
+              <Clock className="w-5 h-5 text-blue-600 mr-3" />
+              <span className="text-sm font-medium text-gray-700">Avg. Response Time</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-              <div className="flex items-center">
-                <BarChart3 className="w-5 h-5 text-purple-600 mr-3" />
-                <span className="text-sm font-medium text-gray-700">Team Productivity</span>
-              </div>
-              <span className="text-lg font-bold text-purple-700">+15%</span>
+            <span className="text-lg font-bold text-blue-700">2.3h</span>
+          </div>
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+            <div className="flex items-center">
+              <BarChart3 className="w-5 h-5 text-purple-600 mr-3" />
+              <span className="text-sm font-medium text-gray-700">Team Productivity</span>
             </div>
+            <span className="text-lg font-bold text-purple-700">+15%</span>
           </div>
         </div>
       </div>

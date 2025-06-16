@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  X, 
-  Save, 
-  Target, 
+import {
+  X,
+  Save,
+  Target,
   User,
   Calendar,
   TrendingUp,
@@ -138,7 +139,7 @@ const GoalsForm = ({ goal, onClose }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -158,10 +159,31 @@ const GoalsForm = ({ goal, onClose }) => {
       }
 
       if (success) {
-        onClose();
+        // Show success toast notification
+        toast.success(
+          goal ? 'Goal Updated!' : 'Goal Created!',
+          {
+            description: goal
+              ? 'Goal has been updated successfully.'
+              : 'New goal has been created successfully.',
+            duration: 4000,
+          }
+        );
+
+        // Small delay to ensure user sees the success message and refresh completes
+        setTimeout(() => {
+          onClose();
+        }, 500);
       }
     } catch (error) {
       console.error('Error saving goal:', error);
+      toast.error(
+        'Save Failed',
+        {
+          description: 'Failed to save goal. Please try again.',
+          duration: 5000,
+        }
+      );
     }
   };
 

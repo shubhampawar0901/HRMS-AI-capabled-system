@@ -26,7 +26,8 @@ const GoalsList = () => {
     loading,
     error,
     pagination,
-    updatePagination
+    updatePagination,
+    fetchGoals
   } = usePerformance();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -250,6 +251,8 @@ const GoalsList = () => {
           onClose={() => {
             setShowCreateForm(false);
             setSelectedGoal(null);
+            // Trigger a manual refresh to ensure data is up to date
+            fetchGoals();
           }}
         />
       )}

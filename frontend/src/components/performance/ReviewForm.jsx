@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { 
-  X, 
-  Save, 
-  Star, 
+import {
+  X,
+  Save,
+  Star,
   User,
   Calendar,
   FileText,
@@ -149,10 +150,25 @@ const ReviewForm = ({ review, onClose }) => {
           comments: feedback.generatedFeedback || prev.comments,
           areasForImprovement: feedback.suggestions?.join(', ') || prev.areasForImprovement
         }));
+
+        // Show success toast for AI feedback generation
+        toast.success(
+          'AI Feedback Generated!',
+          {
+            description: 'Smart feedback has been generated and added to the form.',
+            duration: 3000,
+          }
+        );
       }
     } catch (error) {
       console.error('Error generating AI feedback:', error);
-      alert('Failed to generate AI feedback. Please try again.');
+      toast.error(
+        'AI Feedback Failed',
+        {
+          description: 'Failed to generate AI feedback. Please try again.',
+          duration: 4000,
+        }
+      );
     } finally {
       setGeneratingFeedback(false);
     }
@@ -161,7 +177,7 @@ const ReviewForm = ({ review, onClose }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -180,10 +196,31 @@ const ReviewForm = ({ review, onClose }) => {
       }
 
       if (success) {
-        onClose();
+        // Show success toast notification
+        toast.success(
+          review ? 'Review Updated!' : 'Review Created!',
+          {
+            description: review
+              ? 'Performance review has been updated successfully.'
+              : 'New performance review has been created successfully.',
+            duration: 4000,
+          }
+        );
+
+        // Small delay to ensure user sees the success message and refresh completes
+        setTimeout(() => {
+          onClose();
+        }, 500);
       }
     } catch (error) {
       console.error('Error saving review:', error);
+      toast.error(
+        'Save Failed',
+        {
+          description: 'Failed to save review. Please try again.',
+          duration: 5000,
+        }
+      );
     }
   };
 

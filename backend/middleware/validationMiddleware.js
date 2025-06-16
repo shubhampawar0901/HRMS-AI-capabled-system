@@ -6,6 +6,16 @@ const validateRequest = (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
+    // Debug logging for leave process validation
+    if (req.path.includes('/process')) {
+      console.log('🔍 VALIDATION DEBUG - Leave Process:');
+      console.log('Request Path:', req.path);
+      console.log('Request Method:', req.method);
+      console.log('Request Body:', JSON.stringify(req.body, null, 2));
+      console.log('Request Params:', JSON.stringify(req.params, null, 2));
+      console.log('Validation Errors:', JSON.stringify(errors.array(), null, 2));
+    }
+
     const errorMessages = errors.array().map(error => ({
       field: error.path,
       message: error.msg,

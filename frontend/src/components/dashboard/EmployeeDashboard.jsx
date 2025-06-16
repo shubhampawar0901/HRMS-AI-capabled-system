@@ -15,7 +15,6 @@ import useDashboardData from '@/hooks/useDashboardData';
 import StatsCard from './StatsCard';
 import QuickActions from './QuickActions';
 import AIInsightsWidget from './AIInsightsWidget';
-import AttendanceWidget from './AttendanceWidget';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 const EmployeeDashboard = () => {
@@ -73,14 +72,14 @@ const EmployeeDashboard = () => {
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
-          title="Personal Attendance This Month"
-          value={stats.personalAttendanceThisMonth}
-          icon={Clock}
+          title="Tasks Completed"
+          value={stats.tasksCompleted || 24}
+          icon={CheckCircle}
           color="blue"
-          format="percentage"
+          format="number"
           trend="up"
-          change={2}
-          changeType="percentage"
+          change={3}
+          changeType="number"
         />
         <StatsCard
           title="Leave Balance"
@@ -127,39 +126,33 @@ const EmployeeDashboard = () => {
         </div>
       </div>
 
-      {/* Secondary Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Attendance Widget */}
-        <AttendanceWidget />
-
-        {/* Personal Goals & Progress */}
-        <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Target className="w-5 h-5 text-purple-600 mr-2" />
-            Personal Goals & Progress
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-              <div className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-purple-600 mr-3" />
-                <span className="text-sm font-medium text-gray-700">Monthly Goals</span>
-              </div>
-              <span className="text-lg font-bold text-purple-700">8/10</span>
+      {/* Personal Goals & Progress */}
+      <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Target className="w-5 h-5 text-purple-600 mr-2" />
+          Personal Goals & Progress
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+            <div className="flex items-center">
+              <CheckCircle className="w-5 h-5 text-purple-600 mr-3" />
+              <span className="text-sm font-medium text-gray-700">Monthly Goals</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
-              <div className="flex items-center">
-                <TrendingUp className="w-5 h-5 text-green-600 mr-3" />
-                <span className="text-sm font-medium text-gray-700">Skill Development</span>
-              </div>
-              <span className="text-lg font-bold text-green-700">75%</span>
+            <span className="text-lg font-bold text-purple-700">8/10</span>
+          </div>
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+            <div className="flex items-center">
+              <TrendingUp className="w-5 h-5 text-green-600 mr-3" />
+              <span className="text-sm font-medium text-gray-700">Skill Development</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-              <div className="flex items-center">
-                <Award className="w-5 h-5 text-blue-600 mr-3" />
-                <span className="text-sm font-medium text-gray-700">Achievements</span>
-              </div>
-              <span className="text-lg font-bold text-blue-700">12</span>
+            <span className="text-lg font-bold text-green-700">75%</span>
+          </div>
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+            <div className="flex items-center">
+              <Award className="w-5 h-5 text-blue-600 mr-3" />
+              <span className="text-sm font-medium text-gray-700">Achievements</span>
             </div>
+            <span className="text-lg font-bold text-blue-700">12</span>
           </div>
         </div>
       </div>

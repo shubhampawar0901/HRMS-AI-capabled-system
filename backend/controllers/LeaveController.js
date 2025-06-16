@@ -136,7 +136,7 @@ class LeaveController {
   // ==========================================
   static async getLeaveTypes(req, res) {
     try {
-      const leaveTypes = await LeaveType.findAll({ isActive: true });
+      const leaveTypes = await LeaveType.findAll({ activeOnly: true });
 
       return sendSuccess(res, leaveTypes, 'Leave types retrieved');
     } catch (error) {
@@ -294,7 +294,7 @@ class LeaveController {
         );
       }
 
-      return sendSuccess(res, updatedApplication, `Leave application ${action}d successfully`);
+      return sendSuccess(res, { application: updatedApplication }, `Leave application ${action}d successfully`);
     } catch (error) {
       console.error('Process leave application error:', error);
       return sendError(res, 'Failed to process leave application', 500);

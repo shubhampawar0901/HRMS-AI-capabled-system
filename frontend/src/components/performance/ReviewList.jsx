@@ -24,7 +24,8 @@ const ReviewList = () => {
     pagination,
     updateFilters,
     updatePagination,
-    canManagePerformance
+    canManagePerformance,
+    fetchPerformanceReviews
   } = usePerformance();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -239,6 +240,8 @@ const ReviewList = () => {
           onClose={() => {
             setShowCreateForm(false);
             setSelectedReview(null);
+            // Trigger a manual refresh to ensure data is up to date
+            fetchPerformanceReviews();
           }}
         />
       )}

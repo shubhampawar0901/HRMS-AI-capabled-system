@@ -282,17 +282,23 @@ export function useLeave() {
       });
 
       const response = await leaveService.processLeaveApplication(applicationId, {
-        status: action, // API expects 'status' field, not 'action'
+        action: action, // Backend expects 'action' field
         comments
       });
 
       if (response && response.success) {
-        dispatch({
-          type: LEAVE_ACTIONS.UPDATE_TEAM_APPLICATION,
-          payload: response.data.application
-        });
+        // Validate response data before dispatching
+        if (response.data && response.data.application && response.data.application.id) {
+          dispatch({
+            type: LEAVE_ACTIONS.UPDATE_TEAM_APPLICATION,
+            payload: response.data.application
+          });
 
-        return response.data.application;
+          return response.data.application;
+        } else {
+          console.error('Invalid response data structure:', response.data);
+          throw new Error('Invalid response data from server');
+        }
       } else {
         throw new Error(response.message || `Failed to ${action} leave application`);
       }

@@ -94,8 +94,17 @@ router.get('/team',
   LeaveController.getTeamLeaveApplications
 );
 
-// PUT /api/leave/applications/:id/process - VALIDATION REMOVED FOR TESTING
+// PUT /api/leave/applications/:id/process - TEMPORARILY REMOVE VALIDATION FOR DEBUGGING
 router.put('/applications/:id/process',
+  (req, res, next) => {
+    console.log('🔍 DEBUG - Process Leave Request:');
+    console.log('Request Path:', req.path);
+    console.log('Request Method:', req.method);
+    console.log('Request Body:', JSON.stringify(req.body, null, 2));
+    console.log('Request Params:', JSON.stringify(req.params, null, 2));
+    console.log('Content-Type:', req.get('Content-Type'));
+    next();
+  },
   LeaveController.processLeaveApplication
 );
 

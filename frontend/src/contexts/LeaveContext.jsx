@@ -106,10 +106,15 @@ function leaveReducer(state, action) {
       };
       
     case LEAVE_ACTIONS.SET_APPLICATIONS:
+      // Ensure payload exists and applications is an array
+      const apps = action.payload?.applications || [];
+      // Filter out any null/undefined applications
+      const validApps = apps.filter(app => app && app.id);
+
       return {
         ...state,
-        applications: action.payload.applications || [],
-        pagination: action.payload.pagination || state.pagination,
+        applications: validApps,
+        pagination: action.payload?.pagination || state.pagination,
         isLoading: false
       };
       
@@ -121,13 +126,18 @@ function leaveReducer(state, action) {
       };
       
     case LEAVE_ACTIONS.UPDATE_APPLICATION:
+      // Ensure payload exists and has required id field
+      if (!action.payload || !action.payload.id) {
+        console.error('UPDATE_APPLICATION: Invalid payload', action.payload);
+        return state;
+      }
       return {
         ...state,
         applications: state.applications.map(app =>
-          app.id === action.payload.id ? { ...app, ...action.payload } : app
+          app && app.id === action.payload.id ? { ...app, ...action.payload } : app
         ),
         teamApplications: state.teamApplications.map(app =>
-          app.id === action.payload.id ? { ...app, ...action.payload } : app
+          app && app.id === action.payload.id ? { ...app, ...action.payload } : app
         ),
         isSubmitting: false
       };
@@ -147,10 +157,15 @@ function leaveReducer(state, action) {
       };
       
     case LEAVE_ACTIONS.UPDATE_BALANCE:
+      // Ensure payload exists and has required leaveTypeId field
+      if (!action.payload || action.payload.leaveTypeId === undefined) {
+        console.error('UPDATE_BALANCE: Invalid payload', action.payload);
+        return state;
+      }
       return {
         ...state,
         balance: state.balance.map(item =>
-          item.leaveTypeId === action.payload.leaveTypeId
+          item && item.leaveTypeId === action.payload.leaveTypeId
             ? { ...item, ...action.payload }
             : item
         )
@@ -171,18 +186,28 @@ function leaveReducer(state, action) {
       };
       
     case LEAVE_ACTIONS.SET_TEAM_APPLICATIONS:
+      // Ensure payload exists and applications is an array
+      const applications = action.payload?.applications || [];
+      // Filter out any null/undefined applications
+      const validApplications = applications.filter(app => app && app.id);
+
       return {
         ...state,
-        teamApplications: action.payload.applications || [],
-        pagination: action.payload.pagination || state.pagination,
+        teamApplications: validApplications,
+        pagination: action.payload?.pagination || state.pagination,
         isLoading: false
       };
       
     case LEAVE_ACTIONS.UPDATE_TEAM_APPLICATION:
+      // Ensure payload exists and has required id field
+      if (!action.payload || !action.payload.id) {
+        console.error('UPDATE_TEAM_APPLICATION: Invalid payload', action.payload);
+        return state;
+      }
       return {
         ...state,
         teamApplications: state.teamApplications.map(app =>
-          app.id === action.payload.id ? { ...app, ...action.payload } : app
+          app && app.id === action.payload.id ? { ...app, ...action.payload } : app
         )
       };
       

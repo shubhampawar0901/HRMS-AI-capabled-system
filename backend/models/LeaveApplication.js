@@ -15,6 +15,13 @@ class LeaveApplication {
     this.comments = data.comments;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
+
+    // Additional fields from JOIN queries
+    this.employeeName = data.employee_name;
+    this.employeeCode = data.employee_code;
+    this.leaveTypeName = data.leave_type_name;
+    this.approvedByName = data.approved_by_name;
+    this.departmentName = data.department_name;
   }
 
   // Static methods for database operations

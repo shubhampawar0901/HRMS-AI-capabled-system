@@ -32,12 +32,7 @@ const LeaveApplicationForm = ({ onSuccess, onCancel }) => {
   const [calculatedDays, setCalculatedDays] = useState(0);
   const [availableBalance, setAvailableBalance] = useState(null);
 
-  // Get selected leave type name for display
-  const getSelectedLeaveTypeName = () => {
-    if (!formData.leaveTypeId || !leaveTypes.length) return null;
-    const selectedType = leaveTypes.find(type => type.id.toString() === formData.leaveTypeId);
-    return selectedType ? selectedType.name : null;
-  };
+
 
   // Load initial data
   useEffect(() => {
@@ -208,9 +203,7 @@ const LeaveApplicationForm = ({ onSuccess, onCancel }) => {
                   ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                   : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200 hover:border-gray-400'
               }`}>
-                <SelectValue placeholder="Select leave type">
-                  {getSelectedLeaveTypeName()}
-                </SelectValue>
+                <SelectValue placeholder="Select leave type" />
               </SelectTrigger>
               <SelectContent>
                 {leaveTypes.map((type) => (
