@@ -52,6 +52,18 @@ class EmployeeService {
     );
   }
 
+  // Get employee payroll details (admin only)
+  async getEmployeePayrollDetails(id) {
+    if (!id) {
+      throw new Error('Employee ID is required');
+    }
+
+    return apiRequest(
+      () => axiosInstance.get(API_ENDPOINTS.EMPLOYEES.PAYROLL_DETAILS(id)),
+      `employee-payroll-details-${id}`
+    );
+  }
+
   // Create new employee
   async addEmployee(employeeData) {
     return apiRequest(

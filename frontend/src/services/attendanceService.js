@@ -73,9 +73,33 @@ class AttendanceService {
     return await axiosInstance.put(`${API_ENDPOINTS.ATTENDANCE.BASE}/${id}`, data);
   }
 
+  // Get attendance summary
+  async getAttendanceSummary(params = {}) {
+    const queryParams = new URLSearchParams();
 
+    if (params.employeeId) queryParams.append('employeeId', params.employeeId);
+    if (params.month) queryParams.append('month', params.month);
+    if (params.year) queryParams.append('year', params.year);
 
+    const url = queryParams.toString()
+      ? `${API_ENDPOINTS.ATTENDANCE.SUMMARY}?${queryParams.toString()}`
+      : API_ENDPOINTS.ATTENDANCE.SUMMARY;
 
+    return await axiosInstance.get(url);
+  }
+
+  // Get attendance summary for specific employee and period (admin only)
+  async getEmployeeAttendanceSummary(employeeId, month, year) {
+    if (!employeeId || !month || !year) {
+      throw new Error('Employee ID, month, and year are required');
+    }
+
+    return this.getAttendanceSummary({
+      employeeId: employeeId.toString(),
+      month: month.toString(),
+      year: year.toString()
+    });
+  }
 }
 
 export const attendanceService = new AttendanceService();

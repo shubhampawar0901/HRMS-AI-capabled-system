@@ -100,6 +100,13 @@ router.get('/:id',
   EmployeeController.getEmployeeById
 );
 
+// Get employee payroll details (admin only)
+router.get('/:id/payroll-details',
+  authenticateToken,
+  authorize('admin'),
+  EmployeeController.getEmployeePayrollDetails
+);
+
 // Create new employee
 router.post('/',
   authenticateToken,

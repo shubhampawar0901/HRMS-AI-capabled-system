@@ -29,11 +29,23 @@ const paginationValidation = [
 // ADMIN ROUTES
 // ==========================================
 
-// POST /api/payroll/generate
+// POST /api/payroll/generate (Preview only)
 router.post('/generate',
   generatePayrollValidation,
   validateRequest,
   PayrollController.generatePayroll
+);
+
+// POST /api/payroll/confirm (Save after preview)
+router.post('/confirm',
+  [
+    body('employeeId').isInt().withMessage('Employee ID is required'),
+    body('month').isInt({ min: 1, max: 12 }).withMessage('Month must be between 1 and 12'),
+    body('year').isInt({ min: 2020 }).withMessage('Year must be valid'),
+    body('payrollData').isObject().withMessage('Payroll data is required')
+  ],
+  validateRequest,
+  PayrollController.confirmPayroll
 );
 
 // POST /api/payroll/bulk-generate
@@ -63,6 +75,11 @@ router.get('/summary',
   query('year').isInt({ min: 2020 }).withMessage('Year must be valid'),
   validateRequest,
   PayrollController.getPayrollSummary
+);
+
+// GET /api/payroll/preview
+router.get('/preview',
+  PayrollController.getPayrollPreview
 );
 
 // ==========================================

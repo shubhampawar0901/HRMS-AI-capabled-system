@@ -84,7 +84,40 @@ class PayrollService {
     return 'employee'; // Default to employee for safety
   }
 
-  // Generate payroll
+  // Generate payroll preview (NEW WORKFLOW)
+  async generatePayrollPreview(employeeId, month, year) {
+    if (!employeeId || !month || !year) {
+      throw new Error('Employee ID, month, and year are required for payroll preview');
+    }
+
+    return apiRequest(
+      () => axiosInstance.post(API_ENDPOINTS.PAYROLL.GENERATE, {
+        employeeId,
+        month,
+        year
+      }),
+      'payroll-preview'
+    );
+  }
+
+  // Confirm and save payroll (NEW WORKFLOW)
+  async confirmPayroll(employeeId, month, year, payrollData) {
+    if (!employeeId || !month || !year || !payrollData) {
+      throw new Error('All fields are required to confirm payroll');
+    }
+
+    return apiRequest(
+      () => axiosInstance.post(API_ENDPOINTS.PAYROLL.CONFIRM, {
+        employeeId,
+        month,
+        year,
+        payrollData
+      }),
+      'payroll-confirm'
+    );
+  }
+
+  // Generate payroll (LEGACY - for backward compatibility)
   async generatePayroll(data) {
     return apiRequest(
       () => axiosInstance.post(API_ENDPOINTS.PAYROLL.GENERATE, data),
@@ -97,6 +130,18 @@ class PayrollService {
     return apiRequest(
       () => axiosInstance.put(API_ENDPOINTS.PAYROLL.PROCESS(payrollId), data),
       'payroll-process'
+    );
+  }
+
+  // Mark payroll as paid
+  async markAsPaid(payrollId) {
+    if (!payrollId) {
+      throw new Error('Payroll ID is required to mark as paid');
+    }
+
+    return apiRequest(
+      () => axiosInstance.put(API_ENDPOINTS.PAYROLL.MARK_PAID(payrollId)),
+      'payroll-mark-as-paid'
     );
   }
 
@@ -163,6 +208,24 @@ class PayrollService {
     return apiRequest(
       () => axiosInstance.get(API_ENDPOINTS.PAYROLL.SALARY_STRUCTURE(employeeId)),
       `salary-structure-${employeeId}`
+    );
+  }
+
+  // Get payroll preview (admin only)
+  async getPayrollPreview(employeeId, month, year) {
+    if (!employeeId || !month || !year) {
+      throw new Error('Employee ID, month, and year are required for payroll preview');
+    }
+
+    const params = new URLSearchParams({
+      employeeId: employeeId.toString(),
+      month: month.toString(),
+      year: year.toString()
+    });
+
+    return apiRequest(
+      () => axiosInstance.get(`${API_ENDPOINTS.PAYROLL.PREVIEW}?${params}`),
+      `payroll-preview-${employeeId}-${month}-${year}`
     );
   }
 

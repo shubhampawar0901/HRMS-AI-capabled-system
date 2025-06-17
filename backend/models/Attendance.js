@@ -18,7 +18,7 @@ class Attendance {
   // Static methods for database operations
   static async findById(id) {
     const query = `
-      SELECT a.*, 
+      SELECT a.*,
              CONCAT(e.first_name, ' ', e.last_name) as employee_name,
              e.employee_code
       FROM attendance a
@@ -38,11 +38,11 @@ class Attendance {
   static async create(attendanceData) {
     const query = `
       INSERT INTO attendance (
-        employeeId, date, checkInTime, checkOutTime, 
+        employeeId, date, checkInTime, checkOutTime,
         totalHours, status, location, notes, createdAt, updatedAt
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
-    
+
     const result = await executeQuery(query, [
       attendanceData.employeeId,
       attendanceData.date,
@@ -53,7 +53,7 @@ class Attendance {
       attendanceData.location || null,
       attendanceData.notes || null
     ]);
-    
+
     return await Attendance.findById(result.insertId);
   }
 
@@ -304,7 +304,7 @@ class Attendance {
         SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_days,
         SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END) as half_days,
         ROUND(AVG(totalHours), 2) as avg_hours,
-        SUM(totalHours) as totalHours
+        SUM(totalHours) as total_hours
       FROM attendance
       WHERE employeeId = ? AND MONTH(date) = ? AND YEAR(date) = ?
     `;

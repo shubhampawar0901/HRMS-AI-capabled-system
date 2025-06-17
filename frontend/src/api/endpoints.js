@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
     // Core CRUD Operations
     BASE: '/employees',                      // GET - Get all employees (with pagination/filters)
     BY_ID: (id) => `/employees/${id}`,      // GET - Get employee by ID
+    PAYROLL_DETAILS: (id) => `/employees/${id}/payroll-details`, // GET - Get employee payroll details (admin)
     CREATE: '/employees',                    // POST - Create new employee
     UPDATE: (id) => `/employees/${id}`,     // PUT - Update employee
     DELETE: (id) => `/employees/${id}`,     // DELETE - Delete employee
@@ -86,7 +87,9 @@ export const API_ENDPOINTS = {
     EXPORT: '/payroll/export',
 
     // Admin Operations
-    GENERATE: '/payroll/generate',           // POST - Generate payroll (admin)
+    GENERATE: '/payroll/generate',           // POST - Generate payroll preview (admin)
+    CONFIRM: '/payroll/confirm',             // POST - Confirm and save payroll (admin)
+    PREVIEW: '/payroll/preview',             // GET - Get payroll preview (admin)
     BULK_GENERATE: '/payroll/bulk-generate', // POST - Bulk generate payroll (admin)
     RECORDS: '/payroll/records',             // GET - Get payroll records (admin)
     PROCESS: (id) => `/payroll/${id}/process`,  // PUT - Process payroll (admin)

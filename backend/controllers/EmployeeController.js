@@ -86,6 +86,69 @@ class EmployeeController {
     }
   }
 
+  // ==========================================
+  // GET EMPLOYEE PAYROLL DETAILS (NEW)
+  // ==========================================
+  static async getEmployeePayrollDetails(req, res) {
+    try {
+      const { id } = req.params;
+      const { role } = req.user;
+
+      if (role !== 'admin') {
+        return sendError(res, 'Access denied', 403);
+      }
+
+      // Validate employee ID
+      if (!id || isNaN(parseInt(id))) {
+        return sendError(res, 'Valid employee ID is required', 400);
+      }
+
+      const employee = await Employee.findById(id);
+      if (!employee) {
+        return sendError(res, 'Employee not found', 404);
+      }
+
+      if (employee.status !== 'active') {
+        return sendError(res, 'Cannot retrieve payroll details for inactive employee', 400);
+      }
+
+      // Validate required employee data
+      if (!employee.basicSalary || employee.basicSalary <= 0) {
+        return sendError(res, 'Employee does not have a valid basic salary configured', 400);
+      }
+
+      const response = {
+        employee: {
+          id: employee.id,
+          name: `${employee.firstName} ${employee.lastName}`,
+          employeeCode: employee.employeeCode,
+          department: employee.departmentName || 'Not Assigned',
+          position: employee.position || 'Not Assigned',
+          hireDate: employee.hireDate,
+          basicSalary: employee.basicSalary
+        },
+        salaryStructure: {
+          basicSalary: employee.basicSalary,
+          hraRate: 0.4, // 40%
+          transportAllowance: 2000, // Fixed amount
+          pfRate: 0.12, // 12%
+          taxThreshold: 50000 // Tax threshold
+        }
+      };
+
+      return sendSuccess(res, response, 'Employee payroll details retrieved successfully');
+    } catch (error) {
+      console.error('Get employee payroll details error:', error);
+
+      // Handle specific error types
+      if (error.message.includes('not found')) {
+        return sendError(res, 'Employee not found', 404);
+      }
+
+      return sendError(res, 'Failed to retrieve employee payroll details', 500);
+    }
+  }
+
   static async createEmployee(req, res) {
     try {
       const employeeData = req.body;

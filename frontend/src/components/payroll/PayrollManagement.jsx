@@ -31,7 +31,10 @@ import { useAuth } from '@/hooks/useAuth';
 import usePayroll from '@/hooks/usePayroll';
 import LoadingSpinner from '@/components/layout/LoadingSpinner';
 import { employeeService } from '@/services/employeeService';
+import { payrollService } from '@/services/payrollService';
 import PayrollDetailModal from './PayrollDetailModal';
+import SimplifiedPayrollGeneration from './SimplifiedPayrollGeneration';
+import PayrollPreviewModal from './PayrollPreviewModal';
 import {
   formatCurrency,
   formatPayrollPeriod,
@@ -58,18 +61,16 @@ const PayrollManagement = () => {
   } = usePayroll();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [showGenerateForm, setShowGenerateForm] = useState(false);
-  const [generateForm, setGenerateForm] = useState({
-    employeeId: null,
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear()
-  });
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [processing, setProcessing] = useState(null);
+  const [markingAsPaid, setMarkingAsPaid] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [selectedPayroll, setSelectedPayroll] = useState(null);
   const [showPayrollModal, setShowPayrollModal] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Fetch employees for payroll generation
   React.useEffect(() => {
@@ -79,13 +80,15 @@ const PayrollManagement = () => {
         const response = await employeeService.getEmployees({ limit: 100, status: 'active' });
         if (response.success) {
           const employeeList = response.data.employees || [];
+
           // Transform to match expected format
           const transformedEmployees = employeeList.map(emp => ({
             id: emp.id,
-            name: `${emp.first_name} ${emp.last_name}`,
-            department: emp.department_name || 'Unknown',
-            employeeCode: emp.employee_code
+            name: `${emp.firstName || ''} ${emp.lastName || ''}`.trim(),
+            department: emp.departmentName || 'Unknown',
+            employeeCode: emp.employeeCode
           }));
+          console.log('🔍 Transformed employees:', transformedEmployees);
           setEmployees(transformedEmployees);
         }
       } catch (error) {
@@ -115,29 +118,76 @@ const PayrollManagement = () => {
     );
   }) || [];
 
-  const handleGeneratePayroll = async (e) => {
-    e.preventDefault();
+  const handleGeneratePayroll = async (employeeId, month, year) => {
     setGenerating(true);
-    
+
     try {
-      const success = await generatePayroll(
-        generateForm.employeeId,
-        generateForm.month,
-        generateForm.year
-      );
-      
-      if (success) {
-        setShowGenerateForm(false);
-        setGenerateForm({
-          employeeId: null,
-          month: new Date().getMonth() + 1,
-          year: new Date().getFullYear()
-        });
-        await fetchPayrollRecords();
+      // Call the preview API instead of direct generation
+      const response = await payrollService.generatePayrollPreview(employeeId, month, year);
+
+      if (response.success) {
+        setPreviewData(response.data);
+        setShowGenerateModal(false);
+        setShowPreviewModal(true);
+        return true;
+      } else {
+        throw new Error(response.message || 'Failed to generate payroll preview');
       }
+    } catch (error) {
+      console.error('Generate payroll preview error:', error);
+
+      // Handle specific error types for better UX
+      if (error.response?.status === 409) {
+        // Duplicate payroll error - show user-friendly message
+        const message = error.response.data?.message || 'Payroll already exists for this employee and period.';
+        alert(`⚠️ Duplicate Payroll\n\n${message}`);
+        return false;
+      }
+
+      // Re-throw other errors to be handled by the component
+      throw error;
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleConfirmPayroll = async (previewData) => {
+    try {
+      const response = await payrollService.confirmPayroll(
+        previewData.employee.id,
+        previewData.period.month,
+        previewData.period.year,
+        previewData.calculations
+      );
+
+      if (response.success) {
+        setShowPreviewModal(false);
+        setPreviewData(null);
+        await fetchPayrollRecords();
+        // Show success message
+        console.log('✅ Payroll confirmed and saved successfully');
+      } else {
+        throw new Error(response.message || 'Failed to confirm payroll');
+      }
+    } catch (error) {
+      console.error('Confirm payroll error:', error);
+
+      // Handle specific error types
+      if (error.response?.status === 409) {
+        // Duplicate payroll error during confirmation
+        const message = error.response.data?.message || 'Payroll already exists for this employee and period.';
+        alert(`⚠️ Cannot Save Payroll\n\n${message}\n\nThe payroll may have been created by another user. Please refresh the page.`);
+        return;
+      }
+
+      throw error;
+    }
+  };
+
+  const handleCancelPreview = () => {
+    setPreviewData(null);
+    setShowPreviewModal(false);
+    setShowGenerateModal(true); // Go back to generation modal
   };
 
   const handleProcessPayroll = async (payrollId) => {
@@ -146,6 +196,24 @@ const PayrollManagement = () => {
       await processPayroll(payrollId);
     } finally {
       setProcessing(null);
+    }
+  };
+
+  const handleMarkAsPaid = async (payrollId) => {
+    setMarkingAsPaid(payrollId);
+    try {
+      const response = await payrollService.markAsPaid(payrollId);
+      if (response.success) {
+        await fetchPayrollRecords(); // Refresh the list
+        console.log('✅ Payroll marked as paid successfully');
+      } else {
+        throw new Error(response.message || 'Failed to mark payroll as paid');
+      }
+    } catch (error) {
+      console.error('Mark as paid error:', error);
+      alert(`❌ Failed to mark payroll as paid\n\n${error.message || 'Please try again.'}`);
+    } finally {
+      setMarkingAsPaid(null);
     }
   };
 
@@ -225,7 +293,7 @@ const PayrollManagement = () => {
       )}
       {/* Summary Stats */}
       {summaryStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="group hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] bg-gradient-to-br from-blue-50/50 to-blue-100/50 border-blue-200/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-blue-700 group-hover:text-blue-800 transition-colors duration-200">Total Records</CardTitle>
@@ -258,6 +326,17 @@ const PayrollManagement = () => {
               <p className="text-xs text-emerald-600/80 mt-1">Ready for payment</p>
             </CardContent>
           </Card>
+
+          <Card className="group hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] bg-gradient-to-br from-green-50/50 to-green-100/50 border-green-200/50 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-green-700 group-hover:text-green-800 transition-colors duration-200">Paid</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600 group-hover:text-green-700 transition-colors duration-200" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-900 group-hover:text-green-950 transition-colors duration-200">{summaryStats.paidCount}</div>
+              <p className="text-xs text-green-600/80 mt-1">Payment completed</p>
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -270,7 +349,7 @@ const PayrollManagement = () => {
               Payroll Management
             </CardTitle>
             <Button
-              onClick={() => setShowGenerateForm(!showGenerateForm)}
+              onClick={() => setShowGenerateModal(true)}
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] border-0 w-full sm:w-auto"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -279,100 +358,7 @@ const PayrollManagement = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Generate Payroll Form */}
-          {showGenerateForm && (
-            <div className="mb-6 p-6 border border-blue-200/60 rounded-xl bg-gradient-to-br from-blue-50/50 to-blue-100/30 backdrop-blur-sm animate-in slide-in-from-top-2 duration-300">
-              <h4 className="font-semibold text-blue-800 mb-4 flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Generate New Payroll
-              </h4>
-              <form onSubmit={handleGeneratePayroll} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Select
-                  value={generateForm.employeeId?.toString() || ''}
-                  onValueChange={(value) => setGenerateForm(prev => ({ ...prev, employeeId: parseInt(value) }))}
-                  disabled={loadingEmployees}
-                >
-                  <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
-                    <SelectValue placeholder={loadingEmployees ? "Loading employees..." : "Choose an employee for payroll generation..."} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loadingEmployees ? (
-                      <SelectItem value="loading" disabled>
-                        <div className="flex items-center gap-2">
-                          <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                          Loading employees...
-                        </div>
-                      </SelectItem>
-                    ) : employees.length > 0 ? (
-                      employees.map(emp => (
-                        <SelectItem key={emp.id} value={emp.id.toString()}>
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <span className="text-xs font-medium text-blue-600">
-                                {emp.name?.charAt(0)?.toUpperCase() || 'E'}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="font-medium">{emp.name}</div>
-                              <div className="text-xs text-gray-500">Code: {emp.employeeCode}</div>
-                            </div>
-                          </div>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-employees" disabled>
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <span>⚠️</span>
-                          No employees found
-                        </div>
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
 
-                <Select
-                  value={generateForm.month.toString()}
-                  onValueChange={(value) => setGenerateForm(prev => ({ ...prev, month: parseInt(value) }))}
-                >
-                  <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
-                    <SelectValue placeholder="Choose month..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getMonthOptions().map(month => (
-                      <SelectItem key={month.value} value={month.value.toString()}>
-                        {month.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={generateForm.year.toString()}
-                  onValueChange={(value) => setGenerateForm(prev => ({ ...prev, year: parseInt(value) }))}
-                >
-                  <SelectTrigger className="shadow-sm hover:shadow-md transition-all duration-300">
-                    <SelectValue placeholder="Choose year..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getYearOptions().map(year => (
-                      <SelectItem key={year.value} value={year.value.toString()}>
-                        {year.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Button
-                  type="submit"
-                  disabled={!generateForm.employeeId || generating}
-                  className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-sm hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] border-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                  {generating ? <LoadingSpinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                  Generate
-                </Button>
-              </form>
-            </div>
-          )}
 
           {/* Filters */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -489,6 +475,7 @@ const PayrollManagement = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-2">
+                          {/* View Details Button - Always visible */}
                           <Button
                             variant="outline"
                             size="sm"
@@ -498,6 +485,8 @@ const PayrollManagement = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
+
+                          {/* Action Button - Changes based on status */}
                           {canProcessPayroll(payroll, user.role) && (
                             <Button
                               variant="outline"
@@ -511,6 +500,23 @@ const PayrollManagement = () => {
                                 <LoadingSpinner size="sm" />
                               ) : (
                                 <CheckCircle className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+
+                          {canMarkAsPaid(payroll, user.role) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleMarkAsPaid(payroll.id)}
+                              disabled={markingAsPaid === payroll.id}
+                              className="hover:bg-green-50 hover:border-green-300 hover:text-green-700 transition-all duration-300 ease-in-out hover:scale-[1.05] hover:shadow-sm border-gray-200"
+                              title="Mark as Paid"
+                            >
+                              {markingAsPaid === payroll.id ? (
+                                <LoadingSpinner size="sm" />
+                              ) : (
+                                <DollarSign className="h-4 w-4" />
                               )}
                             </Button>
                           )}
@@ -530,6 +536,22 @@ const PayrollManagement = () => {
         payroll={selectedPayroll}
         isOpen={showPayrollModal}
         onClose={() => setShowPayrollModal(false)}
+      />
+
+      {/* Simplified Payroll Generation Modal */}
+      <SimplifiedPayrollGeneration
+        isOpen={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
+        onGenerate={handleGeneratePayroll}
+      />
+
+      {/* Payroll Preview Modal */}
+      <PayrollPreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        previewData={previewData}
+        onConfirm={handleConfirmPayroll}
+        onCancel={handleCancelPreview}
       />
     </div>
   );

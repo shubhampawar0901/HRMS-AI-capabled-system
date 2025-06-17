@@ -81,8 +81,8 @@ class Payroll {
       payrollData.presentDays,
       payrollData.overtimeHours || 0,
       payrollData.status || 'draft',
-      payrollData.processedBy,
-      payrollData.processedAt
+      payrollData.processedBy || null,
+      payrollData.processedAt || null
     ]);
     
     return await Payroll.findById(result.insertId);
@@ -150,8 +150,16 @@ class Payroll {
     }
 
     if (options.status) {
-      query += ' AND p.status = ?';
-      params.push(options.status);
+      if (Array.isArray(options.status)) {
+        // Handle multiple statuses (for employee view)
+        const placeholders = options.status.map(() => '?').join(',');
+        query += ` AND p.status IN (${placeholders})`;
+        params.push(...options.status);
+      } else {
+        // Handle single status
+        query += ' AND p.status = ?';
+        params.push(options.status);
+      }
     }
 
     query += ' ORDER BY p.year DESC, p.month DESC';
@@ -319,8 +327,16 @@ class Payroll {
     }
 
     if (options.status) {
-      query += ' AND status = ?';
-      params.push(options.status);
+      if (Array.isArray(options.status)) {
+        // Handle multiple statuses (for employee view)
+        const placeholders = options.status.map(() => '?').join(',');
+        query += ` AND status IN (${placeholders})`;
+        params.push(...options.status);
+      } else {
+        // Handle single status
+        query += ' AND status = ?';
+        params.push(options.status);
+      }
     }
 
     const rows = await executeQuery(query, params);
