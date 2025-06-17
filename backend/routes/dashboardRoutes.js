@@ -358,40 +358,23 @@ router.get('/stats', async (req, res) => {
 router.get('/activities', authenticateToken, async (req, res) => {
   try {
     const { limit = 6 } = req.query;
-    
-    // Mock activities data
-    const mockActivities = [
-      {
-        id: 1,
-        type: 'leave_request',
-        message: 'John Doe submitted a leave request',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-        status: 'pending'
-      },
-      {
-        id: 2,
-        type: 'attendance',
-        message: 'Sarah Wilson checked in',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-        status: 'completed'
-      },
-      {
-        id: 3,
-        type: 'performance',
-        message: 'Monthly performance review completed',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-        status: 'completed'
-      },
-      {
-        id: 4,
-        type: 'payroll',
-        message: 'Payroll processed for December',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-        status: 'completed'
-      }
-    ];
+    const userRole = req.user.role;
+    const employeeId = req.user.employeeId;
 
-    const activities = mockActivities.slice(0, parseInt(limit));
+    let activities = [];
+
+    // Role-based activity filtering
+    if (userRole === 'admin') {
+      // Admin sees system-wide activities
+      activities = await getSystemWideActivities(parseInt(limit));
+    } else if (userRole === 'manager') {
+      // Manager sees team activities
+      activities = await getTeamActivities(employeeId, parseInt(limit));
+    } else {
+      // Employee sees only their own activities
+      activities = await getPersonalActivities(employeeId, parseInt(limit));
+    }
+
     sendSuccess(res, activities, 'Recent activities retrieved successfully');
 
   } catch (error) {
@@ -399,6 +382,203 @@ router.get('/activities', authenticateToken, async (req, res) => {
     sendError(res, 'Failed to get recent activities', 500);
   }
 });
+
+// Helper function to get system-wide activities for admin
+async function getSystemWideActivities(limit) {
+  const activities = [];
+
+  try {
+    // Get recent attendance check-ins
+    const attendanceActivities = await executeQuery(`
+      SELECT
+        CONCAT('attendance_', a.id) as id,
+        'attendance' as type,
+        'Employee checked in' as title,
+        CONCAT(COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'Unknown Employee'), ' checked in at ', TIME_FORMAT(a.checkInTime, '%h:%i %p')) as description,
+        COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'Unknown Employee') as user,
+        a.createdAt as timestamp,
+        'completed' as status
+      FROM attendance a
+      JOIN employees e ON a.employeeId = e.id
+      WHERE a.checkInTime IS NOT NULL
+        AND a.createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      ORDER BY a.createdAt DESC
+      LIMIT ?
+    `, [Math.ceil(limit / 4)]);
+
+    // Get recent leave requests
+    const leaveActivities = await executeQuery(`
+      SELECT
+        CONCAT('leave_', la.id) as id,
+        'leave_request' as type,
+        'Leave request submitted' as title,
+        CONCAT(COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'Unknown Employee'), ' requested ',
+               COALESCE(lt.name, 'leave'), ' from ', DATE_FORMAT(la.start_date, '%M %d'),
+               ' to ', DATE_FORMAT(la.end_date, '%M %d')) as description,
+        COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'Unknown Employee') as user,
+        la.created_at as timestamp,
+        la.status
+      FROM leave_applications la
+      JOIN employees e ON la.employee_id = e.id
+      LEFT JOIN leave_types lt ON la.leave_type_id = lt.id
+      WHERE la.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      ORDER BY la.created_at DESC
+      LIMIT ?
+    `, [Math.ceil(limit / 4)]);
+
+    // Get recent employee additions
+    const employeeActivities = await executeQuery(`
+      SELECT
+        CONCAT('employee_', e.id) as id,
+        'employee' as type,
+        'New employee joined' as title,
+        CONCAT(COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'Unknown'), ' joined as ',
+               COALESCE(e.position, 'Employee'), ' in ', COALESCE(d.name, 'Unknown Department')) as description,
+        'System' as user,
+        e.created_at as timestamp,
+        'completed' as status
+      FROM employees e
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE e.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND e.status = 'active'
+      ORDER BY e.created_at DESC
+      LIMIT ?
+    `, [Math.ceil(limit / 4)]);
+
+    // Combine all activities
+    activities.push(...attendanceActivities);
+    activities.push(...leaveActivities);
+    activities.push(...employeeActivities);
+
+    // Sort by timestamp and limit
+    activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return activities.slice(0, limit);
+
+  } catch (error) {
+    console.error('Error fetching system-wide activities:', error);
+    return [];
+  }
+}
+
+// Helper function to get team activities for manager
+async function getTeamActivities(managerId, limit) {
+  const activities = [];
+
+  try {
+    // Get team attendance activities
+    const attendanceActivities = await executeQuery(`
+      SELECT
+        CONCAT('attendance_', a.id) as id,
+        'attendance' as type,
+        'Team member checked in' as title,
+        CONCAT(COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'Team Member'), ' checked in at ', TIME_FORMAT(a.checkInTime, '%h:%i %p')) as description,
+        COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'Team Member') as user,
+        a.createdAt as timestamp,
+        'completed' as status
+      FROM attendance a
+      JOIN employees e ON a.employeeId = e.id
+      WHERE e.manager_id = ?
+        AND a.checkInTime IS NOT NULL
+        AND a.createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      ORDER BY a.createdAt DESC
+      LIMIT ?
+    `, [managerId, Math.ceil(limit / 2)]);
+
+    // Get team leave requests
+    const leaveActivities = await executeQuery(`
+      SELECT
+        CONCAT('leave_', la.id) as id,
+        'leave_request' as type,
+        'Team leave request' as title,
+        CONCAT(COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'Team Member'), ' requested ',
+               COALESCE(lt.name, 'leave'), ' from ', DATE_FORMAT(la.start_date, '%M %d'),
+               ' to ', DATE_FORMAT(la.end_date, '%M %d')) as description,
+        COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'Team Member') as user,
+        la.created_at as timestamp,
+        la.status
+      FROM leave_applications la
+      JOIN employees e ON la.employee_id = e.id
+      LEFT JOIN leave_types lt ON la.leave_type_id = lt.id
+      WHERE e.manager_id = ?
+        AND la.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      ORDER BY la.created_at DESC
+      LIMIT ?
+    `, [managerId, Math.ceil(limit / 2)]);
+
+    // Combine activities
+    activities.push(...attendanceActivities);
+    activities.push(...leaveActivities);
+
+    // Sort by timestamp and limit
+    activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return activities.slice(0, limit);
+
+  } catch (error) {
+    console.error('Error fetching team activities:', error);
+    return [];
+  }
+}
+
+// Helper function to get personal activities for employee
+async function getPersonalActivities(employeeId, limit) {
+  const activities = [];
+
+  try {
+    // Get personal attendance activities
+    const attendanceActivities = await executeQuery(`
+      SELECT
+        CONCAT('attendance_', a.id) as id,
+        'attendance' as type,
+        CASE
+          WHEN a.checkOutTime IS NOT NULL THEN 'Checked out for today'
+          ELSE 'Checked in for today'
+        END as title,
+        CASE
+          WHEN a.checkOutTime IS NOT NULL THEN CONCAT('You checked out at ', TIME_FORMAT(a.checkOutTime, '%h:%i %p'))
+          ELSE CONCAT('You checked in at ', TIME_FORMAT(a.checkInTime, '%h:%i %p'))
+        END as description,
+        'You' as user,
+        a.createdAt as timestamp,
+        'completed' as status
+      FROM attendance a
+      WHERE a.employeeId = ?
+        AND a.createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      ORDER BY a.createdAt DESC
+      LIMIT ?
+    `, [employeeId, Math.ceil(limit / 2)]);
+
+    // Get personal leave requests
+    const leaveActivities = await executeQuery(`
+      SELECT
+        CONCAT('leave_', la.id) as id,
+        'leave_request' as type,
+        'Leave request submitted' as title,
+        CONCAT('You requested ', COALESCE(lt.name, 'leave'), ' from ', DATE_FORMAT(la.start_date, '%M %d'),
+               ' to ', DATE_FORMAT(la.end_date, '%M %d')) as description,
+        'You' as user,
+        la.created_at as timestamp,
+        la.status
+      FROM leave_applications la
+      LEFT JOIN leave_types lt ON la.leave_type_id = lt.id
+      WHERE la.employee_id = ?
+        AND la.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      ORDER BY la.created_at DESC
+      LIMIT ?
+    `, [employeeId, Math.ceil(limit / 2)]);
+
+    // Combine activities
+    activities.push(...attendanceActivities);
+    activities.push(...leaveActivities);
+
+    // Sort by timestamp and limit
+    activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return activities.slice(0, limit);
+
+  } catch (error) {
+    console.error('Error fetching personal activities:', error);
+    return [];
+  }
+}
 
 // Get quick actions based on role
 router.get('/quick-actions', authenticateToken, async (req, res) => {
