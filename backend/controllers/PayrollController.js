@@ -46,17 +46,17 @@ class PayrollController {
 
       const { employeeId, month, year } = req.body;
 
+      // Get employee details first
+      const employee = await Employee.findById(employeeId);
+      if (!employee) {
+        return sendError(res, 'Employee not found', 404);
+      }
+
       // Check if payroll already exists (ENHANCED VALIDATION)
       const existing = await Payroll.findByEmployeeAndPeriod(employeeId, month, year);
       if (existing) {
         console.warn(`⚠️ Duplicate payroll attempt: Employee ${employeeId}, Period ${month}/${year}, Existing ID: ${existing.id}`);
         return sendError(res, `Payroll already exists for ${employee.firstName} ${employee.lastName} for ${getMonthName(month)} ${year}. Please check existing records.`, 409);
-      }
-
-      // Get employee details
-      const employee = await Employee.findById(employeeId);
-      if (!employee) {
-        return sendError(res, 'Employee not found', 404);
       }
 
       // Get attendance data for the month
@@ -123,17 +123,17 @@ class PayrollController {
         return sendError(res, 'Missing required fields', 400);
       }
 
+      // Get employee details for validation first
+      const employee = await Employee.findById(employeeId);
+      if (!employee) {
+        return sendError(res, 'Employee not found', 404);
+      }
+
       // Double-check if payroll already exists (ENHANCED VALIDATION)
       const existing = await Payroll.findByEmployeeAndPeriod(employeeId, month, year);
       if (existing) {
         console.warn(`⚠️ Duplicate payroll confirmation attempt: Employee ${employeeId}, Period ${month}/${year}, Existing ID: ${existing.id}`);
         return sendError(res, `Payroll already exists for ${employee.firstName} ${employee.lastName} for ${getMonthName(month)} ${year}. Cannot create duplicate records.`, 409);
-      }
-
-      // Get employee details for validation
-      const employee = await Employee.findById(employeeId);
-      if (!employee) {
-        return sendError(res, 'Employee not found', 404);
       }
 
       // Create payroll record with confirmed data
