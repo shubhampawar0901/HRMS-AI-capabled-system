@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS Database Complete Usage Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .overview {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #4f46e5;
+        }
+        .overview h2 {
+            margin-top: 0;
+            color: #4f46e5;
+            font-size: 1.8em;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9em;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            color: #1e293b;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #e2e8f0;
+        }
+        .table-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .table-header {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            padding: 20px;
+        }
+        .table-header h3 {
+            margin: 0;
+            font-size: 1.4em;
+        }
+        .table-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .meta-item {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .table-content {
+            padding: 25px;
+        }
+        .feature-usage {
+            margin-bottom: 25px;
+        }
+        .feature-usage h4 {
+            color: #4f46e5;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .usage-list {
+            list-style: none;
+            padding: 0;
+        }
+        .usage-list li {
+            background: white;
+            margin: 8px 0;
+            padding: 12px 15px;
+            border-left: 4px solid #4f46e5;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .usage-list li:before {
+            content: "▶";
+            color: #4f46e5;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .indexes-section {
+            background: #fef3c7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .indexes-section h4 {
+            color: #92400e;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .index-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 10px;
+        }
+        .index-item {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            border-left: 3px solid #f59e0b;
+        }
+        .index-type {
+            font-weight: bold;
+            color: #92400e;
+        }
+        .important-note {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .important-note h5 {
+            color: #dc2626;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .team-logic {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 2px solid #10b981;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .team-logic h4 {
+            color: #047857;
+            margin-top: 0;
+        }
+        .foreign-keys {
+            background: #ede9fe;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .foreign-keys h5 {
+            color: #7c3aed;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .fk-list {
+            list-style: none;
+            padding: 0;
+        }
+        .fk-list li {
+            background: white;
+            margin: 5px 0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            border-left: 3px solid #7c3aed;
+        }
+        .cascade-rule {
+            color: #dc2626;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 HRMS Database Complete Usage Guide</h1>
+            <p>Comprehensive Analysis of All 19 Tables, Features, and Indexes</p>
+            <p><strong>Generated:</strong> 2025-06-17 | <strong>Database:</strong> hrms_db | <strong>Engine:</strong> MySQL InnoDB</p>
+        </div>
+
+        <div class="content">
+            <div class="overview">
+                <h2>📊 Database Overview</h2>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number">19</div>
+                        <div class="stat-label">Total Tables</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">30</div>
+                        <div class="stat-label">Foreign Keys</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">108</div>
+                        <div class="stat-label">Total Indexes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">7</div>
+                        <div class="stat-label">Active Employees</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CORE AUTHENTICATION & USER MANAGEMENT -->
+            <div class="section">
+                <h2>🔐 Core Authentication & User Management</h2>
+                
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>1. users - Authentication Hub</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 9</div>
+                            <div class="meta-item">Current Data: 47 rows</div>
+                            <div class="meta-item">Role: Core Authentication</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Login System:</strong> Email-based authentication with password hashing</li>
+                                <li><strong>Role-Based Access Control:</strong> 3-tier system (admin → manager → employee)</li>
+                                <li><strong>Session Management:</strong> JWT tokens with refresh token support</li>
+                                <li><strong>User Activity Tracking:</strong> Last login timestamps and active status</li>
+                                <li><strong>Security Features:</strong> Account activation/deactivation capabilities</li>
+                            </ul>
+                        </div>
+
+                        <div class="important-note">
+                            <h5>🔑 Critical Business Rule</h5>
+                            <p><strong>Admin ≠ Employee:</strong> Admins are not employees in the system. They exist only in users table for system administration.</p>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (5 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">UNIQUE:</span> [email] - Login uniqueness
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [email] - Fast login lookups
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [role] - Role-based filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [is_active] - Active user queries
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="foreign-keys">
+                            <h5>🔗 Referenced By (6 tables)</h5>
+                            <ul class="fk-list">
+                                <li>employees.user_id → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>employee_documents.uploaded_by → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>leave_applications.approved_by → users.id <span class="cascade-rule">(SET NULL)</span></li>
+                                <li>payroll_records.processed_by → users.id <span class="cascade-rule">(SET NULL)</span></li>
+                                <li>performance_goals.created_by → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>performance_reviews.reviewer_id → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CORE EMPLOYEE MANAGEMENT -->
+            <div class="section">
+                <h2>👥 Core Employee Management</h2>
+                
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>2. employees - Central Employee Repository</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 20</div>
+                            <div class="meta-item">Current Data: 9 rows</div>
+                            <div class="meta-item">Role: Core Business Entity</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="team-logic">
+                            <h4>🏢 TEAM LOGIC IMPLEMENTATION</h4>
+                            <p><strong>Key Field:</strong> <code>manager_id</code> → <code>employees.id</code> (Self-referencing)</p>
+                            <ul class="usage-list">
+                                <li><strong>Team Definition:</strong> All employees with same manager_id form a team</li>
+                                <li><strong>Hierarchical Structure:</strong> Supports multi-level management chains</li>
+                                <li><strong>Current Structure:</strong> 1 manager (Rohit Tiwari) with 4 direct reports</li>
+                                <li><strong>Top-level Employees:</strong> 3 employees with no manager (department heads)</li>
+                            </ul>
+                        </div>
+
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Employee Profiles:</strong> Complete personal and professional information</li>
+                                <li><strong>Team Management:</strong> Manager-employee relationships and hierarchy</li>
+                                <li><strong>Department Assignment:</strong> Links to organizational structure</li>
+                                <li><strong>Salary Management:</strong> Basic salary storage for payroll</li>
+                                <li><strong>Status Tracking:</strong> Active, inactive, terminated, soft-deleted states</li>
+                                <li><strong>Emergency Contacts:</strong> Safety and compliance requirements</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (7 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">UNIQUE:</span> [employee_code] - Business identifier
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [user_id] - Auth system link
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [department_id] - Dept filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [manager_id] - TEAM QUERIES
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status] - Status filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [first_name, last_name] - Name search
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="foreign-keys">
+                            <h5>🔗 Foreign Key Relationships</h5>
+                            <ul class="fk-list">
+                                <li>employees.user_id → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>employees.department_id → departments.id <span class="cascade-rule">(SET NULL)</span></li>
+                                <li>employees.manager_id → employees.id <span class="cascade-rule">(SET NULL)</span> - TEAM HIERARCHY</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>3. departments - Organizational Structure</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 7</div>
+                            <div class="meta-item">Current Data: 5 rows</div>
+                            <div class="meta-item">Role: Organizational Framework</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Organizational Structure:</strong> Department hierarchy and management</li>
+                                <li><strong>Department Head Assignment:</strong> Links managers to departments</li>
+                                <li><strong>Employee Grouping:</strong> Department-wise employee organization</li>
+                                <li><strong>Reporting Structure:</strong> Department-level analytics and reports</li>
+                                <li><strong>Default Departments:</strong> HR, IT, Finance, Marketing, Operations</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (5 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">UNIQUE:</span> [name] - Dept name uniqueness
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [name] - Dept searches
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [manager_id] - Manager-dept link
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [is_active] - Active dept filtering
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCUMENT MANAGEMENT -->
+            <div class="section">
+                <h2>📄 Document Management</h2>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>4. employee_documents - Employee Document Storage</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 11</div>
+                            <div class="meta-item">Current Data: 0 rows</div>
+                            <div class="meta-item">Role: Document Repository</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Employee Onboarding:</strong> Document collection during hiring process</li>
+                                <li><strong>Document Types:</strong> Resume, ID proof, address proof, education, experience</li>
+                                <li><strong>AI Integration:</strong> JSON parsed_data field for AI document extraction</li>
+                                <li><strong>File Management:</strong> Complete file metadata (size, type, path)</li>
+                                <li><strong>Audit Trail:</strong> Tracks who uploaded each document</li>
+                                <li><strong>Compliance:</strong> Document verification and storage for legal requirements</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (4 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee docs lookup
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [document_type] - Type filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [uploaded_by] - Upload audit
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="foreign-keys">
+                            <h5>🔗 Foreign Key Relationships</h5>
+                            <ul class="fk-list">
+                                <li>employee_documents.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>employee_documents.uploaded_by → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ATTENDANCE MANAGEMENT -->
+            <div class="section">
+                <h2>⏰ Attendance Management</h2>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>5. attendance_records - Primary Attendance System</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 11</div>
+                            <div class="meta-item">Current Data: 56 rows</div>
+                            <div class="meta-item">Role: Official Attendance Tracking</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Daily Attendance:</strong> Check-in/check-out time tracking</li>
+                                <li><strong>Working Hours:</strong> Automatic total hours calculation</li>
+                                <li><strong>Attendance Status:</strong> Present, absent, late, half-day classification</li>
+                                <li><strong>Location Tracking:</strong> Optional location-based attendance</li>
+                                <li><strong>Payroll Integration:</strong> Feeds data to salary calculations</li>
+                                <li><strong>Team Monitoring:</strong> Manager team attendance oversight</li>
+                            </ul>
+                        </div>
+
+                        <div class="important-note">
+                            <h5>⚠️ Business Rule</h5>
+                            <p><strong>One Record Per Day:</strong> unique_employee_date constraint ensures single attendance record per employee per day.</p>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (5 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">UNIQUE:</span> [employee_id, date] - One per day rule
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee attendance
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [date] - Date range queries
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status] - Status filtering
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>6. attendance - Secondary Attendance System</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 12</div>
+                            <div class="meta-item">Current Data: 479 rows</div>
+                            <div class="meta-item">Role: Alternative Attendance Tracking</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Legacy System:</strong> Alternative attendance tracking with camelCase naming</li>
+                                <li><strong>Overtime Tracking:</strong> Additional overtimeHours field</li>
+                                <li><strong>Bulk Analytics:</strong> Optimized for large-scale attendance analysis</li>
+                                <li><strong>Data Migration:</strong> Supports transition between attendance systems</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (3 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">UNIQUE:</span> [employeeId, date] - One per day rule
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employeeId, date, status, totalHours] - Bulk analysis
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LEAVE MANAGEMENT SYSTEM -->
+            <div class="section">
+                <h2>🏖️ Leave Management System</h2>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>7. leave_types - Leave Categories</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 7</div>
+                            <div class="meta-item">Current Data: 5 rows</div>
+                            <div class="meta-item">Role: Leave Policy Definition</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Leave Categories:</strong> Annual (21), Sick (10), Casual (12), Maternity (180), Paternity (15)</li>
+                                <li><strong>Policy Enforcement:</strong> Maximum days per year limits</li>
+                                <li><strong>Leave Planning:</strong> Annual leave allocation planning</li>
+                                <li><strong>Compliance:</strong> Legal leave requirements implementation</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (4 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">UNIQUE:</span> [name] - Leave type uniqueness
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [name] - Leave type searches
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [is_active] - Active leave types
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>8. leave_balances - Leave Entitlements</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 9</div>
+                            <div class="meta-item">Current Data: 7 rows</div>
+                            <div class="meta-item">Role: Leave Balance Tracking</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Annual Allocation:</strong> Yearly leave entitlement management</li>
+                                <li><strong>Balance Calculation:</strong> Allocated - Used = Remaining days</li>
+                                <li><strong>Leave Planning:</strong> Employee leave balance visibility</li>
+                                <li><strong>Year-end Processing:</strong> Annual leave balance rollover</li>
+                                <li><strong>Policy Compliance:</strong> Ensures leave limits are respected</li>
+                            </ul>
+                        </div>
+
+                        <div class="important-note">
+                            <h5>📊 Business Logic</h5>
+                            <p><strong>Unique Constraint:</strong> One balance record per employee per leave type per year.</p>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (5 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">UNIQUE:</span> [employee_id, leave_type_id, year]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee balances
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [leave_type_id] - Leave type analysis
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [year] - Year-based reporting
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>9. leave_applications - Leave Request Workflow</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 13</div>
+                            <div class="meta-item">Current Data: 9 rows</div>
+                            <div class="meta-item">Role: Leave Request Management</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Leave Requests:</strong> Employee leave application submission</li>
+                                <li><strong>Approval Workflow:</strong> Pending → Approved/Rejected/Cancelled</li>
+                                <li><strong>Manager Approval:</strong> Manager-based leave approval system</li>
+                                <li><strong>Leave Calendar:</strong> Team leave planning and scheduling</li>
+                                <li><strong>Balance Integration:</strong> Automatic leave balance deduction</li>
+                                <li><strong>Audit Trail:</strong> Complete approval history with comments</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (6 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee leave history
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [leave_type_id] - Leave type analysis
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status] - Workflow filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [start_date, end_date] - Date ranges
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [approved_by] - Approval audit
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="foreign-keys">
+                            <h5>🔗 Foreign Key Relationships</h5>
+                            <ul class="fk-list">
+                                <li>leave_applications.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>leave_applications.leave_type_id → leave_types.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>leave_applications.approved_by → users.id <span class="cascade-rule">(SET NULL)</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAYROLL MANAGEMENT -->
+            <div class="section">
+                <h2>💰 Payroll Management</h2>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>10. payroll_records - Salary Processing</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 21</div>
+                            <div class="meta-item">Current Data: 12 rows</div>
+                            <div class="meta-item">Role: Monthly Salary Processing</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Monthly Payroll:</strong> Comprehensive salary calculation and processing</li>
+                                <li><strong>Salary Components:</strong> Basic salary, HRA, transport allowance, overtime pay</li>
+                                <li><strong>Deductions:</strong> PF deduction, tax deduction, total deductions</li>
+                                <li><strong>Attendance Integration:</strong> Working days vs present days calculation</li>
+                                <li><strong>Workflow Management:</strong> Draft → Processed → Paid status tracking</li>
+                                <li><strong>Compliance:</strong> Tax calculation and statutory deductions</li>
+                            </ul>
+                        </div>
+
+                        <div class="important-note">
+                            <h5>💼 Business Rule</h5>
+                            <p><strong>One Payroll Per Month:</strong> unique_employee_month_year constraint prevents duplicate salary processing.</p>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (6 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">UNIQUE:</span> [employee_id, month, year] - One per month
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee payroll history
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [month, year] - Period queries
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status] - Workflow filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [processed_by] - Processing audit
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="foreign-keys">
+                            <h5>🔗 Foreign Key Relationships</h5>
+                            <ul class="fk-list">
+                                <li>payroll_records.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>payroll_records.processed_by → users.id <span class="cascade-rule">(SET NULL)</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PERFORMANCE MANAGEMENT -->
+            <div class="section">
+                <h2>🎯 Performance Management</h2>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>11. performance_goals - Goal Management</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 10</div>
+                            <div class="meta-item">Current Data: 8 rows</div>
+                            <div class="meta-item">Role: Goal Setting & Tracking</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Goal Setting:</strong> Manager-employee goal alignment and planning</li>
+                                <li><strong>Progress Tracking:</strong> Achievement percentage monitoring (0-100%)</li>
+                                <li><strong>Deadline Management:</strong> Target date tracking and alerts</li>
+                                <li><strong>Status Management:</strong> Active, completed, cancelled goal states</li>
+                                <li><strong>Performance Reviews:</strong> Goal achievement feeds into reviews</li>
+                                <li><strong>Career Development:</strong> Professional growth planning</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (5 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee goals
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status] - Goal status filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [target_date] - Deadline tracking
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [created_by] - Goal creator audit
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>12. performance_reviews - Performance Evaluation</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 9</div>
+                            <div class="meta-item">Current Data: 7 rows</div>
+                            <div class="meta-item">Role: Performance Assessment</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Performance Reviews:</strong> Formal employee evaluation process</li>
+                                <li><strong>Rating System:</strong> Numerical performance scoring (0.00-10.00)</li>
+                                <li><strong>Review Cycles:</strong> Annual, quarterly, or custom review periods</li>
+                                <li><strong>Manager Feedback:</strong> Detailed comments and improvement areas</li>
+                                <li><strong>Review Workflow:</strong> Draft → Submitted → Approved process</li>
+                                <li><strong>Career Decisions:</strong> Promotion and raise decision support</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (5 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee review history
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [reviewer_id] - Reviewer workload
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status] - Review workflow state
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [review_period] - Period analysis
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="foreign-keys">
+                            <h5>🔗 Foreign Key Relationships</h5>
+                            <ul class="fk-list">
+                                <li>performance_goals.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>performance_goals.created_by → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>performance_reviews.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                                <li>performance_reviews.reviewer_id → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI-ENHANCED FEATURES -->
+            <div class="section">
+                <h2>🤖 AI-Enhanced Features</h2>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>13. ai_attendance_anomalies - Intelligent Attendance Analysis</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 17</div>
+                            <div class="meta-item">Current Data: 26 rows</div>
+                            <div class="meta-item">Role: AI Anomaly Detection</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Pattern Detection:</strong> AI identifies unusual attendance patterns</li>
+                                <li><strong>Anomaly Types:</strong> Late patterns, early departure, irregular hours, absence patterns, overtime anomalies, location anomalies, weekend/holiday work</li>
+                                <li><strong>Severity Classification:</strong> Low, medium, high severity levels</li>
+                                <li><strong>Resolution Workflow:</strong> Active → Resolved/Ignored with tracking</li>
+                                <li><strong>AI Recommendations:</strong> JSON-stored suggestions for HR action</li>
+                                <li><strong>Audit Trail:</strong> Complete resolution history with responsible users</li>
+                            </ul>
+                        </div>
+
+                        <div class="important-note">
+                            <h5>🔍 AI Intelligence</h5>
+                            <p><strong>Duplicate Prevention:</strong> Unique constraint prevents duplicate anomalies for same employee, type, date, and status.</p>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (13 total - Most Optimized Table)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">UNIQUE:</span> [employee_id, anomaly_type, detected_date, status]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee anomalies
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [anomaly_type] - Type filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [detected_date] - Date queries
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status] - Status filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [resolved_by] - Resolution audit
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [ignored_by] - Ignore audit
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id, status, detected_date] - Employee status timeline
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id, anomaly_type, detected_date, status] - Optimized lookup
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [detected_date, status, employee_id] - Date-status queries
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status, detected_date, severity] - Bulk retrieval
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status, severity, detected_date] - Anomaly stats
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>14. ai_attrition_predictions - Employee Retention AI</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 10</div>
+                            <div class="meta-item">Current Data: 9 rows</div>
+                            <div class="meta-item">Role: Retention Risk Assessment</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Risk Scoring:</strong> AI calculates attrition risk (0.0000-9.9999)</li>
+                                <li><strong>Risk Levels:</strong> Low, medium, high, critical classification</li>
+                                <li><strong>Factor Analysis:</strong> JSON storage of risk contributing factors</li>
+                                <li><strong>AI Recommendations:</strong> Retention strategies and interventions</li>
+                                <li><strong>Model Versioning:</strong> Tracks AI model improvements over time</li>
+                                <li><strong>Predictive Analytics:</strong> Proactive employee retention management</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (4 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee predictions
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [risk_level] - Risk filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [prediction_date] - Prediction timeline
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>15. ai_smart_feedback - AI-Generated Performance Insights</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 10</div>
+                            <div class="meta-item">Current Data: 12 rows</div>
+                            <div class="meta-item">Role: Intelligent Feedback Generation</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>AI Feedback:</strong> Automated performance feedback generation</li>
+                                <li><strong>Feedback Types:</strong> Performance, development, career, general categories</li>
+                                <li><strong>Data-Driven Insights:</strong> JSON performance data analysis</li>
+                                <li><strong>Smart Suggestions:</strong> AI-powered improvement recommendations</li>
+                                <li><strong>Confidence Scoring:</strong> AI reliability measurement</li>
+                                <li><strong>Manager Support:</strong> Assists managers in providing quality feedback</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (4 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee feedback
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [feedback_type] - Type filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [generated_by] - Generator audit
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>16. ai_chatbot_interactions - Conversational AI Tracking</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 11</div>
+                            <div class="meta-item">Current Data: 128 rows</div>
+                            <div class="meta-item">Role: Chatbot Analytics</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Chatbot 'Shubh':</strong> HR chatbot interaction logging</li>
+                                <li><strong>Session Management:</strong> Conversation grouping and tracking</li>
+                                <li><strong>Intent Classification:</strong> Query categorization and analysis</li>
+                                <li><strong>Performance Monitoring:</strong> Response time and confidence tracking</li>
+                                <li><strong>User Satisfaction:</strong> Feedback collection (positive/negative/neutral)</li>
+                                <li><strong>AI Improvement:</strong> Training data collection for model enhancement</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (5 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [user_id] - User interaction history
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [session_id] - Session analysis
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [intent] - Intent classification
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [created_at] - Time-based analytics
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>17. ai_resume_parser - Resume Processing AI</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 12</div>
+                            <div class="meta-item">Current Data: 13 rows</div>
+                            <div class="meta-item">Role: Automated Resume Processing</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Resume Parsing:</strong> AI-powered resume data extraction</li>
+                                <li><strong>Structured Data:</strong> JSON parsed data for easy integration</li>
+                                <li><strong>Text Extraction:</strong> Raw text extraction from PDF/DOC files</li>
+                                <li><strong>Confidence Scoring:</strong> Parsing accuracy measurement</li>
+                                <li><strong>Performance Tracking:</strong> Processing time monitoring</li>
+                                <li><strong>Error Handling:</strong> Failed parsing diagnostics and recovery</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (4 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [employee_id] - Employee resume lookup
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status] - Processing status
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [created_at] - Processing timeline
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>18. ai_smart_reports - AI-Generated Analytics</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 12</div>
+                            <div class="meta-item">Current Data: 11 rows</div>
+                            <div class="meta-item">Role: Intelligent Report Generation</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Smart Reports:</strong> AI-generated employee, team, and department reports</li>
+                                <li><strong>Executive Summaries:</strong> AI-written report summaries</li>
+                                <li><strong>Data Insights:</strong> JSON-structured analytical insights</li>
+                                <li><strong>AI Recommendations:</strong> Actionable suggestions based on data</li>
+                                <li><strong>Data Snapshots:</strong> Historical data preservation for reports</li>
+                                <li><strong>Report Automation:</strong> Scheduled and on-demand report generation</li>
+                            </ul>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (6 total)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [report_type] - Report type filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [target_id] - Target entity lookup
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [generated_by] - Generator audit
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [status] - Generation status
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [created_at] - Report timeline
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>19. ai_policy_documents - Knowledge Base Management</h3>
+                        <div class="table-meta">
+                            <div class="meta-item">Engine: InnoDB</div>
+                            <div class="meta-item">Columns: 20</div>
+                            <div class="meta-item">Current Data: 8 rows</div>
+                            <div class="meta-item">Role: RAG Chatbot Knowledge Base</div>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <div class="feature-usage">
+                            <h4>🎯 Feature Usage</h4>
+                            <ul class="usage-list">
+                                <li><strong>Document Management:</strong> HR policy and procedure document storage</li>
+                                <li><strong>RAG Integration:</strong> Retrieval-Augmented Generation for chatbot</li>
+                                <li><strong>Vector Database:</strong> Pinecone integration for semantic search</li>
+                                <li><strong>Access Control:</strong> Role-based document access (public/employee/manager/admin)</li>
+                                <li><strong>Department Specific:</strong> Department-targeted policy documents</li>
+                                <li><strong>Processing Pipeline:</strong> Document chunking and vector embedding</li>
+                                <li><strong>Document Types:</strong> Leave policy, attendance policy, benefits, handbook, code of conduct</li>
+                            </ul>
+                        </div>
+
+                        <div class="important-note">
+                            <h5>🔍 Advanced Features</h5>
+                            <p><strong>Vector Integration:</strong> Stores Pinecone vector IDs for AI-powered document retrieval and semantic search.</p>
+                        </div>
+
+                        <div class="indexes-section">
+                            <h4>📇 Indexes (12 total - Complex Permission System)</h4>
+                            <div class="index-grid">
+                                <div class="index-item">
+                                    <span class="index-type">PRIMARY:</span> [id]
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [filename, original_filename] - File search
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [document_type] - Type filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [processing_status] - Processing monitoring
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [is_active] - Active documents
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [access_level] - Permission filtering
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [access_level, department_specific] - Complex permissions
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [document_type, processing_status, is_active] - Multi-criteria
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [uploaded_by] - Upload audit
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [created_at] - Upload timeline
+                                </div>
+                                <div class="index-item">
+                                    <span class="index-type">INDEX:</span> [department_specific] - Department docs
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="foreign-keys">
+                            <h5>🔗 Foreign Key Relationships</h5>
+                            <ul class="fk-list">
+                                <li>ai_policy_documents.department_specific → departments.id <span class="cascade-rule">(SET NULL)</span></li>
+                                <li>ai_policy_documents.uploaded_by → users.id <span class="cascade-rule">(RESTRICT)</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUMMARY AND TEAM LOGIC -->
+            <div class="section">
+                <h2>🏢 Team Logic Implementation Summary</h2>
+
+                <div class="team-logic">
+                    <h4>🔑 How Teams Work Without a Teams Table</h4>
+                    <p><strong>Core Implementation:</strong> The system uses the <code>employees.manager_id</code> field to create hierarchical team structures.</p>
+
+                    <div class="feature-usage">
+                        <h4>🎯 Team Logic Features</h4>
+                        <ul class="usage-list">
+                            <li><strong>Team Definition:</strong> All employees with the same manager_id form a team</li>
+                            <li><strong>Manager Identification:</strong> Employees who appear as manager_id in other records are managers</li>
+                            <li><strong>Multi-level Hierarchy:</strong> Managers can have managers, creating organizational depth</li>
+                            <li><strong>Current Structure:</strong> 1 active manager (Rohit Tiwari) with 4 direct reports</li>
+                            <li><strong>Top-level Employees:</strong> 3 employees with no manager (department heads)</li>
+                            <li><strong>Role-based Access:</strong> Managers see only their team members, admins see all</li>
+                        </ul>
+                    </div>
+
+                    <div class="important-note">
+                        <h5>🔍 Key Database Relationships</h5>
+                        <ul>
+                            <li><strong>employees.manager_id → employees.id (SET NULL)</strong> - Creates team hierarchy</li>
+                            <li><strong>departments.manager_id → employees.id (SET NULL)</strong> - Department heads</li>
+                            <li><strong>Index optimization:</strong> idx_manager on employees table for fast team queries</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMPLETE INDEX SUMMARY -->
+            <div class="section">
+                <h2>📇 Complete Index Summary</h2>
+
+                <div class="overview">
+                    <h2>📊 Index Distribution</h2>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-number">19</div>
+                            <div class="stat-label">PRIMARY Indexes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">14</div>
+                            <div class="stat-label">UNIQUE Indexes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">75</div>
+                            <div class="stat-label">Regular Indexes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">108</div>
+                            <div class="stat-label">Total Indexes</div>
+                        </div>
+                    </div>
+
+                    <div class="important-note">
+                        <h5>🏆 Most Optimized Tables</h5>
+                        <ul>
+                            <li><strong>ai_attendance_anomalies:</strong> 13 indexes (analytics optimization)</li>
+                            <li><strong>ai_policy_documents:</strong> 12 indexes (complex permission system)</li>
+                            <li><strong>employees:</strong> 7 indexes (core business entity)</li>
+                            <li><strong>leave_applications:</strong> 6 indexes (workflow optimization)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOREIGN KEY SUMMARY -->
+            <div class="section">
+                <h2>🔗 Complete Foreign Key Relationships (30 Total)</h2>
+
+                <div class="foreign-keys">
+                    <h5>🔑 All Foreign Key Relationships</h5>
+                    <ul class="fk-list">
+                        <li>employees.user_id → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>employees.department_id → departments.id <span class="cascade-rule">(SET NULL)</span></li>
+                        <li>employees.manager_id → employees.id <span class="cascade-rule">(SET NULL)</span> - TEAM HIERARCHY</li>
+                        <li>departments.manager_id → employees.id <span class="cascade-rule">(SET NULL)</span></li>
+                        <li>employee_documents.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>employee_documents.uploaded_by → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>attendance.employeeId → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>attendance_records.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>leave_applications.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>leave_applications.leave_type_id → leave_types.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>leave_applications.approved_by → users.id <span class="cascade-rule">(SET NULL)</span></li>
+                        <li>leave_balances.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>leave_balances.leave_type_id → leave_types.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>payroll_records.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>payroll_records.processed_by → users.id <span class="cascade-rule">(SET NULL)</span></li>
+                        <li>performance_goals.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>performance_goals.created_by → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>performance_reviews.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>performance_reviews.reviewer_id → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>ai_attendance_anomalies.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>ai_attendance_anomalies.resolved_by → users.id <span class="cascade-rule">(SET NULL)</span></li>
+                        <li>ai_attendance_anomalies.ignored_by → users.id <span class="cascade-rule">(SET NULL)</span></li>
+                        <li>ai_attrition_predictions.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>ai_chatbot_interactions.user_id → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>ai_resume_parser.employee_id → employees.id <span class="cascade-rule">(SET NULL)</span></li>
+                        <li>ai_smart_feedback.employee_id → employees.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>ai_smart_feedback.generated_by → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>ai_smart_reports.generated_by → users.id <span class="cascade-rule">(CASCADE)</span></li>
+                        <li>ai_policy_documents.department_specific → departments.id <span class="cascade-rule">(SET NULL)</span></li>
+                        <li>ai_policy_documents.uploaded_by → users.id <span class="cascade-rule">(RESTRICT)</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="overview">
+                <h2>🎯 Conclusion</h2>
+                <p>This HRMS database represents a comprehensive, AI-enhanced human resource management system with sophisticated team management capabilities. The system successfully implements team hierarchies without a dedicated teams table, using the self-referencing <code>employees.manager_id</code> field to create flexible organizational structures.</p>
+
+                <p><strong>Key Strengths:</strong></p>
+                <ul class="usage-list">
+                    <li>Comprehensive indexing strategy with 108 total indexes for optimal performance</li>
+                    <li>Robust foreign key relationships ensuring data integrity across 30 relationships</li>
+                    <li>Advanced AI features for anomaly detection, attrition prediction, and intelligent feedback</li>
+                    <li>Flexible team management without rigid team table constraints</li>
+                    <li>Complete audit trails and workflow management across all business processes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
