@@ -26,7 +26,8 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  Eye
+  Eye,
+  X
 } from 'lucide-react';
 
 const AdminLeaveManagement = () => {
@@ -57,6 +58,7 @@ const AdminLeaveManagement = () => {
 
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [showProcessModal, setShowProcessModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [processAction, setProcessAction] = useState('');
   const [comments, setComments] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -94,6 +96,11 @@ const AdminLeaveManagement = () => {
       ...prev,
       page: newPage
     }));
+  };
+
+  const handleViewApplication = (application) => {
+    setSelectedApplication(application);
+    setShowViewModal(true);
   };
 
   const handleProcessApplication = async (application, action) => {
@@ -363,7 +370,7 @@ const AdminLeaveManagement = () => {
                             </>
                           ) : (
                             <Button
-                              onClick={() => setSelectedApplication(application)}
+                              onClick={() => handleViewApplication(application)}
                               size="sm"
                               variant="outline"
                               className="border-gray-300 text-gray-600 hover:bg-gray-50"
@@ -500,6 +507,126 @@ const AdminLeaveManagement = () => {
                 {isProcessing ? 'Processing...' : (processAction === 'approve' ? 'Approve' : 'Reject')}
               </Button>
             </div>
+          </Card>
+        </div>
+      )}
+
+      {/* View Application Modal */}
+      {showViewModal && selectedApplication && (
+        <div className="hrms-modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowViewModal(false)}>
+          <Card className="hrms-modal-content w-full max-w-2xl bg-white shadow-2xl border-0">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-bold text-gray-900">
+                  Leave Application Details
+                </CardTitle>
+                <Button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setSelectedApplication(null);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Employee Information */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-3">Employee Information</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Employee:</span>
+                    <div className="font-medium text-gray-900">{getEmployeeName(selectedApplication.employeeId)}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Applied On:</span>
+                    <div className="font-medium text-gray-900">{formatDate(selectedApplication.createdAt || selectedApplication.appliedDate)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Leave Details */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-3">Leave Details</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Leave Type:</span>
+                    <div className="font-medium text-gray-900">{getLeaveTypeName(selectedApplication.leaveTypeId)}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Duration:</span>
+                    <div className="font-medium text-gray-900">
+                      {selectedApplication.totalDays || calculateDuration(selectedApplication.startDate, selectedApplication.endDate)} days
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Start Date:</span>
+                    <div className="font-medium text-gray-900">{formatDate(selectedApplication.startDate)}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">End Date:</span>
+                    <div className="font-medium text-gray-900">{formatDate(selectedApplication.endDate)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-3">Status</h4>
+                <div className="flex items-center gap-2">
+                  <Badge className={getStatusColor(selectedApplication.status)}>
+                    {selectedApplication.status.charAt(0).toUpperCase() + selectedApplication.status.slice(1)}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Reason */}
+              {selectedApplication.reason && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-3">Reason</h4>
+                  <p className="text-gray-700 text-sm leading-relaxed">{selectedApplication.reason}</p>
+                </div>
+              )}
+
+              {/* Comments */}
+              {selectedApplication.comments && (
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-3">Comments</h4>
+                  <p className="text-gray-700 text-sm leading-relaxed">{selectedApplication.comments}</p>
+                </div>
+              )}
+
+              {/* Action Buttons for Pending Applications */}
+              {selectedApplication.status === 'pending' && (
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      handleProcessApplication(selectedApplication, 'approve');
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      handleProcessApplication(selectedApplication, 'reject');
+                    }}
+                    variant="outline"
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                </div>
+              )}
+            </CardContent>
           </Card>
         </div>
       )}

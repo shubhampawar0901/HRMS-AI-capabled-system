@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal Test</title>
+    <style>
+        .hrms-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .hrms-modal-content {
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 10000;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .test-button {
+            padding: 10px 20px;
+            background: #3B82F6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Modal Test</h1>
+    <button class="test-button" onclick="openModal()">Open Test Modal</button>
+
+    <div id="testModal" class="hrms-modal-overlay" style="display: none;">
+        <div class="hrms-modal-content">
+            <button class="close-button" onclick="closeModal()">&times;</button>
+            <h2>Test Modal</h2>
+            <p>This is a test modal to verify the modal functionality works correctly.</p>
+            <p>If you can see this, the modal CSS and JavaScript are working properly.</p>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('testModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('testModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('testModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
