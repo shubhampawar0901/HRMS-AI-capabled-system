@@ -55,37 +55,10 @@ router.get('/all',
   EmployeeController.getAllEmployees
 );
 
-// Get all employees (with pagination)
+// Get all employees (with pagination) - NO VALIDATION RESTRICTIONS
 router.get('/',
   authenticateToken,
   authorize('admin', 'manager'),
-  [
-    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
-    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-    query('departmentId').optional().custom((value) => {
-      if (value === '' || value === undefined || value === null) return true;
-      if (!Number.isInteger(Number(value)) || Number(value) < 1) {
-        throw new Error('Department ID must be a valid positive integer');
-      }
-      return true;
-    }),
-    query('managerId').optional().custom((value) => {
-      if (value === '' || value === undefined || value === null) return true;
-      if (!Number.isInteger(Number(value)) || Number(value) < 1) {
-        throw new Error('Manager ID must be a valid positive integer');
-      }
-      return true;
-    }),
-    query('status').optional().isIn(['active', 'inactive', 'terminated']).withMessage('Invalid status'),
-    query('search').optional().custom((value) => {
-      if (value === '' || value === undefined || value === null) return true;
-      if (typeof value !== 'string' || value.length < 1 || value.length > 100) {
-        throw new Error('Search term must be 1-100 characters');
-      }
-      return true;
-    })
-  ],
-  validateRequest,
   EmployeeController.getAllEmployees
 );
 
